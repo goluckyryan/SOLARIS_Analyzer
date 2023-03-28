@@ -8,7 +8,9 @@
 #include <unistd.h>
 #include <time.h> // time in nano-sec
 
-#include "../SOLARIS_QT6_DAQ/Event.h"
+#include "Event.h" // this is a symblic link to SOLARIS_QT6_DAQ/Event.h
+
+#define tick2ns 8 // 1 tick = 8 ns
 
 class SolReader {
   private:
@@ -27,12 +29,12 @@ class SolReader {
 
   public:
     SolReader();
-    SolReader(std::string fileName, unsigned short dataType);
+    SolReader(std::string fileName, unsigned short dataType = 0); // dataType can auto determine from the data, but remove it will crash....
     ~SolReader();
 
     void OpenFile(std::string fileName);
-    int  ReadNextBlock(int opt = 0); // opt = 0, noraml, 1, fast
-    int  ReadBlock(unsigned int index);
+    int  ReadNextBlock(int isSkip = 0); // opt = 0, noraml, 1, fast
+    int  ReadBlock(unsigned int index, bool verbose = false);
 
     void ScanNumBlock();
 
@@ -64,7 +66,7 @@ SolReader::SolReader(){
   init();
 }
 
-SolReader::SolReader(std::string fileName, unsigned short dataType = 0){
+SolReader::SolReader(std::string fileName, unsigned short dataType){
   init();
   OpenFile(fileName);
   evt->SetDataType(dataType);
@@ -86,12 +88,12 @@ inline void SolReader::OpenFile(std::string fileName){
   }
 }
 
-inline int SolReader::ReadBlock(unsigned int index){
+inline int SolReader::ReadBlock(unsigned int index, bool verbose){
   if( isScanned == false) return -1;
   if( index >= totNumBlock )return -1;
   fseek(inFile, 0L, SEEK_SET);
 
-  printf("-----------%u, %u\n", index, blockPos[index]);
+  if( verbose ) printf("Block index: %u, File Pos: %u byte\n", index, blockPos[index]);
 
   fseek(inFile, blockPos[index], SEEK_CUR);
 
@@ -100,7 +102,7 @@ inline int SolReader::ReadBlock(unsigned int index){
   return ReadNextBlock();
 }
 
-inline int SolReader::ReadNextBlock(int opt){
+inline int SolReader::ReadNextBlock(int isSkip){
   if( inFile == NULL ) return -1;
   if( feof(inFile) ) return -1;
   if( filePos >= inFileSize) return -1;
@@ -117,8 +119,8 @@ inline int SolReader::ReadNextBlock(int opt){
   }
   evt->dataType = blockStartIdentifier & 0xF;
 
-  if( evt->dataType == 0){
-    if( opt == 0 ){
+  if( evt->dataType == 0){ //======== same as the dataFormat in Digitizer
+    if( isSkip == 0 ){
       fread(&evt->channel, 1, 1, inFile);
       fread(&evt->energy, 2, 1, inFile);
       fread(&evt->timestamp, 6, 1, inFile);
@@ -135,7 +137,7 @@ inline int SolReader::ReadNextBlock(int opt){
       fseek(inFile, 31, SEEK_CUR);
     }
     fread(&evt->traceLenght, 8, 1, inFile);
-    if( opt == 0){
+    if( isSkip == 0){
       fread(evt->analog_probes_type, 2, 1, inFile);
       fread(evt->digital_probes_type, 4, 1, inFile);
       fread(evt->analog_probes[0], evt->traceLenght*4, 1, inFile);
@@ -148,7 +150,7 @@ inline int SolReader::ReadNextBlock(int opt){
       fseek(inFile, 6 + evt->traceLenght*(12), SEEK_CUR);
     } 
   }else if( evt->dataType == 1){
-    if( opt == 0 ){
+    if( isSkip == 0 ){
       fread(&evt->channel, 1, 1, inFile);
       fread(&evt->energy, 2, 1, inFile);
       fread(&evt->timestamp, 6, 1, inFile);
@@ -159,14 +161,14 @@ inline int SolReader::ReadNextBlock(int opt){
       fseek(inFile, 14, SEEK_CUR);
     }
     fread(&evt->traceLenght, 8, 1, inFile);
-    if( opt == 0){
+    if( isSkip == 0){
       fread(&evt->analog_probes_type[0], 1, 1, inFile);
       fread(evt->analog_probes[0], evt->traceLenght*4, 1, inFile);
     }else{
       fseek(inFile, 1 + evt->traceLenght*4, SEEK_CUR);
     }
   }else if( evt->dataType == 2){
-    if( opt == 0 ){
+    if( isSkip == 0 ){
       fread(&evt->channel, 1, 1, inFile);
       fread(&evt->energy, 2, 1, inFile);
       fread(&evt->timestamp, 6, 1, inFile);
@@ -177,7 +179,7 @@ inline int SolReader::ReadNextBlock(int opt){
       fseek(inFile, 14, SEEK_CUR);
     }
   }else if( evt->dataType == 3){
-    if( opt == 0 ){
+    if( isSkip == 0 ){
       fread(&evt->channel, 1, 1, inFile);
       fread(&evt->energy, 2, 1, inFile);
       fread(&evt->timestamp, 6, 1, inFile);
@@ -186,7 +188,7 @@ inline int SolReader::ReadNextBlock(int opt){
     }
   }else if( evt->dataType == 15){
       fread(&evt->dataSize, 8, 1, inFile);
-    if( opt == 0){
+    if( isSkip == 0){
       fread(evt->data, evt->dataSize, 1, inFile);
     }else{
       fseek(inFile, evt->dataSize, SEEK_CUR);
