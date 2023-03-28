@@ -1,0 +1,37 @@
+#!/bin/bash
+
+if [ $# -eq 0 ] || [ $1 == "-help"  ]; then
+  echo "$ Proess_Run [RunNum] [EventBuild] [Monitor]"
+  echo "     RunNum = run number / \"lastRun\" "
+  echo "   EventBld = 2/1/0/-1/-2   || 2 = with Trace"  
+  echo "   Monitors = 2/1/0         || 1 = single run,  2 = using the list in ChainMonitors.C"
+  echo "                              10 = single run and post to websrv, 20 = list runs and post to websrv"
+  echo ""
+  echo "       **** When feeding trace data to Monitors, the EventBld flag must be 2 or -2."
+  echo ""
+  exit 1
+fi;
+
+
+RUN=$1
+EventBld=$2
+
+#padding 
+if [ "${RUN:0:1}" == "0" ]; then
+    RUN=${RUN:1:2}
+else
+    RUN=$(printf '%d' $RUN)
+fi
+RUN=$(printf '%03d' ${RUN})
+
+source ~/Analysis/working/expName.sh
+
+ls -1 ${rawDataPath}/${expName}_${RUN}_*
+
+if [ ${EventBld} -neq 0 ]; then
+
+  if [ ${EventBld} -eq 1 ]; then
+    ./EventBuilder ${rawDataPath}/${expName}_${RUN}.root 100 0 `ls -1 ${rawDataPath}/${expName}_${RUN}_*`
+  fi
+
+fi

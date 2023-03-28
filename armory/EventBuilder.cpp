@@ -134,9 +134,14 @@ int main(int argc, char ** argv){
   }
 
   //^=========================================== 
+
+  printf("================================= \n");
+
   int fileID = 0;
   findEarliestTime(nFile, fileID);
   fillData(fileID, saveTrace);
+
+  int last_precentage = 0;
 
   unsigned count = 1;
   while(count < totNumEvent){
@@ -158,11 +163,20 @@ int main(int argc, char ** argv){
     }
 
     count ++;
+    int percentage = count * 100/totNumEvent;
+
+    if( percentage > last_precentage ) {
+      printf("Processed : %u, %.0f%% \n\033[A\r", count, count*100./totNumEvent);
+      last_precentage = percentage;
+    }
+
   }
   
   outRootFile->cd();
   tree->Write();
 
+  printf("===================================== done. ");
+  printf("Number of Event Built is %lld .\n", evID);
 
   //^############## delete new
   for( int i = 0; i < nFile; i++) delete reader[i];

@@ -1,0 +1,28 @@
+#!/bin/bash
+
+
+###################################################
+##
+##    This is a script for Setup/switch Experiment
+##
+##   
+##
+####################################################
+
+
+# this will define global enviroment varibales, like the analysis path, export armory
+source SOLARIS.sh
+
+#  Check git
+
+
+
+#need to distingish mac and daq
+
+
+#create working/expName.sh
+
+#  create folders
+# data_raw = /mnt/data0/${expName}
+# root_data = /mnt/data1/${expName}
+
