@@ -172,9 +172,6 @@ else
   fi
 fi
 
-
-
-
 ############### set up expName.sh, so that all experimental Name is refered to this name
 if [ ${isBranchExist} -eq 0 ]; then
 
@@ -196,8 +193,24 @@ if [ ${isBranchExist} -eq 0 ]; then
 fi
 
 echo -e "${YELLOW} 4) ##################  making new folders in ${rawDataPathParent} ${NC}"
-rawData=${rawDataPathParent}/${expName}
-rootData=${rootDataPathParent}/${expName}
+
+if [ ${PCID} -eq 1 ]; then
+  rawData=${rawDataPathParent}/${expName}
+  rootData=${rootDataPathParent}/${expName}
+elif [ ${PCID} -eq 2 ]; then
+  rawData=${rawDataPathParent}/${expName}/data
+  rootData=${rootDataPathParent}/${expName}/root_data
+else
+
+  path=$(pwd)
+  read -p "Please enter absolute DATAPATH (e.g. ${path}) " DATAPATH
+  echo "DATAPATH for    raw data : ${DATAPATH}/${expName}/data"
+  echo "DATAPATH for   root_data : ${DATAPATH}/${expName}/root_data"   
+
+  rawData=${DATAPATH}/${expName}/data
+  rootData=${DATAPATH}/${expName}/root_data
+
+fi
 
 mkdir -v ${rawData}
 mkdir -v ${rootData}
