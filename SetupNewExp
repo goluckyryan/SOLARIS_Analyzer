@@ -70,6 +70,8 @@ fi
 
 if [ ${Arch} == "Darwin" ] && [ ${PCName} == "SOLARISs-Mac-Studio.local" ]; then 
   PCID=2
+  rawDataPathParent=${HOME}/experimentalData/
+  rootDataPathParent=${HOME}/experimentalData/
 fi
 
 ############### Check is git exist
@@ -178,7 +180,7 @@ if [ ${isBranchExist} -eq 0 ]; then
 
   workingDir=$(pwd)"/working/"
   expNamePath=$(pwd)"/working/expName.sh"
-  echo -e "${YELLOW} 4) ################## Setting up ${expNamePath} ${NC}"
+  echo -e "${YELLOW} 3a) ################## Setting up ${expNamePath} ${NC}"
 
   if [ ! -d ${workingDir} ]; then
       mkdir -p ${workingDir}  # create parent directory
@@ -193,7 +195,7 @@ if [ ${isBranchExist} -eq 0 ]; then
   echo "elogID=0" >> ${expNamePath}
 fi
 
-echo -e "-----------  making new folders in ${rawDataPathParent}"
+echo -e "${YELLOW} 4) ##################  making new folders in ${rawDataPathParent} ${NC}"
 rawData=${rawDataPathParent}/${expName}
 rootData=${rootDataPathParent}/${expName}
 
