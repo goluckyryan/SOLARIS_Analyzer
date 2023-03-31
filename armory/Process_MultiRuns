@@ -1,0 +1,17 @@
+#!/bin/bash
+
+if [ -z $SOLARISANADIR ]; then
+  echo "###### env variable SOLARISANADIR not defined. Abort. Please run the SOLARIS.sh."
+  echo "better add \"source <path_to_SOLARIS.sh>\" into .bashrc"
+  exit 
+fi
+
+if [ $# -eq 0 ] || [ $# -eq 1 ] || [ $1 == "-help"  ]; then
+  echo "$./process_MultiRuns [RunNum1] [RunNum2] [EventBuild] [GeneralSort]"
+  echo "    RunNum1 = start run number"
+  echo "    RunNum2 = stop run number"
+  echo "   EventBld = 2/1/0*   || 2 = with Trace"  
+  echo " GenralSort = n/1/0*   || 1 = GeneralSort.C, n = GeneralSortTraceProof.C with n-worker"
+  echo "        * negative option = force "
+  exit 1
+fi;

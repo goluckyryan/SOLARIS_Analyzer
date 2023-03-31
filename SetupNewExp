@@ -9,70 +9,7 @@
 ##
 ####################################################
 
-
-RED='\033[1;31m'
-YELLOW='\033[1;33m'
-ORANGE='\033[0;33m'
-GREEN='\033[1;32m'
-BLUE='\033[0;34m'
-Cyan='\033[0;36m'
-NC='\033[0m'  #no color
-
-
-##############   need to distingish mac and daq
-Arch="$(uname -s)"
-PCName="$(hostname)"
-PCID=-1      #if PCID == 1 (DAQ), 2 (MAC), -1(OTHER)
-
-#------ Set up data folder, check disk space
-echo -e "${YELLOW} 0) ################## Check computer name and arch. ${NC}"
-echo "PC name  : ${PCName}"
-echo "Archetech: ${Arch}"
-
-if [ ${Arch} == "Linux" ] && [ ${PCName} == "solaris-daq" ]; then 
-
-  PCID=1
-
-  pathsSetting=${HOME}/SOLARIS_QT6_DAQ/programSettings.txt
-  if [ -e ${pathsSetting} ]; then
-    echo "Found DAQ programSettings.txt for paths settings"
-
-    analysisPath=$(cat ${pathsSetting} | head -n 2 | tail -n 1)
-
-    if [ "${analysisPath}" = "$(pwd)" ]; then
-      echo "The analysisPath from ${analysisPath} is same as the present folder $(pwd)"
-    else
-      echo "The analysisPath from ${analysisPath} is different from present folder $(pwd). Abort."
-      exit
-    fi
-
-    rawDataPathParent=$(cat ${pathsSetting} | head -n 3 | tail -n 1)
-    rootDataPathParent=$(cat ${pathsSetting} | head -n 4 | tail -n 1)
-
-    databaseIP=$(cat ${pathsSetting} | head -n 6 | tail -n 1)
-    databaseName=$(cat ${pathsSetting} | head -n 7 | tail -n 1)
-
-    #echo ${rawDataPathParent}
-    #echo ${rootDataPathParent}
-    #echo ${databaseIP}
-    #echo ${databaseName}
-
-  else 
-
-    echo "${RED} Cannot found DAQ programSettings.txt for path settings ${NC}"
-    echo "Seek Ryan for help"
-    exit
-
-  fi
-
-fi
-
-
-if [ ${Arch} == "Darwin" ] && [ ${PCName} == "SOLARISs-Mac-Studio.local" ]; then 
-  PCID=2
-  rawDataPathParent=${HOME}/experimentalData/
-  rootDataPathParent=${HOME}/experimentalData/
-fi
+source armory/Process_BasicConfig
 
 ############### Check is git exist
 isGitExist=0
@@ -105,11 +42,10 @@ echo " 6) Tell Database SetupNewExp change exp. (only from the DAQ)"
 echo " 7) git push (if new exp.)"
 echo "============================================================="
 
-
 expName=$1
 
 ###############  this will define global enviroment varibales, like the analysis path, export armory
-#source SOLARIS.sh
+source SOLARIS.sh
 
 ###############  Check git
 echo -e "${YELLOW} 1) ################## Git Fetch ${NC}"
@@ -146,7 +82,7 @@ else
 
     if [ ${PCID} -eq 1 ]; then
 
-      echo -e "You are going to create a${GREEN} NEW ${NC}branch ${Cyan}${expName}${NC} from branch : $(git branch --show-current)"
+      echo -e "You are going to create a${GREEN} NEW ${NC}branch ${CYAN}${expName}${NC} from branch : $(git branch --show-current)"
       read -p "Are you sure? (Y/N) " createNewBranch
       if [ ${createNewBranch} == "Y" ]; then
         git checkout -b ${expName}
@@ -156,7 +92,7 @@ else
     
     else
 
-      echo -e "${Cyan} ONLY the DAQ machines can create branch ${NC}"
+      echo -e "${CYAN} ONLY the DAQ machines can create branch ${NC}"
 
     fi
 
@@ -190,6 +126,7 @@ if [ ${isBranchExist} -eq 0 ]; then
   echo "rootDataPath=${rootDataPathParent}"/${expName} >> ${expNamePath}
   echo "runID=0" >> ${expNamePath}
   echo "elogID=0" >> ${expNamePath}
+  echo "#------------end of file." >> ${expNamePath}
 fi
 
 echo -e "${YELLOW} 4) ##################  making new folders in ${rawDataPathParent} ${NC}"
@@ -231,11 +168,14 @@ if [ ${PCID} -eq 1 ]; then
   echo -e "=================== Tell the database"
 
   haha1=${databaseIP}"/write?db="${databaseName}
-  haha2="RunID,start=0 value=0,expName=\"${expName}\",comment=\"New_experiment_[${expName}]_was_created\""
 
+  if [ ${isBranchExist} -eq 0 ]; then
+    haha2="RunID,start=0 value=0,expName=\"${expName}\",comment=\"New_experiment_[${expName}]_was_created.\""
+  else
+    haha2="RunID,start=0 value=0,expName=\"${expName}\",comment=\"New_experiment_[${expName}]_was_switched.\""
+  fi
   #echo $haha1
   #echo $haha2
-
   curl -s -v -XPOST "$haha1" --data-binary "$haha2"  --max-time 1 --connect-timeout 1
 
   #===== clean up working if it is new

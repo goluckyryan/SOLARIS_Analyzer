@@ -1,10 +1,18 @@
 #!/bin/bash
 
+if [ -z $SOLARISANADIR ]; then
+  echo "###### env variable SOLARISANADIR not defined. Abort. Please run the SOLARIS.sh."
+  echo "better add \"source <path_to_SOLARIS.sh>\" into .bashrc"
+  exit 
+fi
+
+
 if [ $# -eq 0 ] || [ $1 == "-help"  ]; then
-  echo "$ Proess_Run [RunNum] [EventBuild] [Monitor]"
-  echo "     RunNum = run number / \"lastRun\" "
-  echo "   EventBld = 2/1/0/-1/-2   || 2 = with Trace"  
-  echo "   Monitors = 2/1/0         || 1 = single run,  2 = using the list in ChainMonitors.C"
+  echo "$ Proess_Run [RunNum] [EventBuild] [GeneralSort] [Monitor]"
+  echo "        RunNum = run number / \"lastRun\" "
+  echo "      EventBld = 2/1/0/-1/-2   || 2 = with Trace"  
+  echo "   GeneralSort = n/0/-n        || n = number of worker"  
+  echo "      Monitors = 2/1/0         || 1 = single run,  2 = using the list in ChainMonitors.C"
   echo "                              10 = single run and post to websrv, 20 = list runs and post to websrv"
   echo ""
   echo "       **** When feeding trace data to Monitors, the EventBld flag must be 2 or -2."
@@ -14,7 +22,23 @@ fi;
 
 
 RUN=$1
-EventBld=$2
+runNum=$1
+EventBld=0
+nWorker=1
+isMonitor=0
+
+if [ $# -ge 2 ]; then EventBld=$2; fi
+if [ $# -ge 3 ]; then nWorker=$3; fi
+if [ $# -ge 4 ]; then isMonitor=$4; fi
+
+timeWin=100000
+
+source ${SOLARISANADIR}/armory/Process_BasicConfig
+source ${SOLARISANADIR}/working/expName.sh
+
+if [ "$RUN" == "lastRun" ]; then
+  RUN=$runID
+fi
 
 #padding 
 if [ "${RUN:0:1}" == "0" ]; then
@@ -24,14 +48,36 @@ else
 fi
 RUN=$(printf '%03d' ${RUN})
 
-source ~/Analysis/working/expName.sh
+#################################### 
+if [ ${PCID} -eq 1 ]; then
+  source Process_EventBuilder $RUN ${EventBld}
+fi
 
-ls -1 ${rawDataPath}/${expName}_${RUN}_*
+if [ ${PCID} -eq 2 ]; then
+  ## Dwonlaod Data
+  echo "Downlaod data"
+fi
 
-if [ ${EventBld} -neq 0 ]; then
+#################################### GeneralSort
 
-  if [ ${EventBld} -eq 1 ]; then
-    ./EventBuilder ${rawDataPath}/${expName}_${RUN}.root 100 0 `ls -1 ${rawDataPath}/${expName}_${RUN}_*`
-  fi
+if [ ${nWorker} -eq 0 ]; then
+
+  echo -e "${LRED}>>>>>>>>>>>>>>>>>>>>> GeneralSort Skipped by user. ${NC}"
+
+else
+  source $ROOTSYS/bin/thisroot.sh
+
+  mkdir ~/.proof/working
+  cp ${SOLARISANADIR}/working/Mapping.h ~/.proof/working/.
+  mkdir ~/.proof/armory
+  cp ${SOLARISANADIR}/armory/AnalysisLib.h ~/.proof/armory/.
+
+  root -l -q -b "${SOLARISANADIR}/armory/GeneralSortAgent.C($runNum, ${nWorker})"
 
 fi
+#################################### Monitor
+
+
+
+
+

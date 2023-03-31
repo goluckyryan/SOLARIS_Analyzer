@@ -70,7 +70,12 @@
     "qdatetime": "cpp",
     "fstream": "cpp",
     "allocator": "cpp",
-    "qsignalmapper": "cpp"
+    "qsignalmapper": "cpp",
+    "GeneralSort.C": "cpp",
+    "forward_list": "cpp",
+    "ChainMonitors.C": "cpp",
+    "GeneralSortAgent.C": "cpp",
+    "kaka.C": "cpp"
   },
 
   "better-comments.multilineComments": true,

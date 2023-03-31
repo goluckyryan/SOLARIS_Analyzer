@@ -6,8 +6,9 @@
 #include "TTree.h"
 #include "TMath.h"
 #include "TString.h"
-#include "TClonesArray.h"
-#include "TVector.h"
+#include "TMacro.h"
+//#include "TClonesArray.h" // plan to save trace as TVector with TClonesArray
+//#include "TVector.h"
 
 #define MAX_ID 64
 #define MAX_TRACE_LEN 2500
@@ -41,14 +42,18 @@ int                   bd[MAX_ID] = {0};
 int                   ch[MAX_ID] = {0};
 int                    e[MAX_ID] = {0};  
 unsigned long long   e_t[MAX_ID] = {0};
+unsigned short   lowFlag[MAX_ID] = {0};
+unsigned short  highFlag[MAX_ID] = {0};
 int             traceLen[MAX_ID] = {0};
-int  trace[MAX_ID][MAX_TRACE_LEN] = {0};
+int trace[MAX_ID][MAX_TRACE_LEN] = {0};
 
 void fillData(int &fileID, const bool &saveTrace){
   bd[multi] = fileID;
   ch[multi] = evt[fileID]->channel;
   e[multi] = evt[fileID]->energy;
   e_t[multi] = evt[fileID]->timestamp;
+  lowFlag[multi] = evt[fileID]->flags_low_priority;
+  highFlag[multi] = evt[fileID]->flags_high_priority;
   
   if( saveTrace ){
     traceLen[multi] = evt[fileID]->traceLenght;
@@ -108,18 +113,19 @@ int main(int argc, char ** argv){
 
   TTree * tree = new TTree("tree", outFileName);
 
-  tree->Branch("evID",      &evID, "event_ID/l"); 
-  tree->Branch("multi",    &multi, "multi/I"); 
-  tree->Branch("bd",           bd, "board[multi]/I");
-  tree->Branch("ch",           ch, "channel[multi]/I");
-  tree->Branch("e",             e, "energy[multi]/I");
-  tree->Branch("e_t",         e_t, "energy_timestamp[multi]/l");
+  tree->Branch("evID",         &evID, "event_ID/l"); 
+  tree->Branch("multi",       &multi, "multi/I"); 
+  tree->Branch("bd",              bd, "board[multi]/I");
+  tree->Branch("ch",              ch, "channel[multi]/I");
+  tree->Branch("e",                e, "energy[multi]/I");
+  tree->Branch("e_t",            e_t, "energy_timestamp[multi]/l");
+  tree->Branch("lowFlag",    lowFlag, "lowFlag[multi]/s");
+  tree->Branch("highFlag",  highFlag, "highFlag[multi]/s");
 
   if( saveTrace){
     tree->Branch("tl",        traceLen, "traceLen[multi]/I");
     tree->Branch("trace",        trace, Form("trace[multi][%d]/I", MAX_TRACE_LEN));
   }
-
 
   reader = new SolReader*[nFile];
   evt = new Event *[nFile];
@@ -140,6 +146,9 @@ int main(int argc, char ** argv){
   int fileID = 0;
   findEarliestTime(nFile, fileID);
   fillData(fileID, saveTrace);
+
+  unsigned long firstTimeStamp = evt[fileID]->timestamp;
+  unsigned long lastTimeStamp = 0;
 
   int last_precentage = 0;
 
@@ -163,6 +172,9 @@ int main(int argc, char ** argv){
     }
 
     count ++;
+
+    if( count == totNumEvent ) lastTimeStamp = evt[fileID]->timestamp;
+
     int percentage = count * 100/totNumEvent;
 
     if( percentage > last_precentage ) {
@@ -175,8 +187,24 @@ int main(int argc, char ** argv){
   outRootFile->cd();
   tree->Write();
 
-  printf("===================================== done. ");
-  printf("Number of Event Built is %lld .\n", evID);
+
+  //======== Save timestamp as TMacro
+  TMacro timeStamp;
+  TString str;
+  str.Form("%lu", firstTimeStamp); timeStamp.AddLine( str.Data() );
+  str.Form("%lu", lastTimeStamp); timeStamp.AddLine( str.Data() );
+
+  timeStamp.Write("timeStamp");
+
+
+  printf("===================================== done. \n");
+  printf("Number of Event Built : %lld\n", evID);
+  printf("      first timestamp : %lu \n", firstTimeStamp);
+  printf("       last timestamp : %lu \n", lastTimeStamp);
+  unsigned long duration = lastTimeStamp - firstTimeStamp;
+  printf("       total duration : %lu = %.2f sec \n", duration, duration * tick2ns * 1.0 / 1e9 );
+  printf("===================================== end of summary. \n");
+
 
   //^############## delete new
   for( int i = 0; i < nFile; i++) delete reader[i];

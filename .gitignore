@@ -3,6 +3,9 @@ working/Settings
 
 EventBuilder
 *.root
+*.pcm
+*.d
+*.so
 
 data_raw
 root_data

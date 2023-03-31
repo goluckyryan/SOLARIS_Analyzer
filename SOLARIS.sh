@@ -1,23 +1,36 @@
-#=================== Main
-unset SOLARISSYS
+
+#========== this script define the SOLARISANADIR as global env.
+
+unset SOLARISANADIR
 
 SOURCE=${BASH_ARGV[0]}
 PCName=$(uname -n)
 if [ $(uname -n) == "solaris-daq" ]; then
-  SOLARISSYS=~/Analysis
+  SOLARISANADIR=~/Analysis
 else
   if [ $(pwd) == $HOME ]; then 
-    SOLARISSYS=$(dirname ${SOURCE})
+    SOLARISANADIR=$(dirname ${SOURCE})
     
-    if [[ ${SOLARISSYS} == *"$HOME"* ]]; then
+    if [[ ${SOLARISANADIR} == *"$HOME"* ]]; then
       dummpy=0
     else
-      SOLARISSYS=${HOME}/$SOLARISSYS
+      SOLARISANADIR=${HOME}/$SOLARISANADIR
     fi
     
   else
-    SOLARISSYS=$(pwd)
+    SOLARISANADIR=$(pwd)
   fi
 fi
 
-export SOLARISSYS
+export SOLARISANADIR
+
+echo "####### set global variable SOLARISANADIR = ${SOLARISANADIR}"
+
+export PATH=$PATH:$SOLARISANADIR/armory
+
+echo "####### add ${SOLARISANADIR}/armory into PATH"
+
+
+###########################
+
+alias 2Working='cd ${SOLARISANADIR}/working'

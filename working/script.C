@@ -43,7 +43,7 @@ void script(){
                                                                 reader->GetFilePos(), 
                                                                 reader->GetFileSize());
       evt->PrintAll();
-      evt->PrintAllTrace();
+      //evt->PrintAllTrace();
     }
 
     h1->Fill(evt->timestamp);
