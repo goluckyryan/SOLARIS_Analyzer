@@ -72,11 +72,10 @@
     "allocator": "cpp",
     "qsignalmapper": "cpp",
     "GeneralSort.C": "cpp",
-    "forward_list": "cpp",
     "ChainMonitors.C": "cpp",
     "GeneralSortAgent.C": "cpp",
-    "kaka.C": "cpp",
-    "Rabbit.C": "cpp"
+    "readRawTrace.C": "cpp",
+    "readTrace.C": "cpp"
   },
 
   "better-comments.multilineComments": true,
