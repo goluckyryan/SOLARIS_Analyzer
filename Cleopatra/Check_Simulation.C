@@ -48,7 +48,7 @@ enum plotID { pEZ,               /// 0
               pEmpty };          /// 17
 plotID StringToPlotID(TString str);
 void Check_Simulation(TString filename = "transfer.root",
-                      TString configFile = "../Armory/Check_Simulation_Config.txt",
+                      TString configFile = "../working/Check_Simulation_Config.txt",
                       Int_t padSize = 500,
                       bool outputCanvas = false){
 
