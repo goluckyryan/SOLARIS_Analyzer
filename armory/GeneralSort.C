@@ -17,28 +17,10 @@ Bool_t GeneralSort::Process(Long64_t entry){
   if( entry < 2 ) printf("%s %lld\n", __func__, entry);
 
   ///initialization
-  for( int i = 0; i < detNum[0]; i++){
-    eE[i] = TMath::QuietNaN();
-    xf[i] = TMath::QuietNaN();
-    xn[i] = TMath::QuietNaN();
-    eT [i] = 0;
-    xfT[i] = 0;
-    xnT[i] = 0;
-
-    if( isTraceExist && traceMethod > 0 ){
-      teE[i] = TMath::QuietNaN();
-      teT[i] = TMath::QuietNaN();
-      teR[i] = TMath::QuietNaN();
-    }
-  }
-
-  for( int i = 0; i < detNum[1]; i++){
-    rdt[i]  = TMath::QuietNaN();
-    rdtT[i] = 0;
-    if( isTraceExist && traceMethod > 0 ){
-      trdt[i]  = TMath::QuietNaN();
-      trdtT[i] = TMath::QuietNaN();
-      trdtR[i] = TMath::QuietNaN();
+  for( int i = 0; i < nDetType; i++){
+    for( int j = 0; j < detNum[i]; j++){
+      eE[i][j] = TMath::QuietNaN();
+      eT[i][j] = 0;
     }
   }
   
@@ -50,40 +32,24 @@ Bool_t GeneralSort::Process(Long64_t entry){
   b_e->GetEntry(entry);
   b_e_t->GetEntry(entry);
 
-
   for( int i = 0 ; i < multi; i++){    
     int detID = mapping[bd[i]][ch[i]];
-    int kindIndex = -1;
+    int detType = FindDetType(detID, detMaxID);
 
-    for( int g = 0; g < (int) detMaxID.size(); g ++){
-      int low = ( g == 0 ? 0 : detMaxID[g-1]);
-      int high = detMaxID[g];
+    int low = (i == 0 ? 0 : detMaxID[detType-1]);
 
-      if(  low <= detID && detID  < high ){
-        
-        //************** array
-        if( g == 0 ){
-          kindIndex = (kindIndex + 1) % 3;
-          switch (kindIndex){
-            case 0 : { eE[detID] = e[i] * detParity[g];  eT[detID] = e_t[i]; } break;
-            case 1 : { xf[detID] = e[i] * detParity[g]; xfT[detID] = e_t[i]; } break;
-            case 2 : { xn[detID] = e[i] * detParity[g]; xnT[detID] = e_t[i]; } break;
-          }
-        }
+    int reducedDetID = detID - low;
 
-        //************** rdt
-        if( g == 1 ){
-          detID = detID - detMaxID[g-1];
-          rdt[detID] = e[i] * detParity[g];  rdtT[detID] = e_t[i]; 
-        }
+    eE[detType][reducedDetID] = e[i] * detParity[detType];
+    eT[detType][reducedDetID] = e_t[i];
 
-      }
-
-    }
   }
 
 
   if(  isTraceExist && traceMethod >= 0 ){
+
+    b_tl->GetEntry(entry);
+    b_trace->GetEntry(entry);
 
     int countTrace = 0;
 
@@ -92,11 +58,21 @@ Bool_t GeneralSort::Process(Long64_t entry){
     for( int i = 0; i < multi; i++){
       int detID = mapping[bd[i]][ch[i]];
 
+      int traceLength = tl[i];
+      gTrace = (TGraph*) arr->ConstructedAt(countTrace, "C");
+      gTrace->Clear();         
+      gTrace->Set(traceLength);         
+         
+      gTrace->SetTitle(Form("ev:%llu,nHit:%d,id:%d,len:%d", evID, i, detID, traceLength));
+      countTrace ++;
+
+      for( int k = 0 ; k < traceLength; k++){
+        gTrace->SetPoint(k, k, trace[i][k]);
+      }
+
     }
 
-
   }
-
 
   newTree->Fill();
 
@@ -108,11 +84,14 @@ void GeneralSort::Terminate(){
 
   printf("========================= %s\n", __func__);
 
-  TString option = GetOption();
-  TObjArray * tokens = option.Tokenize(",");
-  traceMethod = ((TObjString*) tokens->At(0))->String().Atoi();
-  saveFileName = ((TObjString*) tokens->At(1))->String();
-  
+  DecodeOption();
+
+  if( !isParallel){
+    saveFile->cd();
+    newTree->Write();
+    saveFile->Close();
+  }
+
   //get entries
   saveFile = TFile::Open(saveFileName);
   if( saveFile->IsOpen() ){
@@ -134,7 +113,8 @@ void GeneralSort::Begin(TTree * tree){
   printf( "=====================   SOLARIS GeneralSort.C   =================\n");
   printf( "=================================================================\n");
 
-  PrintMapping(mapping, detName, detMaxID);
+  PrintMapping(mapping, detTypeName, detMaxID);
+
 
 }
 
@@ -144,9 +124,14 @@ void GeneralSort::SlaveBegin(TTree * /*tree*/){
 }
 
 void GeneralSort::SlaveTerminate(){
+
   printf("%s\n", __func__);
-  saveFile->cd();
-  newTree->Write();
-  fOutput->Add(proofFile);
-  saveFile->Close();
+
+  if( isParallel){
+    saveFile->cd();
+    newTree->Write();
+    fOutput->Add(proofFile);
+    saveFile->Close();
+  }
+  
 }

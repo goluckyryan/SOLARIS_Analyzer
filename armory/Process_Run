@@ -72,7 +72,7 @@ else
   mkdir ~/.proof/armory
   cp ${SOLARISANADIR}/armory/AnalysisLib.h ~/.proof/armory/.
 
-  root -l -q -b "${SOLARISANADIR}/armory/GeneralSortAgent.C($runNum, ${nWorker})"
+  root -l -q -b "${SOLARISANADIR}/armory/GeneralSortAgent.C($runNum, ${nWorker}, 0)"
 
 fi
 #################################### Monitor

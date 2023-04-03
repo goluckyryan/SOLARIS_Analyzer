@@ -82,6 +82,9 @@ public :
     isTraceExist = false;
     traceMethod = 0; // -1 = ignore trace, 0 = no trace fit, 1 = fit, 2 = trapezoid
   
+    isParallel = false;
+    detNum.clear();
+    nDetType = 0;
   }
   virtual ~GeneralSort() { }
   virtual Int_t   Version() const { return 2; }
@@ -107,24 +110,19 @@ public :
   void PrintTraceMethod();
 
   std::vector<int> detNum;
+  int nDetType;
+
+  void SetUpTree();
+  void DecodeOption();
+  bool isParallel;
 
   TString saveFileName;
   TFile * saveFile; //!
   TProofOutputFile * proofFile; //!
   TTree * newTree; //!
 
-  //TODO ---- 2D array
-  Float_t   *eE; //!
-  ULong64_t *eT; //!
-
-  Float_t   *xf ; //!
-  ULong64_t *xfT; //!
-
-  Float_t   *xn ; //!
-  ULong64_t *xnT; //!
-
-  Float_t   *rdt ; //!
-  ULong64_t *rdtT; //!
+  Float_t   ** eE; //!
+  ULong64_t ** eT; //!
 
   //trace
   TClonesArray * arr ;//!
@@ -132,19 +130,106 @@ public :
   TClonesArray * arrTrapezoid ;//!   
   TGraph * gTrapezoid; //!
 
-  Float_t   *teE; //!  
-  Float_t   *teT; //! 
-  Float_t   *teR; //!
-
-  Float_t   *trdt ; //!
-  Float_t   *trdtT ; //!
-  Float_t   *trdtR ; //!
+  //trace energy, trigger time, rise time
+  Float_t   **teE; //! 
+  Float_t   **teT; //! 
+  Float_t   **teR; //! 
 
 };
 
 #endif
 
 #ifdef GeneralSort_cxx
+
+//^##############################################################
+void GeneralSort::SetUpTree(){
+
+  printf("%s\n", __func__);
+
+  if( isParallel){
+    proofFile = new TProofOutputFile(saveFileName, "M");
+    saveFile = proofFile->OpenFile("RECREATE");
+  }else{
+    saveFile = new TFile(saveFileName,"RECREATE");
+  }
+
+  newTree = new TTree("gen_tree", "Tree After GeneralSort");
+  newTree->SetDirectory(saveFile);
+  newTree->AutoSave();
+
+  detNum = ExtractDetNum(mapping, detTypeName, detMaxID);
+
+  nDetType = (int) detTypeName.size();
+
+  eE = new Float_t * [nDetType];
+  eT = new ULong64_t * [nDetType];
+
+  for( int i = 0 ; i < nDetType; i++){
+    eE[i] = new Float_t[detNum[i]];
+    eT[i] = new ULong64_t[detNum[i]];
+
+    for( int j = 0; j < detNum[i]; j++){
+      eE[i][j] =  TMath::QuietNaN();
+      eT[i][j] = 0;
+    }
+
+    newTree->Branch(  detTypeName[i].c_str(),        eE[i], Form("%s[%d]/F", detTypeName[i].c_str(), detNum[i]));
+    newTree->Branch( (detTypeName[i]+"_t").c_str(),  eT[i], Form("%s_Timestamp[%d]/l", detTypeName[i].c_str(), detNum[i]));
+  }
+
+
+  if( isTraceExist && traceMethod >= 0){
+
+    arr = new TClonesArray("TGraph");
+
+    newTree->Branch("trace", arr, 256000);
+    arr->BypassStreamer();
+
+    if( traceMethod > 0 ){
+
+      teE = new Float_t * [nDetType];
+      teT = new Float_t * [nDetType];
+      teR = new Float_t * [nDetType];
+
+      for( int i = 0 ; i < nDetType; i++){
+        teE[i] = new Float_t[detNum[i]];
+        teT[i] = new Float_t[detNum[i]];
+        teR[i] = new Float_t[detNum[i]];
+
+        for( int j = 0; j < detNum[i]; j++){
+          teE[i][j] =  TMath::QuietNaN();
+          teT[i][j] =  TMath::QuietNaN();
+          teR[i][j] =  TMath::QuietNaN();
+        }
+
+        newTree->Branch( ("t" + detTypeName[i]).c_str(),       teE[i], Form("trace_%s[%d]/F",      detTypeName[i].c_str(), detNum[i]));
+        newTree->Branch( ("t" + detTypeName[i]+"_t").c_str(),  teT[i], Form("trace_%s_time[%d]/l", detTypeName[i].c_str(), detNum[i]));
+        newTree->Branch( ("t" + detTypeName[i]+"_r").c_str(),  teR[i], Form("trace_%s_rise[%d]/l", detTypeName[i].c_str(), detNum[i]));
+      }
+
+    }
+
+  }
+
+}
+
+//^##############################################################
+void GeneralSort::DecodeOption(){
+  TString option = GetOption();
+  if( option != ""){
+    TObjArray * tokens = option.Tokenize(",");
+    traceMethod = ((TObjString*) tokens->At(0))->String().Atoi();
+    saveFileName = ((TObjString*) tokens->At(1))->String();
+    isParallel = ((TObjString*) tokens->At(2))->String().Atoi();
+  }else{
+    traceMethod = -1;
+    saveFileName = "temp.root";
+    isParallel = false;
+  }
+
+  printf("|%s| %d %s %d \n", option.Data(), traceMethod, saveFileName.Data(), isParallel);
+
+}
 
 //^##############################################################
 void GeneralSort::Init(TTree *tree){
@@ -179,10 +264,7 @@ void GeneralSort::Init(TTree *tree){
   printf( "========== total Entry : %ld\n", NumEntries);
 
   //########################### Get Option 
-  TString option = GetOption();
-  TObjArray * tokens = option.Tokenize(",");
-  traceMethod = ((TObjString*) tokens->At(0))->String().Atoi();
-  saveFileName = ((TObjString*) tokens->At(1))->String();
+  DecodeOption();
 
   if( isTraceExist ){
     PrintTraceMethod();
@@ -190,65 +272,7 @@ void GeneralSort::Init(TTree *tree){
     printf("++++++++ no Trace found\n");
   }
 
-  proofFile = new TProofOutputFile(saveFileName, "M");
-  saveFile = proofFile->OpenFile("RECREATE");
-   
-  newTree = new TTree("gen_tree", "Tree After GeneralSort");
-  newTree->SetDirectory(saveFile);
-  newTree->AutoSave();
-
-  detNum = ExtractDetNum(mapping, detName, detMaxID);
-
-  eE  = new Float_t[detNum[0]];
-  xf  = new Float_t[detNum[0]];
-  xn  = new Float_t[detNum[0]];
-  eT  = new ULong64_t[detNum[0]];
-  xfT = new ULong64_t[detNum[0]];
-  xnT = new ULong64_t[detNum[0]];
-
-  rdt  = new Float_t[detNum[1]];
-  rdtT = new ULong64_t[detNum[1]];
-
-  newTree->Branch("e",      eE, Form("Energy[%d]/F", detNum[0]));
-  newTree->Branch("e_t",    eT, Form("Energy_Timestamp[%d]/l", detNum[0]));
-
-  newTree->Branch("xf",     xf, Form("XF[%d]/F", detNum[0]));
-  newTree->Branch("xf_t",  xfT, Form("XF_Timestamp[%d]/l", detNum[0]));
-
-  newTree->Branch("xn",     xn, Form("XN[%d]/F", detNum[0]));
-  newTree->Branch("xn_t",  xnT, Form("XN_Timestamp[%d]/l", detNum[0]));
-
-  newTree->Branch("rdt",     rdt, Form("Recoil[%d]/F", detNum[1]));
-  newTree->Branch("rdt_t",  rdtT, Form("Recoil_Timestamp[%d]/l", detNum[1]));
-
-  if( isTraceExist && traceMethod >= 0){
-
-    arr = new TClonesArray("TGraph");
-
-    newTree->Branch("trace", arr, 256000);
-    arr->BypassStreamer();
-
-    if( traceMethod > 0 ){
-
-      teE = new Float_t[detNum[0]];
-      teT = new Float_t[detNum[0]];
-      teR = new Float_t[detNum[0]];
-
-      trdt  = new Float_t[detNum[1]];
-      trdtT = new Float_t[detNum[1]];
-      trdtR = new Float_t[detNum[1]];
-
-      newTree->Branch("te",    teE, Form("Trace_Energy[%d]/F", detNum[0]));
-      newTree->Branch("te_t",  teT, Form("Trace_Energy_Time[%d]/F", detNum[0]));
-      newTree->Branch("te_r",  teR, Form("Trace_Energy_RiseTime[%d]/F", detNum[0]));
-
-      newTree->Branch("trdt",    trdt , Form("Trace_RDT[%d]/F", detNum[1]));
-      newTree->Branch("trdt_t",  trdtT, Form("Trace_RDT_Time[%d]/F", detNum[1]));
-      newTree->Branch("trdt_r",  trdtR, Form("Trace_RDT_RiseTime[%d]/F", detNum[1]));
-    }
-
-  }
-
+  SetUpTree();
 
   printf("---- end of Init %s\n ", __func__);
 

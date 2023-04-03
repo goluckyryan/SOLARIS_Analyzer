@@ -75,7 +75,8 @@
     "forward_list": "cpp",
     "ChainMonitors.C": "cpp",
     "GeneralSortAgent.C": "cpp",
-    "kaka.C": "cpp"
+    "kaka.C": "cpp",
+    "Rabbit.C": "cpp"
   },
 
   "better-comments.multilineComments": true,

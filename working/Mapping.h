@@ -7,53 +7,58 @@
 //^   If this file is modified, please Close Digitizer and Open again
 //^-------------------------------------------------------------------------------
 //^  
-//^   Array  :   0 -  99
-//^   Recoil : 100 - 199
+//^   Array-e  :    0 -  99
+//^   Array-xf :  100 - 199
+//^   Array-xn :  200 - 299
+//^   Recoil   :  300 - 399
 //^   
-//^  line comment is '//^'   
+//^   line comment is '//^'   
 //^ 
 //^===============================================================================
 
 #include <vector>
 #include <string>
 
-const std::vector<std::string> detName = {"Array", "Recoil"}; //C= The comment "//C=" is an indicator DON't Remove
-const std::vector<int>        detMaxID = {    100,      200}; //C# The comment "//C#" is an indicator DON't Remove
-const std::vector<int>       detParity = {      1,        1}; 
+const std::vector<std::string> detTypeName = {  "e",  "xf", "xn", "rdt"}; //C= The comment "//C=" is an indicator DON't Remove
+const std::vector<int>          detGroupID = {    0,     0,    0,     1}; //C& The comment "//C&" is an indicator DON't Remove
+const std::vector<int>            detMaxID = {  100,   200,  300,   400}; //C# The comment "//C#" is an indicator DON't Remove
+const std::vector<int>           detParity = {    1,     1,    1,     1}; 
+
+const std::vector<std::string> groupName = { "Array", "Recoil"}; //C% The comment "//C%" is an indicator DON't Remove
 
 //!The mapping[i] must match as the IP setting in the DAQ
 
 const std::vector<std::vector<int>> mapping = {
 {
-//C 0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15 // this line is an indicator DON'T Remove "//C " is an indcator
-    0,  0,  0,  1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4, -1,  ///  0 - 15 
-    5,  5,  5,  6,  6,  6,  7,  7,  7,  8,  8,  8,  9,  9,  9, -1,  /// 16 - 31
-   10, 10, 10, 11, 11, 11, 12, 12, 12, 13, 13, 13, 14, 14, 14, -1,  /// 32 - 47
-   15, 15, 15, 16, 16, 16, 17, 17, 17, 18, 18, 18, 19, 19, 19, -1   /// 48 - 63
+//C   0     1     2     3     4     5     6     7     8     9    10    11    12    13    14    15 // this line is an indicator DON'T Remove "//C " is an indcator
+      0,  100,  200,    1,  101,  201,    2,  102,  202,    3,  103,  203,    4,  104,  204,   -1,  ///  0 - 15 
+      5,  105,  205,    6,  106,  206,    7,  107,  207,    8,  108,  208,    9,  109,  209,   -1,  /// 16 - 31
+     10,  110,  210,   11,  111,  211,   12,  112,  212,   13,  113,  213,   14,  114,  214,   -1,  /// 32 - 47
+     15,  115,  215,   16,  116,  216,   17,  117,  217,   18,  118,  218,   19,  119,  219,   -1   /// 48 - 63
 //C------------- end of a digitizer  // this line is an indicator DON'T Remove "//C-" is an indcator
 },
-//^{
-//^//C 0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15 // this line is an indicator DON'T Remove "//C " is an indcator
-//^   20, 20, 20, 21, 21, 21, 22, 22, 22, 23, 23, 23, 24, 24, 24, -1,  ///  0 - 15 
-//^   25, 25, 25, 26, 26, 26, 27, 27, 27, 28, 28, 28, 29, 29, 29, -1,  /// 16 - 31
-//^   30, 30, 30, 31, 31, 31, 32, 32, 32, 33, 33, 33, 34, 34, 34, -1,  /// 32 - 47
-//^   35, 35, 35, 36, 36, 36, 37, 37, 37, 38, 38, 38, 39, 39, 39, -1   /// 48 - 63
-//^//C------------- end of a digitizer // this line is an indicator DON'T Remove "//C-" is an indcator
-//^},
-//^{
-//^//C 0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15 // this line is an indicator DON'T Remove "//C " is an indcator
-//^   40, 40, 40, 41, 41, 41, 42, 42, 42, 43, 43, 43, 44, 44, 44, -1,  ///  0 - 15 
-//^   45, 45, 45, 46, 46, 46, 47, 47, 47, 48, 48, 48, 49, 49, 49, -1,  /// 16 - 31
-//^   50, 50, 50, 51, 51, 51, 52, 52, 52, 53, 53, 53, 54, 54, 54, -1,  /// 32 - 47
-//^   55, 55, 55, 56, 56, 56, 57, 57, 57, 58, 58, 58, 59, 59, 59, -1   /// 48 - 63
-//^//C------------- end of a digitizer // this line is an indicator DON'T Remove "//C-" is an indcator
-//^},
 {
-//C  0    1    2    3    4    5    6    7    8    9   10   11   12   13   14   15 // this line is an indicator DON'T Remove "//C " is an indcator
-   100, 101, 102, 103, 104, 105, 106, 107,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  ///  0 - 15
-    -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  /// 16 - 31
-    -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  /// 32 - 47
-    -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1   /// 48 - 63
+//C   0     1     2     3     4     5     6     7     8     9    10    11    12    13    14    15 // this line is an indicator DON'T Remove "//C " is an indcator
+     20,  120,  220,   21,  121,  221,   22,  122,  222,   23,  123,  223,   24,  124,  224,   -1,  ///  0 - 15 
+     25,  125,  225,   26,  126,  226,   27,  127,  227,   28,  128,  228,   29,  129,  229,   -1,  /// 16 - 31
+     30,  130,  230,   31,  131,  231,   32,  132,  232,   33,  133,  233,   34,  134,  234,   -1,  /// 32 - 47
+     35,  135,  235,   36,  136,  236,   37,  137,  237,   38,  138,  238,   39,  139,  239,   -1   /// 48 - 63
+//C------------- end of a digitizer // this line is an indicator DON'T Remove "//C-" is an indcator
+},
+{
+//C   0     1     2     3     4     5     6     7     8     9    10    11    12    13    14    15 // this line is an indicator DON'T Remove "//C " is an indcator
+     40,  140,  240,   41,  141,  241,   42,  142,  242,   43,  143,  243,   44,  144,  244,   -1,  ///  0 - 15 
+     45,  145,  245,   46,  146,  246,   47,  147,  247,   48,  148,  248,   49,  149,  249,   -1,  /// 16 - 31
+     50,  150,  250,   51,  151,  251,   52,  152,  252,   53,  153,  253,   54,  154,  254,   -1,  /// 32 - 47
+     55,  155,  255,   56,  156,  256,   57,  157,  257,   58,  158,  258,   59,  159,  259,   -1   /// 48 - 63
+//C------------- end of a digitizer // this line is an indicator DON'T Remove "//C-" is an indcator
+},
+{
+//C   0     1     2     3     4     5     6     7     8     9    10    11    12    13    14    15 // this line is an indicator DON'T Remove "//C " is an indcator
+    300,  301,  302,  303,  304,  305,  306,  307,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,  ///  0 - 15
+     -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,  /// 16 - 31
+     -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,  /// 32 - 47
+     -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1   /// 48 - 63
 //C------------- end of a digitizer // this line is an indicator DON'T Remove "//C-" is an indcator
 }
 };

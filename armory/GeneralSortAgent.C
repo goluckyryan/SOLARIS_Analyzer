@@ -3,7 +3,7 @@
 #include "TProof.h"
 #include "TChain.h"
 
-void GeneralSortAgent(Int_t runNum, int nWorker = 1, int traceMethod = 0){
+void GeneralSortAgent(Int_t runNum, int nWorker = 1, int traceMethod = -1){
 
   TString name;
   name.Form("../root_data/run%03d.root", runNum);
@@ -15,18 +15,24 @@ void GeneralSortAgent(Int_t runNum, int nWorker = 1, int traceMethod = 0){
 
   printf("----------------------------\n");
 
-  TProof * p = TProof::Open("", Form("workers=%d", abs(nWorker)));
-  p->ShowCache();
-  printf("----------------------------\n");
-
+  //this is the option for TSelector, the first one is traceMethod, 2nd is save fileName;
   TString option;
 
-  //this is the option for TSelector, the first one is traceMethod, 2nd is save fileName;
-  option.Form("%d,../root_data/gen_run%03d.root", traceMethod, runNum);
+  if( nWorker == 1){
 
-  chain->SetProof();
-  chain->Process("../armory/GeneralSort.C+", option);
+    option.Form("%d,../root_data/gen_run%03d.root,%d", traceMethod, runNum, 0);
+    chain->Process("../armory/GeneralSort.C+", option);
 
+  }else{
+
+    TProof * p = TProof::Open("", Form("workers=%d", abs(nWorker)));
+    p->ShowCache();
+    printf("----------------------------\n");
+
+    chain->SetProof();
+    option.Form("%d,../root_data/gen_run%03d.root,%d", traceMethod, runNum, 1);
+    chain->Process("../armory/GeneralSort.C+", option);
+  }
 
 
 }
