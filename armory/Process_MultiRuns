@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -l
 
 if [ -z $SOLARISANADIR ]; then
   echo "###### env variable SOLARISANADIR not defined. Abort. Please run the SOLARIS.sh."
@@ -6,12 +6,91 @@ if [ -z $SOLARISANADIR ]; then
   exit 
 fi
 
-if [ $# -eq 0 ] || [ $# -eq 1 ] || [ $1 == "-help"  ]; then
-  echo "$./process_MultiRuns [RunNum1] [RunNum2] [EventBuild] [GeneralSort]"
-  echo "    RunNum1 = start run number"
-  echo "    RunNum2 = stop run number"
-  echo "   EventBld = 2/1/0*   || 2 = with Trace"  
-  echo " GenralSort = n/1/0*   || 1 = GeneralSort.C, n = GeneralSortTraceProof.C with n-worker"
+if [ $# -le 2 ] || [ $1 == "-help"  ]; then
+  echo "$./process_MultiRuns [RunNum1] [RunNum2] [EventBuild] [GeneralSort] [numMacTerminal]"
+  echo "        RunNum1 = start run number"
+  echo "        RunNum2 = stop run number"
+  echo "       EventBld = 2/1/0/-1/-2   || 2 = with Trace"  
+  echo "    GeneralSort = n/0/-n        || n = number of worker"  
+  echo "    TraceMethod = -1/0/1/2      || -1 no trace, 0 save trace, 1 fit, 2 trapezoid"  
+  echo " numMacTerminal = n ^           || in order to speed up in Mac "  
   echo "        * negative option = force "
+  echo "        ^ only for mac, and it will override GeneralSort to be 1 worker. "
   exit 1
 fi;
+
+
+runID1=$1
+runID2=$2
+buidEvt=$3
+nWorker=0
+traceMethod=0
+nTerminal=0
+
+if [ $# -ge 4 ]; then nWorker=$4; fi
+if [ $# -ge 5 ]; then traceMethod=$5; fi
+if [ $# -ge 6 ]; then nTerminal=$6; fi
+
+source ${SOLARISANADIR}/armory/Process_BasicConfig
+source ${SOLARISANADIR}/working/expName.sh
+
+
+if [ $PCID -eq 2 ]; then
+  if [ $nTerminal -ge 2 ]; then
+    if [[ $nWorker -ge 0 ]]; then
+      nWorker=1;
+    else
+      nWorker=-1;
+    fi
+  fi
+else
+  $nTerminal=0;
+fi
+
+
+if [ $nTerminal -eq 0 ]; then
+
+  for i in $(seq $runID1 $runID2); do
+    Process_Run $i $buidEvt $nWorker $traceMethod 0
+  done
+
+else
+
+  if [ $PCID -ne 2 ]; then
+    exit 1
+  fi 
+
+  # Calculate the size of each segment
+  segment_size=$(( ($runID2 - $runID1 + 1) / $nTerminal ))
+
+  # Iterate through the segments
+  for i in $(seq 0 $(( $nTerminal - 1 ))); do
+    start=$(( $runID1 + ($i * $segment_size) ))
+    end=$(( $start + $segment_size - 1 ))
+
+    # Handle the last segment, which may be larger
+    if [[ $i -eq $(( $nTerminal - 1 )) ]]; then
+      end=$runID2
+    fi
+
+    echo "Segment $(( $i + 1 )): [$start, $end]"
+
+    profile_name="Homebrew"
+    width=700
+    height=500
+    x_pos=200
+    y_pos=200
+
+osascript <<END_SCRIPT
+  tell application "Terminal"
+    activate
+    set newWindow to do script "cd $SOLARISANADIR/working; Process_MultiRuns $start $end $buidEvt $nWorker $traceMethod"
+    set current settings of newWindow to settings set "$profile_name"
+    set size of front window to { $width, $height }
+    set position of front window to { $x_pos + $(( $i * 100 )), $y_pos + $(( $i * 100 )) }
+  end tell
+END_SCRIPT
+
+  done
+
+fi

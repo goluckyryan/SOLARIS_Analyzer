@@ -19,7 +19,7 @@ if [ $# -eq 0 ] || [ $1 == "-help"  ]; then
   echo "      Monitors = 2/1/0         || 1 = single run,  2 = using the list in ChainMonitors.C"
   echo "                              10 = single run and post to websrv, 20 = list runs and post to websrv"
   echo ""
-  echo "       **** When feeding trace data to Monitors, the EventBld flag must be 2 or -2."
+  echo "       * negative option = force (except for TraceMethod)"
   echo ""
   exit 1
 fi;
@@ -34,10 +34,8 @@ isMonitor=0
 
 if [ $# -ge 2 ]; then EventBld=$2; fi
 if [ $# -ge 3 ]; then nWorker=$3; fi
-if [ $# -ge 4 ]; then TraceMethod=$3; fi
+if [ $# -ge 4 ]; then TraceMethod=$4; fi
 if [ $# -ge 5 ]; then isMonitor=$5; fi
-
-timeWin=100000
 
 source ${SOLARISANADIR}/armory/Process_BasicConfig
 source ${SOLARISANADIR}/working/expName.sh

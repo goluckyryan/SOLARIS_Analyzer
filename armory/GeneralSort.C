@@ -101,7 +101,7 @@ void GeneralSort::Terminate(){
 
   if( !isParallel){
     saveFile->cd();
-    newSaveTree->Print();
+    newSaveTree->Print("toponly");
     newSaveTree->Write();
     saveFile->Close();
   }

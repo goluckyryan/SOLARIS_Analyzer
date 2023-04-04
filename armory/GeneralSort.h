@@ -229,7 +229,7 @@ void GeneralSort::SetUpTree(){
     }
 
   }
-  newSaveTree->Print(); //very important, otherwise the mac will blow up.
+  newSaveTree->Print("toponly"); //very important, otherwise the mac will blow up.
 }
 
 //^##############################################################
