@@ -15,7 +15,7 @@ if [ $# -eq 0 ] || [ $1 == "-help"  ]; then
   echo "        RunNum = run number / \"lastRun\" "
   echo "      EventBld = 2/1/0/-1/-2   || 2 = with Trace"  
   echo "   GeneralSort = n/0/-n        || n = number of worker"  
-  echo "   TraceMethod = -1/0/1/2      || -1 no trace, 0 save trace, 1 fit, 2 trapezoid"  
+  echo "   TraceMethod = -1/0/1/2      || -1 no trace, 0 save trace, 1 fit, 2 trapezoid(not implemented)"  
   echo "      Monitors = 2/1/0         || 1 = single run,  2 = using the list in ChainMonitors.C"
   echo "                              10 = single run and post to websrv, 20 = list runs and post to websrv"
   echo ""

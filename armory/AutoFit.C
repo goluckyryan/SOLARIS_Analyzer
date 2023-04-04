@@ -21,9 +21,9 @@
 
 //Global fit paramaters
 
-vector<double> BestFitMean;
-vector<double> BestFitCount;
-vector<double> BestFitSigma;
+std::vector<double> BestFitMean;
+std::vector<double> BestFitCount;
+std::vector<double> BestFitSigma;
 
 TString recentFitMethod;
 

@@ -12,7 +12,6 @@
 #include <TSystem.h>
 #include <TMath.h>
 
-
 Long64_t processedEntry = 0;
 float lastPercentage = 0;
 
@@ -26,6 +25,12 @@ Bool_t GeneralSort::Process(Long64_t entry){
     for( int j = 0; j < detNum[i]; j++){
       eE[i][j] = TMath::QuietNaN();
       eT[i][j] = 0;
+
+      if( isTraceExist && traceMethod > 0){
+        teE[i][j] = TMath::QuietNaN();
+        teT[i][j] = TMath::QuietNaN();
+        teR[i][j] = TMath::QuietNaN();
+      }
     }
   }
   
@@ -40,9 +45,7 @@ Bool_t GeneralSort::Process(Long64_t entry){
   for( int i = 0 ; i < multi; i++){    
     int detID = mapping[bd[i]][ch[i]];
     int detType = FindDetType(detID, detMaxID);
-
     int low = (i == 0 ? 0 : detMaxID[detType-1]);
-
     int reducedDetID = detID - low;
 
     eE[detType][reducedDetID] = e[i] * detParity[detType];
@@ -50,6 +53,7 @@ Bool_t GeneralSort::Process(Long64_t entry){
 
   }
 
+  //@===================================== Trace
   if(  isTraceExist && traceMethod >= 0 ){
 
     b_tl->GetEntry(entry);
@@ -72,6 +76,42 @@ Bool_t GeneralSort::Process(Long64_t entry){
 
       for( int k = 0 ; k < traceLength; k++){
         gTrace->SetPoint(k, k, trace[i][k]);
+      }
+
+      //***=================== fit
+      if( traceMethod == 1){
+        gFit  = new TF1("gFit", fitFunc, 0, traceLength, numPara);
+        gFit->SetLineColor(6);
+        gFit->SetRange(0, traceLength);
+
+        gFit->SetParameter(0, e[i]);
+        gFit->SetParameter(1, 100);   //triggerTime //TODO how to not hardcode?
+        gFit->SetParameter(2, 10);    //rise time   //TODO how to not hardcode?
+        gFit->SetParameter(3, trace[i][0]);  //base line 
+        gFit->SetParameter(4, 100);   // decay  //TODO how to not hardcode?
+        gFit->SetParameter(5, -0.01); // pre-rise slope //TODO how to not hardcode?
+
+        gFit->SetParLimits(1, 85, 125); //raneg for the trigger time
+        gFit->SetParLimits(5, -2, 0);
+
+        gTrace->Fit("gFit", "QR", "", 0, traceLength);
+
+
+        int detType = FindDetType(detID, detMaxID);
+        int low = (i == 0 ? 0 : detMaxID[detType-1]);
+        int reducedDetID = detID - low;
+
+        teE[detType][reducedDetID] = gFit->GetParameter(0);
+        teT[detType][reducedDetID] = gFit->GetParameter(1);
+        teR[detType][reducedDetID] = gFit->GetParameter(2);
+
+        delete gFit;
+        gFit = nullptr;
+      }
+
+      //***=================== Trapezoid filter
+      if( traceMethod == 2){
+        //TODO
       }
 
     }

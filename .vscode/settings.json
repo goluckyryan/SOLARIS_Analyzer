@@ -91,7 +91,8 @@
     "transfer_test.C": "cpp",
     "Transfer.C": "cpp",
     "Simulation_Helper.C": "cpp",
-    "Check_Simulation.C": "cpp"
+    "Check_Simulation.C": "cpp",
+    "AutoFit.C": "cpp"
   },
 
   "better-comments.multilineComments": true,
