@@ -181,7 +181,7 @@ int main(int argc, char ** argv){
 
     int percentage = count * 100/totNumEvent;
 
-    if( percentage > last_precentage ) {
+    if( percentage > last_precentage + 1.0 ) {
       printf("Processed : %u, %.0f%% \n\033[A\r", count, count*100./totNumEvent);
       last_precentage = percentage;
     }

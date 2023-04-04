@@ -116,6 +116,8 @@ public :
   void DecodeOption();
   bool isParallel;
 
+  unsigned long NumEntries;
+
   TString saveFileName;
   TFile * saveFile; //!
   TProofOutputFile * proofFile; //!
@@ -261,7 +263,7 @@ void GeneralSort::Init(TTree *tree){
     fChain->SetBranchAddress("trace", trace, &b_trace);
   }
 
-  unsigned long NumEntries = fChain->GetEntries();
+  NumEntries = fChain->GetEntries();
   printf( "========== total Entry : %ld\n", NumEntries);
 
   //########################### Get Option 

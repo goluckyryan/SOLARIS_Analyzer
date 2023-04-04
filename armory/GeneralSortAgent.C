@@ -18,7 +18,7 @@ void GeneralSortAgent(Int_t runNum, int nWorker = 1, int traceMethod = -1){
   //this is the option for TSelector, the first one is traceMethod, 2nd is save fileName;
   TString option;
 
-  if( nWorker == 1){
+  if( abs(nWorker) == 1){
 
     option.Form("%d,../root_data/gen_run%03d.root,%d", traceMethod, runNum, 0);
     chain->Process("../armory/GeneralSort.C+", option);

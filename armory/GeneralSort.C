@@ -9,12 +9,17 @@
 #include <TH2.h>
 #include <TStyle.h>
 #include <TString.h>
+#include <TSystem.h>
 #include <TMath.h>
+
+
+Long64_t processedEntry = 0;
+float lastPercentage = 0;
 
 //^##############################################################
 Bool_t GeneralSort::Process(Long64_t entry){
 
-  if( entry < 2 ) printf("%s %lld\n", __func__, entry);
+  if( entry < 1 ) printf("============================== start processing data\n");
 
   ///initialization
   for( int i = 0; i < nDetType; i++){
@@ -74,6 +79,15 @@ Bool_t GeneralSort::Process(Long64_t entry){
 
   }
 
+  if( !isParallel){
+    processedEntry ++;
+    float percentage = processedEntry*100/NumEntries;
+    if( percentage > lastPercentage + 1.0) {
+      printf("Processed : %lld, %.0f%% \n\033[A\r", entry, percentage);
+      lastPercentage = percentage;
+    }
+  }
+
   newTree->Fill();
 
   return kTRUE;
@@ -117,7 +131,8 @@ void GeneralSort::Begin(TTree * tree){
 
   PrintMapping(mapping, detTypeName, detMaxID);
 
-  tree->GetEntriesFast();
+  DecodeOption();
+  if(!isParallel) tree->GetEntriesFast();
 
 }
 
@@ -128,7 +143,7 @@ void GeneralSort::SlaveBegin(TTree * /*tree*/){
 
 void GeneralSort::SlaveTerminate(){
 
-  printf("%s\n", __func__);
+  printf("\n%s\n", __func__);
 
   if( isParallel){
     printf("%s::SaveTree\n", __func__);
