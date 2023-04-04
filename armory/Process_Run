@@ -1,5 +1,8 @@
 #!/bin/bash
 
+######## default time window = 100 tick
+timeWin=100
+
 if [ -z $SOLARISANADIR ]; then
   echo "###### env variable SOLARISANADIR not defined. Abort. Please run the SOLARIS.sh."
   echo "better add \"source <path_to_SOLARIS.sh>\" into .bashrc"
@@ -8,10 +11,11 @@ fi
 
 
 if [ $# -eq 0 ] || [ $1 == "-help"  ]; then
-  echo "$ Proess_Run [RunNum] [EventBuild] [GeneralSort] [Monitor]"
+  echo "$ Process_Run [RunNum] [EventBuild] [GeneralSort] [TraceMethod] [Monitor]"
   echo "        RunNum = run number / \"lastRun\" "
   echo "      EventBld = 2/1/0/-1/-2   || 2 = with Trace"  
   echo "   GeneralSort = n/0/-n        || n = number of worker"  
+  echo "   TraceMethod = -1/0/1/2      || -1 no trace, 0 save trace, 1 fit, 2 trapezoid"  
   echo "      Monitors = 2/1/0         || 1 = single run,  2 = using the list in ChainMonitors.C"
   echo "                              10 = single run and post to websrv, 20 = list runs and post to websrv"
   echo ""
@@ -25,11 +29,13 @@ RUN=$1
 runNum=$1
 EventBld=0
 nWorker=1
+TraceMethod=0
 isMonitor=0
 
 if [ $# -ge 2 ]; then EventBld=$2; fi
 if [ $# -ge 3 ]; then nWorker=$3; fi
-if [ $# -ge 4 ]; then isMonitor=$4; fi
+if [ $# -ge 4 ]; then TraceMethod=$3; fi
+if [ $# -ge 5 ]; then isMonitor=$5; fi
 
 timeWin=100000
 
@@ -40,41 +46,22 @@ if [ "$RUN" == "lastRun" ]; then
   RUN=$runID
 fi
 
-#padding 
-if [ "${RUN:0:1}" == "0" ]; then
-    RUN=${RUN:1:2}
-else
-    RUN=$(printf '%d' $RUN)
-fi
-RUN=$(printf '%03d' ${RUN})
+RUN=${RUN%0} #remove zero
+RUN=$(printf '%03d' $RUN) ##add back the zero
 
 #################################### 
 if [ ${PCID} -eq 1 ]; then
-  source Process_EventBuilder $RUN ${EventBld}
-fi
+  source Process_EventBuilder $RUN $EventBld $timeWin
 
-if [ ${PCID} -eq 2 ]; then
-  ## Dwonlaod Data
-  echo "Downlaod data"
+else
+  source Process_Download $RUN
+  
+  source Process_EventBuilder $RUN $EventBld
+
 fi
 
 #################################### GeneralSort
 
-if [ ${nWorker} -eq 0 ]; then
-
-  echo -e "${LRED}>>>>>>>>>>>>>>>>>>>>> GeneralSort Skipped by user. ${NC}"
-
-else
-  source $ROOTSYS/bin/thisroot.sh
-
-  mkdir ~/.proof/working
-  cp ${SOLARISANADIR}/working/Mapping.h ~/.proof/working/.
-  mkdir ~/.proof/armory
-  cp ${SOLARISANADIR}/armory/AnalysisLib.h ~/.proof/armory/.
-
-  root -l -q -b "${SOLARISANADIR}/armory/GeneralSortAgent.C($runNum, ${nWorker}, 0)"
-
-fi
 #################################### Monitor
 
 

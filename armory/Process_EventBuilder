@@ -1,12 +1,35 @@
-################################################  EventBuilder
+#!/bin/bash
+
+if [ -z $SOLARISANADIR ]; then
+  echo "###### env variable SOLARISANADIR not defined. Abort. Please run the SOLARIS.sh."
+  echo "better add \"source <path_to_SOLARIS.sh>\" into .bashrc"
+  exit 
+fi
+
+if [ $# -ne 3 ] || [ $1 == "-help"  ]; then
+  echo "$ Process_EventBuilder [RunNum] [EventBuild] [timeWin]"
+  echo "        RunNum = run number"
+  echo "      EventBld = 2/1/0/-1/-2   || 2 = with Trace"  
+  echo "       timeWin = number of tick for an event  "  
+  echo ""
+  exit 1
+fi;
+
 RUN=$1
 EventBld=$2
+timeWin=$3
 
-rawDataPath=${SOLARISANADIR}/data_raw
-rootDataPath=${SOLARISANADIR}/root_data
+source ${SOLARISANADIR}/armory/Process_BasicConfig
+source ${SOLARISANADIR}/working/expName.sh
 
-rawDataPattern="${rawDataPath}/${expName}_${RUN}_"
-rootDataName="${rootDataPath}/run${RUN}.root"
+runNum=${RUN#0} #remove zero
+RUN=$(printf '%03d' $runNum) ##add back the zero
+
+rawDataPath=$SOLARISANADIR/data_raw
+rootDataPath=$SOLARISANADIR/root_data
+
+rawDataPattern="$rawDataPath/${expName}_${RUN}_*.sol"
+rootDataName="$rootDataPath/run$RUN.root"
 
 dir=$(pwd)
 cd ${SOLARISANADIR}/armory
@@ -17,7 +40,7 @@ cd ${dir}
 isRawDataExist=`ls -1 ${rawDataPattern}* 2>/dev/null | wc -l`
 
 if [ ! $isRawDataExist -gt 0 ]; then
-  echo -e "${LRED}################# Run Data not exist. Abort ${NC}"
+  echo -e "${LRED}################# Run Data $rawDataPattern not exist. Abort. ${NC}"
   exit
 fi
 
@@ -32,13 +55,13 @@ echo -e "${CYAN} ============== total file size : ${totSize}${NC}"
 if [ ${Arch} == "Linux" ]; then
   rawDataTime=`stat -c "%Z"  ${rawDataPattern}* | sort -rn | head -1`    
 else
-  rawDataTime=`stat -f "%Sm" -t "%Y%m%d%H%M%S" ${rawDataPattern}* | sort -rn | head -1`    
+  rawDataTime=`stat -f "%Sm" -t "%Y%m%d%H%M%S" $rawDataPattern | sort -rn | head -1`    
 fi
 
 #==== check if root data exist
 isRootDataExist=`ls -1 $rootDataName 2>/dev/null | wc -l`
 
-#==== if merged data exist, check timeStamp
+#==== if root data exist, check timeStamp
 if [ ${isRootDataExist} -gt 0 ]; then
   if [ ${Arch} == "Linux" ]; then
     rootDataTime=`stat -c "%Z" $rootDataName | sort -rn | head -1`
@@ -60,14 +83,14 @@ elif [ ${EventBld} -ge 1 ]; then
       
     echo -e "${LRED}>>>>>>>>>>>>>>>>>>>>> Event Building $(date) ${NC}"
     if [ ${EventBld} -eq 1 ]; then
-      EventBuilder $rootDataName ${timeWin} 0 `ls -1 ${rawDataPattern}*`
+      EventBuilder $rootDataName ${timeWin} 0 $rawDataPattern
     elif [ ${EventBld} -eq 2 ]; then
-      EventBuilder $rootDataName ${timeWin} 1 `ls -1 ${rawDataPattern}*`
+      EventBuilder $rootDataName ${timeWin} 1 $rawDataPattern
     fi
     echo -e "${LRED}<<<<<<<<<<<<<<<< Done Event Building $(date) ${NC}"
 
   else
-      echo -e "${GREEN}Merged data are newer than raw data. No need to merged again.${NC}"
+      echo -e "${GREEN} root data are newer than raw data. No need to merged again.${NC}"
       echo -e "${GREEN}You can Force merging using option -${EventBld}, ${ORANGE} see ./process_run.sh -help${NC}"
   fi
 
@@ -75,9 +98,9 @@ else
 
     echo -e "${LRED}>>>>>>>>>>>>>>> Force Event Building $(date) ${NC}"
     if [ ${EventBld} -eq -1 ]; then
-      EventBuilder $rootDataName ${timeWin} 0 `ls -1 ${rawDataPattern}*`
+      EventBuilder $rootDataName ${timeWin} 0 $rawDataPattern
     elif [ ${EventBld} -eq -2 ]; then
-      EventBuilder $rootDataName ${timeWin} 1 `ls -1 ${rawDataPattern}*`
+      EventBuilder $rootDataName ${timeWin} 1 $rawDataPattern
     fi
     echo -e "${LRED}<<<<<<<<<<<<<<<< Done Event Building $(date) ${NC}"
 

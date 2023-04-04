@@ -1,0 +1,92 @@
+#!/bin/bash
+
+if [ -z $SOLARISANADIR ]; then
+  echo "###### env variable SOLARISANADIR not defined. Abort. Please run the SOLARIS.sh."
+  echo "better add \"source <path_to_SOLARIS.sh>\" into .bashrc"
+  exit 
+fi
+
+if [ $# -eq 0 ] || [ $1 == "-help"  ]; then
+  echo "$ Process_Sort [RunNum] [GeneralSort] [TraceMethod]"
+  echo "        RunNum = run number"
+  echo "   GeneralSort = n/0/-n        || n = number of worker"  
+  echo "   TraceMethod = -1/0/1/2      || -1 no trace, 0 save trace, 1 fit, 2 trapezoid"  
+  echo ""
+  exit 1
+fi;
+
+RUN=$1
+nWorker=$2
+TraceMethod=$3
+
+source $SOLARISANADIR/armory/Process_BasicConfig
+source $SOLARISANADIR/working/expName.sh
+
+runNum=${RUN#0} #remove zero
+RUN=$(printf '%03d' $runNum) ##add back the zero
+
+if [ ${nWorker} -eq 0 ]; then
+  echo -e "${LRED}>>>>>>>>>>>>>>>>>>>>> GeneralSort Skipped by user. ${NC}"
+else
+  source $ROOTSYS/bin/thisroot.sh
+
+  #--------- Check is runXXX.root exist
+  rootDataPath=$SOLARISANADIR/root_data
+  rootDataName="$rootDataPath/run$RUN.root"
+  isRootDataExist=`ls -1 $rootDataName 2>/dev/null | wc -l`
+
+  #==== if root data exist, check timeStamp
+  if [ $isRootDataExist -gt 0 ]; then
+    if [ ${Arch} == "Linux" ]; then
+      rootDataTime=`stat -c "%Z" $rootDataName | sort -rn | head -1`
+    else
+      rootDataTime=`stat -f "%Sm" -t "%Y%m%d%H%M%S" $rootDataName | sort -rn | head -1`
+    fi
+  else
+    rootDataTime=0
+    echo -e "$LRED ################# run$RUN.root does not exist. Abort. $NC"
+    exit 1
+  fi
+
+  #-------- check gen_root timestamp
+  genRootDataName="$rootDataPath/gen_run$RUN.root"
+  isGenRootDataExist=`ls -1 $genRootDataName 2>/dev/null | wc -l`
+
+  #----- if gen_runXXX.data exist, check timeStamp
+  if [ $isGenRootDataExist -gt 0 ]; then
+  if [ ${Arch} == "Linux" ]; then
+      genRootDataTime=`stat -c "%Z" $genRootDataName | sort -rn | head -1`
+    else
+      genRootDataTime=`stat -f "%Sm" -t "%Y%m%d%H%M%S" $genRootDataName | sort -rn | head -1`
+    fi
+  else
+    genRootDataTime=0
+  fi
+
+  mkdir -p ~/.proof/working
+  cp ${SOLARISANADIR}/working/Mapping.h ~/.proof/working/.
+  mkdir -p ~/.proof/armory
+  cp ${SOLARISANADIR}/armory/AnalysisLib.h ~/.proof/armory/.
+
+  if [ $nWorker -le -1 ]; then
+    echo -e "${LRED}>>>>>>>>>>>>>>> Force GeneralSort $(date) ${NC}"
+    root -l -q -b "$SOLARISANADIR/armory/GeneralSortAgent.C($runNum, $nWorker, $TraceMethod)"
+    echo -e "${LRED}<<<<<<<<<<<<<<<< Done GeneralSort $(date) ${NC}"
+  fi
+
+  if [ $nWorker -ge 1 ]; then
+
+    if [ $rootDataTime -ge $genRootDataTime ]; then
+
+      echo -e "${LRED}>>>>>>>>>>>>>>>>>>>>> Event Building $(date) ${NC}"
+      root -l -q -b "$SOLARISANADIR/armory/GeneralSortAgent.C($runNum, $nWorker, $TraceMethod)"
+      echo -e "${LRED}<<<<<<<<<<<<<<<< Done Event Building $(date) ${NC}"
+
+    else
+      echo -e "${GREEN}gen_run$RUN.root is newer than run$RUN.root. No need to GeneralSort again.${NC}"
+      echo -e "${GREEN}You can Force GeneralSort using option -${nWorker}, ${ORANGE} see Process_Run -help${NC}"
+    fi
+
+  fi
+
+fi

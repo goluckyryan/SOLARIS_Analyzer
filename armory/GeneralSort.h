@@ -255,6 +255,7 @@ void GeneralSort::Init(TTree *tree){
     printf(" ++++++++ no Trace.\n");
     isTraceExist = false;
   }else{
+    printf(" ++++++++ Found Trace.\n");
     isTraceExist = true;
     fChain->SetBranchAddress("tl", tl, &b_tl);
     fChain->SetBranchAddress("trace", trace, &b_trace);

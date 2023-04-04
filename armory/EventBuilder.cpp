@@ -89,6 +89,10 @@ int main(int argc, char ** argv){
     return -1;
   }
 
+  // for( int i = 0; i < argc; i++){
+  //   printf("%d | %s\n", i, argv[i]);
+  // }
+
   TString outFileName = argv[1];
   int timeWindow = atoi(argv[2]);
   const bool saveTrace = atoi(argv[3]);

@@ -87,11 +87,13 @@ void GeneralSort::Terminate(){
   DecodeOption();
 
   if( !isParallel){
+    printf("%s::SaveTree %p, %p\n", __func__, saveFile, newTree);
     saveFile->cd();
     newTree->Write();
     saveFile->Close();
   }
 
+  printf("=======================================================\n");
   //get entries
   saveFile = TFile::Open(saveFileName);
   if( saveFile->IsOpen() ){
@@ -115,6 +117,7 @@ void GeneralSort::Begin(TTree * tree){
 
   PrintMapping(mapping, detTypeName, detMaxID);
 
+  tree->GetEntriesFast();
 
 }
 
@@ -128,6 +131,7 @@ void GeneralSort::SlaveTerminate(){
   printf("%s\n", __func__);
 
   if( isParallel){
+    printf("%s::SaveTree\n", __func__);
     saveFile->cd();
     newTree->Write();
     fOutput->Add(proofFile);
