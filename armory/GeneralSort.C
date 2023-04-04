@@ -122,8 +122,13 @@ Bool_t GeneralSort::Process(Long64_t entry){
     processedEntry ++;
     float percentage = processedEntry*100/NumEntries;
     if( percentage >= lastPercentage ) {
-      printf("Processed : %lld, %.0f%% \n\033[A\r", entry, percentage);
+      TString msg; msg.Form("%lu", NumEntries);
+      int len = msg.Sizeof();
+      printf("Processed : %*lld, %3.0f%% | Elapsed %6.1f sec | expect %6.1f sec\n\033[A\r", len, entry, percentage, stpWatch.RealTime(), stpWatch.RealTime()/percentage*100);
+      stpWatch.Start(kFALSE);
       lastPercentage = percentage + 1.0;
+      if( lastPercentage >= 100)  printf("\n");
+
     }
   }
 
@@ -140,6 +145,7 @@ void GeneralSort::Terminate(){
   DecodeOption();
 
   if( !isParallel){
+    stpWatch.Start(kFALSE);
     saveFile->cd();
     newSaveTree->Print("toponly");
     newSaveTree->Write();
@@ -171,7 +177,10 @@ void GeneralSort::Begin(TTree * tree){
   PrintMapping(mapping, detTypeName, detMaxID);
 
   DecodeOption();
-  if(!isParallel) tree->GetEntriesFast();
+  if(!isParallel) {
+    tree->GetEntriesFast();
+    stpWatch.Start();
+  }
 
 }
 

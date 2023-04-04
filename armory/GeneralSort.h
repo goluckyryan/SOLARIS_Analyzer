@@ -10,6 +10,7 @@
 #include <TGraph.h>
 #include <TClonesArray.h>
 #include <TF1.h>
+#include <TStopwatch.h>
 #include <TProofOutputFile.h>
 
 /*********************************=======
@@ -89,6 +90,8 @@ TGraph * TrapezoidFilter(TGraph * trace){
   }
   return trapezoid;
 }
+
+TStopwatch stpWatch;
 
 //^######################################### Class definition
 // Header file for the classes stored in the TTree if any.
