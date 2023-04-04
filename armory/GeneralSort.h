@@ -253,8 +253,6 @@ void GeneralSort::DecodeOption(){
 //^##############################################################
 void GeneralSort::Init(TTree *tree){
 
-  printf("%s\n", __func__);
-
   // Set branch addresses and branch pointers
   if (!tree) return;
   fChain = tree;
@@ -299,7 +297,6 @@ void GeneralSort::Init(TTree *tree){
 }
 
 Bool_t GeneralSort::Notify(){
-  printf("%s\n", __func__);
   return kTRUE;
 }
 
@@ -312,7 +309,7 @@ void GeneralSort::PrintTraceMethod(){
     case  2 : traceMethodStr = "Trapezoid"; break;
     default:  traceMethodStr = "Unknown"; break;
   }
-  printf("  Trace method ? %s \n", traceMethodStr);
+  printf("\033[1;33m ===== Trace method ? %s \033[m\n", traceMethodStr);
 }
 
 #endif // #ifdef GeneralSort_cxx

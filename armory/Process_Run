@@ -56,11 +56,13 @@ if [ ${PCID} -eq 1 ]; then
 else
   source Process_Download $RUN
   
-  source Process_EventBuilder $RUN $EventBld
+  source Process_EventBuilder $RUN $EventBld $timeWin
 
 fi
 
 #################################### GeneralSort
+
+source Process_Sort $RUN $nWorker $TraceMethod
 
 #################################### Monitor
 

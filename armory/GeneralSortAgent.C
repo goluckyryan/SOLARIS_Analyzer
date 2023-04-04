@@ -13,7 +13,7 @@ void GeneralSortAgent(Int_t runNum, int nWorker = 1, int traceMethod = -1){
 
   chain->GetListOfFiles()->Print();
 
-  printf("----------------------------\n");
+  printf("\033[1;33m---------------------total number of Events %llu\033[0m\n", chain->GetEntries());
 
   //this is the option for TSelector, the first one is traceMethod, 2nd is save fileName;
   TString option;

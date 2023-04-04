@@ -8,6 +8,9 @@ if [ $# -eq 0 ] || [ $1 == "-help"  ]; then
 fi;
 RUN=$1
 
+runNum=${RUN#0} #remove zero
+RUN=$(printf '%03d' $runNum) ##add back the zero
+
 source $SOLARISANADIR/armory/Process_BasicConfig
 source $SOLARISANADIR/working/expName.sh
 

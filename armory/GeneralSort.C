@@ -81,9 +81,9 @@ Bool_t GeneralSort::Process(Long64_t entry){
   if( !isParallel){
     processedEntry ++;
     float percentage = processedEntry*100/NumEntries;
-    if( percentage > lastPercentage + 1.0) {
+    if( percentage >= lastPercentage ) {
       printf("Processed : %lld, %.0f%% \n\033[A\r", entry, percentage);
-      lastPercentage = percentage;
+      lastPercentage = percentage + 1.0;
     }
   }
 
@@ -95,7 +95,7 @@ Bool_t GeneralSort::Process(Long64_t entry){
 //^##############################################################
 void GeneralSort::Terminate(){
 
-  printf("========================= %s\n", __func__);
+  printf("=============================== %s\n", __func__);
 
   DecodeOption();
 
@@ -106,7 +106,6 @@ void GeneralSort::Terminate(){
     saveFile->Close();
   }
 
-  printf("=======================================================\n");
   //get entries
   saveFile = TFile::Open(saveFileName);
   if( saveFile->IsOpen() ){
@@ -115,9 +114,10 @@ void GeneralSort::Terminate(){
   
     saveFile->Close();
   
-    printf("=======================================================\n");
+    printf("=========================================================================\n");
     PrintTraceMethod();
     printf("----- saved as \033[1;33m%s\033[0m. valid event: %d\n", saveFileName.Data() , validCount); 
+    printf("=========================================================================\n");
   }
 }
 
@@ -136,14 +136,10 @@ void GeneralSort::Begin(TTree * tree){
 }
 
 void GeneralSort::SlaveBegin(TTree * /*tree*/){
-  printf("%s\n", __func__);
 
 }
 
 void GeneralSort::SlaveTerminate(){
-
-  printf("\n%s\n", __func__);
-
   if( isParallel){
     printf("%s::SaveTree\n", __func__);
     saveFile->cd();
