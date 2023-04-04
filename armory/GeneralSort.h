@@ -3,6 +3,7 @@
 
 #include <TROOT.h>
 #include <TChain.h>
+#include <TTree.h>
 #include <TFile.h>
 #include <TSelector.h>
 #include <TObjString.h>
@@ -85,6 +86,22 @@ public :
     isParallel = false;
     detNum.clear();
     nDetType = 0;
+
+    saveFile = nullptr;
+    newSaveTree = nullptr;
+
+    eE = nullptr;
+    eT = nullptr;
+
+    arr = nullptr;
+    gTrace = nullptr;
+    arrTrapezoid = nullptr;
+    gTrapezoid = nullptr;
+
+    teE = nullptr;
+    teT = nullptr;
+    teR = nullptr;
+
   }
   virtual ~GeneralSort() { }
   virtual Int_t   Version() const { return 2; }
@@ -121,7 +138,7 @@ public :
   TString saveFileName;
   TFile * saveFile; //!
   TProofOutputFile * proofFile; //!
-  TTree * newTree; //!
+  TTree * newSaveTree; //!
 
   Float_t   ** eE; //!
   ULong64_t ** eT; //!
@@ -155,9 +172,9 @@ void GeneralSort::SetUpTree(){
     saveFile = new TFile(saveFileName,"RECREATE");
   }
 
-  newTree = new TTree("gen_tree", "Tree After GeneralSort");
-  newTree->SetDirectory(saveFile);
-  newTree->AutoSave();
+  newSaveTree = new TTree("gen_tree", "Tree After GeneralSort");
+  newSaveTree->SetDirectory(saveFile);
+  newSaveTree->AutoSave();
 
   detNum = ExtractDetNum(mapping, detTypeName, detMaxID);
 
@@ -175,8 +192,8 @@ void GeneralSort::SetUpTree(){
       eT[i][j] = 0;
     }
 
-    newTree->Branch(  detTypeName[i].c_str(),        eE[i], Form("%s[%d]/F", detTypeName[i].c_str(), detNum[i]));
-    newTree->Branch( (detTypeName[i]+"_t").c_str(),  eT[i], Form("%s_Timestamp[%d]/l", detTypeName[i].c_str(), detNum[i]));
+    newSaveTree->Branch(  detTypeName[i].c_str(),        eE[i], Form("%s[%d]/F", detTypeName[i].c_str(), detNum[i]));
+    newSaveTree->Branch( (detTypeName[i]+"_t").c_str(),  eT[i], Form("%s_Timestamp[%d]/l", detTypeName[i].c_str(), detNum[i]));
   }
 
 
@@ -184,7 +201,7 @@ void GeneralSort::SetUpTree(){
 
     arr = new TClonesArray("TGraph");
 
-    newTree->Branch("trace", arr, 256000);
+    newSaveTree->Branch("trace", arr, 256000);
     arr->BypassStreamer();
 
     if( traceMethod > 0 ){
@@ -204,15 +221,15 @@ void GeneralSort::SetUpTree(){
           teR[i][j] =  TMath::QuietNaN();
         }
 
-        newTree->Branch( ("t" + detTypeName[i]).c_str(),       teE[i], Form("trace_%s[%d]/F",      detTypeName[i].c_str(), detNum[i]));
-        newTree->Branch( ("t" + detTypeName[i]+"_t").c_str(),  teT[i], Form("trace_%s_time[%d]/l", detTypeName[i].c_str(), detNum[i]));
-        newTree->Branch( ("t" + detTypeName[i]+"_r").c_str(),  teR[i], Form("trace_%s_rise[%d]/l", detTypeName[i].c_str(), detNum[i]));
+        newSaveTree->Branch( ("t" + detTypeName[i]).c_str(),       teE[i], Form("trace_%s[%d]/F",      detTypeName[i].c_str(), detNum[i]));
+        newSaveTree->Branch( ("t" + detTypeName[i]+"_t").c_str(),  teT[i], Form("trace_%s_time[%d]/l", detTypeName[i].c_str(), detNum[i]));
+        newSaveTree->Branch( ("t" + detTypeName[i]+"_r").c_str(),  teR[i], Form("trace_%s_rise[%d]/l", detTypeName[i].c_str(), detNum[i]));
       }
 
     }
 
   }
-
+  newSaveTree->Print(); //very important, otherwise the mac will blow up.
 }
 
 //^##############################################################
@@ -264,7 +281,7 @@ void GeneralSort::Init(TTree *tree){
   }
 
   NumEntries = fChain->GetEntries();
-  printf( "========== total Entry : %ld\n", NumEntries);
+  printf( " ========== total Entry : %ld\n", NumEntries);
 
   //########################### Get Option 
   DecodeOption();
@@ -297,6 +314,5 @@ void GeneralSort::PrintTraceMethod(){
   }
   printf("  Trace method ? %s \n", traceMethodStr);
 }
-
 
 #endif // #ifdef GeneralSort_cxx

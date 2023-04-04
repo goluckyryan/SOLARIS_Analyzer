@@ -4,7 +4,7 @@
             "name": "Mac",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/Applications/root-6.28.00/include/**"
+                "/Applications/root_v6.28.02/include/**"
             ],
             "defines": [],
             "macFrameworkPath": [
@@ -13,7 +13,7 @@
             "compilerPath": "/usr/bin/g++",
             "cStandard": "c17",
             "cppStandard": "c++17",
-            "intelliSenseMode": "macos-gcc-arm64"
+            "intelliSenseMode": "macos-clang-arm64"
         },
         {
             "name": "Linux",

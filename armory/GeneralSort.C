@@ -50,7 +50,6 @@ Bool_t GeneralSort::Process(Long64_t entry){
 
   }
 
-
   if(  isTraceExist && traceMethod >= 0 ){
 
     b_tl->GetEntry(entry);
@@ -88,7 +87,7 @@ Bool_t GeneralSort::Process(Long64_t entry){
     }
   }
 
-  newTree->Fill();
+  newSaveTree->Fill();
 
   return kTRUE;
 }
@@ -101,9 +100,9 @@ void GeneralSort::Terminate(){
   DecodeOption();
 
   if( !isParallel){
-    printf("%s::SaveTree %p, %p\n", __func__, saveFile, newTree);
     saveFile->cd();
-    newTree->Write();
+    newSaveTree->Print();
+    newSaveTree->Write();
     saveFile->Close();
   }
 
@@ -148,7 +147,7 @@ void GeneralSort::SlaveTerminate(){
   if( isParallel){
     printf("%s::SaveTree\n", __func__);
     saveFile->cd();
-    newTree->Write();
+    newSaveTree->Write();
     fOutput->Add(proofFile);
     saveFile->Close();
   }
