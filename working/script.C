@@ -5,7 +5,7 @@
 
 void script(){ 
 
-  SolReader * reader = new SolReader("../data_raw/Master_001_01_21233_000.sol");
+  SolReader * reader = new SolReader("../data_raw/Master_003_00_21245_000.sol");
   Event * evt = reader->evt;
 
   printf("========== file size: %u Byte\n", reader->GetFileSize());
@@ -39,7 +39,7 @@ void script(){
     reader->ReadNextBlock();
     
     if( i < 8 ){
-      printf("########################## nBlock : %u, %u/%u\n", reader->GetNumBlock(), 
+      printf("########################## nBlock : %u, %u/%u\n", reader->GetBlockID(), 
                                                                 reader->GetFilePos(), 
                                                                 reader->GetFileSize());
       evt->PrintAll();

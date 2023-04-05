@@ -20,7 +20,7 @@ class SolReader {
     unsigned int totNumBlock;
 
     unsigned short blockStartIdentifier;
-    unsigned int numBlock;
+    long blockID;
     bool isScanned;
 
     void init();
@@ -38,10 +38,12 @@ class SolReader {
 
     void ScanNumBlock();
 
-    unsigned int GetNumBlock()      {return numBlock;}
-    unsigned int GetTotalNumBlock() {return totNumBlock;}
-    unsigned int GetFilePos()       {return filePos;}
-    unsigned int GetFileSize()      {return inFileSize;}
+    long         GetBlockID()       const {return blockID;}
+    unsigned int GetTotalNumBlock() const {return totNumBlock;}
+    unsigned int GetFilePos()       const {return filePos;}
+    unsigned int GetFileSize()      const {return inFileSize;}
+
+    bool IsEndOfFile() {return (filePos >= inFileSize ? true : false);}
     
     void RewindFile(); 
 
@@ -51,7 +53,7 @@ class SolReader {
 
 void SolReader::init(){
   inFileSize = 0;
-  numBlock = 0;
+  blockID = -1;
   filePos = 0;
   totNumBlock = 0;
   evt = new Event();
@@ -73,6 +75,7 @@ SolReader::SolReader(std::string fileName, unsigned short dataType){
 }
 
 SolReader::~SolReader(){
+  //printf("%s\n", __func__);
   if( !inFile ) fclose(inFile);
   delete evt;
 }
@@ -96,15 +99,16 @@ inline int SolReader::ReadBlock(unsigned int index, bool verbose){
   if( verbose ) printf("Block index: %u, File Pos: %u byte\n", index, blockPos[index]);
 
   fseek(inFile, blockPos[index], SEEK_CUR);
+  filePos = blockPos[index];
 
-  numBlock = index;
-
+  blockID = index;
+  blockID --;
   return ReadNextBlock();
 }
 
 inline int SolReader::ReadNextBlock(int isSkip){
   if( inFile == NULL ) return -1;
-  if( feof(inFile) ) return -1;
+  if( feof(inFile) )  return -1; 
   if( filePos >= inFileSize) return -1;
   
   fread(&blockStartIdentifier, 2, 1, inFile);
@@ -195,33 +199,34 @@ inline int SolReader::ReadNextBlock(int isSkip){
     }
   }
 
-  numBlock ++;
+  blockID ++;
   filePos = ftell(inFile);
+
   return 0;
 }
 
 void SolReader::RewindFile(){
   rewind(inFile);
   filePos = 0;
-  numBlock = 0;
+  blockID = 0;
 }
 
 void SolReader::ScanNumBlock(){
   if( inFile == NULL ) return;
   if( feof(inFile) ) return;
   
-  numBlock = 0;
+  blockID = -1;
   blockPos.clear();
 
   blockPos.push_back(0);
 
   while( ReadNextBlock(1) == 0){
     blockPos.push_back(filePos);
-    printf("%u, %.2f%% %u/%u\n\033[A\r", numBlock, filePos*100./inFileSize, filePos, inFileSize);
+    printf("%ld, %.2f%% %u/%u\n\033[A\r", blockID, filePos*100./inFileSize, filePos, inFileSize);
   }
 
-  totNumBlock = numBlock;
-  numBlock = 0;
+  totNumBlock = blockID + 1;
+  blockID = -1;
   isScanned = true;
   printf("\nScan complete: number of data Block : %u\n", totNumBlock);
   rewind(inFile);
