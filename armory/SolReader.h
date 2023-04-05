@@ -44,7 +44,7 @@ class SolReader {
     unsigned int GetFileSize()      const {return inFileSize;}
 
     bool IsEndOfFile() {return (filePos >= inFileSize ? true : false);}
-    
+
     void RewindFile(); 
 
     Event * evt;
@@ -219,13 +219,14 @@ void SolReader::ScanNumBlock(){
   blockPos.clear();
 
   blockPos.push_back(0);
+  totNumBlock = 0;
 
   while( ReadNextBlock(1) == 0){
     blockPos.push_back(filePos);
     printf("%ld, %.2f%% %u/%u\n\033[A\r", blockID, filePos*100./inFileSize, filePos, inFileSize);
+    totNumBlock ++;
   }
 
-  totNumBlock = blockID + 1;
   blockID = -1;
   isScanned = true;
   printf("\nScan complete: number of data Block : %u\n", totNumBlock);

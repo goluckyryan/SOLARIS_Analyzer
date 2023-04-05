@@ -92,7 +92,12 @@
     "Transfer.C": "cpp",
     "Simulation_Helper.C": "cpp",
     "Check_Simulation.C": "cpp",
-    "AutoFit.C": "cpp"
+    "AutoFit.C": "cpp",
+    "__hash_table": "cpp",
+    "__split_buffer": "cpp",
+    "__tree": "cpp",
+    "bitset": "cpp",
+    "stack": "cpp"
   },
 
   "better-comments.multilineComments": true,

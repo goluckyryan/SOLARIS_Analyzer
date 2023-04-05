@@ -23,33 +23,23 @@ std::vector<int> activeFileID;
 std::vector<int> groupIndex;
 std::vector<std::vector<int>> group; // group[i][j], i = group ID, j = group member)
 
-void findEarliestTime2(int &fileID, int & digiID){
+void findEarliestTime(int &fileID, int & digiID){
+
   unsigned long firstTime = 0;
   for( int i = 0; i < (int) activeFileID.size(); i++){
-
     int id = activeFileID[i];
-
-    if( reader[id]->IsEndOfFile() ) {
-      groupIndex[i] ++;
-      if( groupIndex[i] < (int) group[i].size() ){
-        activeFileID[i] = group[i][groupIndex[i]];
-        id = activeFileID[i];
-      }else{
-        activeFileID.erase(activeFileID.begin() + i);
-        continue;
-      }
-    }
-
-    if( firstTime == 0 ) {
+    if( i == 0 ) {
       firstTime = evt[id]->timestamp;
       fileID = id;
       digiID = i;
+      //printf("%d | %ld %lu %d | %d \n", id, reader[id]->GetBlockID(), evt[id]->timestamp, evt[id]->channel, (int) activeFileID.size());
       continue;
     }
     if( evt[id]->timestamp <= firstTime) {
       firstTime = evt[id]->timestamp;
       fileID = id;
       digiID = i;
+      //printf("%d | %ld %lu %d | %d \n", id, reader[id]->GetBlockID(), evt[id]->timestamp, evt[id]->channel, (int) activeFileID.size());
     }
   }
 }
@@ -113,7 +103,7 @@ int main(int argc, char ** argv){
   // }
 
   TString outFileName = argv[1];
-  int timeWindow = atoi(argv[2]);
+  int timeWindow = abs(atoi(argv[2]));
   const bool saveTrace = atoi(argv[3]);
 
   const int nFile = argc - 4;
@@ -238,33 +228,30 @@ int main(int argc, char ** argv){
   //--- find earlist time among the files
   activeFileID.clear();
   groupIndex.clear();  //the index of each group
+  std::vector<bool> relay; // to tell next block loop to change file
 
   for(int i = 0; i < (int) group.size(); i++) {
     groupIndex.push_back(0);
     activeFileID.push_back(group[i][0]);
+    relay.push_back(false);
   }
 
   int fileID = 0;
   int digiID = 0;
-  //findEarliestTime(nFile, fileID);
-  findEarliestTime2(fileID, digiID);
+  findEarliestTime(fileID, digiID);
   fillData(fileID, digiID, saveTrace);
 
   unsigned long firstTimeStamp = evt[fileID]->timestamp;
   unsigned long lastTimeStamp = 0;
 
+
   int last_precentage = 0;
-  while(activeFileID.size() > 0){
+  while((activeFileID.size() > 0)){
 
-    //findEarliestTime(nFile, fileID);
-    findEarliestTime2(fileID, digiID);
-
+    findEarliestTime(fileID, digiID);
     if( evt[fileID]->timestamp - e_t[0] < timeWindow ){
-
       fillData(fileID, digiID, saveTrace);
-
     }else{
-
       outRootFile->cd();
       tree->Fill();
       evID ++;
@@ -273,6 +260,19 @@ int main(int argc, char ** argv){
       fillData(fileID, digiID, saveTrace);
     }
 
+    ///========= check is file finished.
+    if( relay[digiID]){
+      groupIndex[digiID] ++;
+      if( groupIndex[digiID] < (int) group[digiID].size() ){
+        activeFileID[digiID] = group[digiID][groupIndex[digiID]];
+        fileID = activeFileID[digiID];
+      }else{
+        activeFileID.erase(activeFileID.begin() + digiID);
+      }
+      relay[digiID] = false;
+    }
+    if( reader[fileID]->IsEndOfFile() ) relay[digiID] = true;
+  
     ///========= calculate progress
     processedFileSize = 0;
     for( int p = 0; p < (int) group.size(); p ++){
@@ -290,7 +290,7 @@ int main(int argc, char ** argv){
       printf(" \n\033[A\r");
       last_precentage = percentage + 1.0;
     }
-  } ///====== end of event building loop
+  }; ///====== end of event building loop
 
   processedFileSize = 0;
   for( int p = 0; p < (int) group.size(); p ++){
@@ -305,6 +305,8 @@ int main(int argc, char ** argv){
   lastTimeStamp = evt[fileID]->timestamp;
   //*=========================================== save file
   outRootFile->cd();
+  tree->Fill();
+  evID ++;
   tree->Write();
 
   //*=========================================== Save timestamp as TMacro
@@ -316,7 +318,7 @@ int main(int argc, char ** argv){
 
   unsigned int numBlock = 0;
   for( int i = 0; i < nFile; i++){
-    printf("%d | %u \n", i,  reader[i]->GetBlockID() + 1);
+    printf("%d | %8ld | %10u/%10u\n", i,  reader[i]->GetBlockID() + 1, reader[i]->GetFilePos(), reader[i]->GetFileSize());
     numBlock += reader[i]->GetBlockID() + 1;
   }
 

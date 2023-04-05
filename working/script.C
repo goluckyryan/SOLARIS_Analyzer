@@ -8,6 +8,34 @@ void script(){
   SolReader * reader = new SolReader("../data_raw/Master_003_00_21245_000.sol");
   Event * evt = reader->evt;
 
+  reader->ScanNumBlock();
+
+  long numBlock = reader->GetTotalNumBlock();
+
+  for( int i = 1; i < 10; i ++ ){
+    reader->ReadBlock(numBlock-i);
+    evt->PrintEnergyTimeStamp();
+  }
+
+
+  printf("======================== \n");
+  SolReader * reader1 = new SolReader("../data_raw/Master_003_01_21233_000.sol");
+  Event * evt1 = reader1->evt;
+
+  reader1->ScanNumBlock();
+
+  long numBlock1 = reader1->GetTotalNumBlock();
+
+  for( int i = 1; i < 10; i ++ ){
+    reader1->ReadBlock(numBlock1-i);
+    evt1->PrintEnergyTimeStamp();
+  }
+
+
+  /*
+  SolReader * reader = new SolReader("../data_raw/Master_003_00_21245_000.sol");
+  Event * evt = reader->evt;
+
   printf("========== file size: %u Byte\n", reader->GetFileSize());
 
   reader->ScanNumBlock();
@@ -58,6 +86,7 @@ void script(){
 
 
   h2->Draw();
+  */
 
   //printf("reader traceLength : %lu \n", evt->traceLenght);
 
