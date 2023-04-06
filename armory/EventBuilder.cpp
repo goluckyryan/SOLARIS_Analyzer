@@ -85,9 +85,9 @@ void printEvent(){
 //^##################################################################################
 int main(int argc, char ** argv){
 
-  printf("=====================================\n");
-  printf("===        sol  --> root          ===\n");
-  printf("=====================================\n");  
+  printf("=======================================================\n");
+  printf("===        SOLARIS Event Builder sol  --> root      ===\n");
+  printf("=======================================================\n");  
 
   if( argc <= 3){
     printf("%s [outfile] [timeWindow] [saveTrace] [sol-1] [sol-2] ... \n", argv[0]);
@@ -318,10 +318,9 @@ int main(int argc, char ** argv){
 
   unsigned int numBlock = 0;
   for( int i = 0; i < nFile; i++){
-    printf("%d | %8ld | %10u/%10u\n", i,  reader[i]->GetBlockID() + 1, reader[i]->GetFilePos(), reader[i]->GetFileSize());
+    //printf("%d | %8ld | %10u/%10u\n", i,  reader[i]->GetBlockID() + 1, reader[i]->GetFilePos(), reader[i]->GetFileSize());
     numBlock += reader[i]->GetBlockID() + 1;
   }
-
 
   printf("===================================== done. \n");
   printf("Number of Block Scanned : %u\n", numBlock);

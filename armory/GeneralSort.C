@@ -21,8 +21,8 @@ Bool_t GeneralSort::Process(Long64_t entry){
   if( entry < 1 ) printf("============================== start processing data\n");
 
   ///initialization
-  for( int i = 0; i < nDetType; i++){
-    for( int j = 0; j < detNum[i]; j++){
+  for( int i = 0; i < mapping::nDetType; i++){
+    for( int j = 0; j < mapping::detNum[i]; j++){
       eE[i][j] = TMath::QuietNaN();
       eT[i][j] = 0;
 
@@ -43,12 +43,12 @@ Bool_t GeneralSort::Process(Long64_t entry){
   b_e_t->GetEntry(entry);
 
   for( int i = 0 ; i < multi; i++){    
-    int detID = mapping[bd[i]][ch[i]];
-    int detType = FindDetType(detID, detMaxID);
-    int low = (i == 0 ? 0 : detMaxID[detType-1]);
+    int detID = mapping::map[bd[i]][ch[i]];
+    int detType = mapping::FindDetTypeIndex(detID);
+    int low = (i == 0 ? 0 : mapping::detMaxID[detType-1]);
     int reducedDetID = detID - low;
 
-    eE[detType][reducedDetID] = e[i] * detParity[detType];
+    eE[detType][reducedDetID] = e[i] * mapping::detParity[detType];
     eT[detType][reducedDetID] = e_t[i];
 
   }
@@ -64,7 +64,8 @@ Bool_t GeneralSort::Process(Long64_t entry){
     arr->Clear("C");
 
     for( int i = 0; i < multi; i++){
-      int detID = mapping[bd[i]][ch[i]];
+      int detID = mapping::map[bd[i]][ch[i]];
+
 
       int traceLength = tl[i];
       gTrace = (TGraph*) arr->ConstructedAt(countTrace, "C");
@@ -80,6 +81,12 @@ Bool_t GeneralSort::Process(Long64_t entry){
 
       //***=================== fit
       if( traceMethod == 1){
+
+        int detType = mapping::FindDetTypeIndex(detID);
+        //TODO use a blackList
+        //if( mapping::detTypeName[detType] != "rdt") continue;
+
+        //TODO try custom build fiting algorithm. May be faster?
         gFit  = new TF1("gFit", fitFunc, 0, traceLength, numPara);
         gFit->SetLineColor(6);
         gFit->SetRange(0, traceLength);
@@ -96,9 +103,7 @@ Bool_t GeneralSort::Process(Long64_t entry){
 
         gTrace->Fit("gFit", "QR", "", 0, traceLength);
 
-
-        int detType = FindDetType(detID, detMaxID);
-        int low = (i == 0 ? 0 : detMaxID[detType-1]);
+        int low = (i == 0 ? 0 : mapping::detMaxID[detType-1]);
         int reducedDetID = detID - low;
 
         teE[detType][reducedDetID] = gFit->GetParameter(0);
@@ -174,7 +179,7 @@ void GeneralSort::Begin(TTree * tree){
   printf( "=====================   SOLARIS GeneralSort.C   =================\n");
   printf( "=================================================================\n");
 
-  PrintMapping(mapping, detTypeName, detMaxID);
+  mapping::PrintMapping();
 
   DecodeOption();
   if(!isParallel) {

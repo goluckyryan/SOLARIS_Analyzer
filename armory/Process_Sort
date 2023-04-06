@@ -65,8 +65,6 @@ else
 
   mkdir -p ~/.proof/working
   cp ${SOLARISANADIR}/working/Mapping.h ~/.proof/working/.
-  mkdir -p ~/.proof/armory
-  cp ${SOLARISANADIR}/armory/AnalysisLib.h ~/.proof/armory/.
 
   if [ $nWorker -le -1 ]; then
     echo -e "${LRED}>>>>>>>>>>>>>>> Force GeneralSort $(date) ${NC}"

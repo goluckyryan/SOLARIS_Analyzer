@@ -13,6 +13,9 @@
 #include <TStopwatch.h>
 #include <TProofOutputFile.h>
 
+//^######################################### Skip list for trace fitting
+//TODO
+
 /*********************************=======
 
 the sequence of each method 
@@ -29,9 +32,8 @@ the sequence of each method
 
 ******************************************/
 
-/// in Process_Sort, copy the GeneralSortMapping.h to ~/.proof/working/
+/// in Process_Sort, copy the Mapping.h to ~/.proof/working/
 #include "../working/Mapping.h"
-#include "../armory/AnalysisLib.h"
 
 //^######################################### FIT FUNCTION
 const int numPara = 6;
@@ -132,8 +134,6 @@ public :
     traceMethod = 0; // -1 = ignore trace, 0 = no trace fit, 1 = fit, 2 = trapezoid
   
     isParallel = false;
-    detNum.clear();
-    nDetType = 0;
 
     saveFile = nullptr;
     newSaveTree = nullptr;
@@ -174,9 +174,6 @@ public :
 
   void SetTraceMethod(int methodID) {traceMethod = methodID;}
   void PrintTraceMethod();
-
-  std::vector<int> detNum;
-  int nDetType;
 
   void SetUpTree();
   void DecodeOption();
@@ -226,24 +223,22 @@ void GeneralSort::SetUpTree(){
   newSaveTree->SetDirectory(saveFile);
   newSaveTree->AutoSave();
 
-  detNum = ExtractDetNum(mapping, detTypeName, detMaxID);
+  newSaveTree->Branch( "evID", &evID, "EventID/l"); // simply copy
 
-  nDetType = (int) detTypeName.size();
+  eE = new Float_t * [mapping::nDetType];
+  eT = new ULong64_t * [mapping::nDetType];
 
-  eE = new Float_t * [nDetType];
-  eT = new ULong64_t * [nDetType];
+  for( int i = 0 ; i < mapping::nDetType; i++){
+    eE[i] = new Float_t[mapping::detNum[i]];
+    eT[i] = new ULong64_t[mapping::detNum[i]];
 
-  for( int i = 0 ; i < nDetType; i++){
-    eE[i] = new Float_t[detNum[i]];
-    eT[i] = new ULong64_t[detNum[i]];
-
-    for( int j = 0; j < detNum[i]; j++){
+    for( int j = 0; j < mapping::detNum[i]; j++){
       eE[i][j] =  TMath::QuietNaN();
       eT[i][j] = 0;
     }
 
-    newSaveTree->Branch(  detTypeName[i].c_str(),        eE[i], Form("%s[%d]/F", detTypeName[i].c_str(), detNum[i]));
-    newSaveTree->Branch( (detTypeName[i]+"_t").c_str(),  eT[i], Form("%s_Timestamp[%d]/l", detTypeName[i].c_str(), detNum[i]));
+    newSaveTree->Branch(  mapping::detTypeName[i].c_str(),        eE[i], Form("%s[%d]/F", mapping::detTypeName[i].c_str(), mapping::detNum[i]));
+    newSaveTree->Branch( (mapping::detTypeName[i]+"_t").c_str(),  eT[i], Form("%s_Timestamp[%d]/l", mapping::detTypeName[i].c_str(), mapping::detNum[i]));
   }
 
 
@@ -256,24 +251,26 @@ void GeneralSort::SetUpTree(){
 
     if( traceMethod > 0 ){
 
-      teE = new Float_t * [nDetType];
-      teT = new Float_t * [nDetType];
-      teR = new Float_t * [nDetType];
+      teE = new Float_t * [mapping::nDetType];
+      teT = new Float_t * [mapping::nDetType];
+      teR = new Float_t * [mapping::nDetType];
 
-      for( int i = 0 ; i < nDetType; i++){
-        teE[i] = new Float_t[detNum[i]];
-        teT[i] = new Float_t[detNum[i]];
-        teR[i] = new Float_t[detNum[i]];
+      for( int i = 0 ; i < mapping::nDetType; i++){
+        teE[i] = new Float_t[mapping::detNum[i]];
+        teT[i] = new Float_t[mapping::detNum[i]];
+        teR[i] = new Float_t[mapping::detNum[i]];
 
-        for( int j = 0; j < detNum[i]; j++){
+        for( int j = 0; j <mapping::detNum[i]; j++){
           teE[i][j] =  TMath::QuietNaN();
           teT[i][j] =  TMath::QuietNaN();
           teR[i][j] =  TMath::QuietNaN();
         }
 
-        newSaveTree->Branch( ("t" + detTypeName[i]).c_str(),       teE[i], Form("trace_%s[%d]/F",      detTypeName[i].c_str(), detNum[i]));
-        newSaveTree->Branch( ("t" + detTypeName[i]+"_t").c_str(),  teT[i], Form("trace_%s_time[%d]/l", detTypeName[i].c_str(), detNum[i]));
-        newSaveTree->Branch( ("t" + detTypeName[i]+"_r").c_str(),  teR[i], Form("trace_%s_rise[%d]/l", detTypeName[i].c_str(), detNum[i]));
+        //TODO use a blackList to skip some trace
+
+        newSaveTree->Branch( ("w" + mapping::detTypeName[i]).c_str(),      teE[i], Form("trace_%s[%d]/F",      mapping::detTypeName[i].c_str(), mapping::detNum[i]));
+        newSaveTree->Branch( ("w" + mapping::detTypeName[i]+"T").c_str(),  teT[i], Form("trace_%s_time[%d]/l", mapping::detTypeName[i].c_str(), mapping::detNum[i]));
+        newSaveTree->Branch( ("w" + mapping::detTypeName[i]+"R").c_str(),  teR[i], Form("trace_%s_rise[%d]/l", mapping::detTypeName[i].c_str(), mapping::detNum[i]));
       }
 
     }

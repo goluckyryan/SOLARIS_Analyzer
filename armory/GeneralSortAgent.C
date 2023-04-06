@@ -2,6 +2,8 @@
 #include "TTree.h"
 #include "TProof.h"
 #include "TChain.h"
+#include "TMacro.h"
+#include "TFile.h"
 
 void GeneralSortAgent(Int_t runNum, int nWorker = 1, int traceMethod = -1){
 
@@ -33,6 +35,19 @@ void GeneralSortAgent(Int_t runNum, int nWorker = 1, int traceMethod = -1){
     option.Form("%d,../root_data/gen_run%03d.root,%d", traceMethod, runNum, 1);
     chain->Process("../armory/GeneralSort.C+", option);
   }
+
+  //========== open the output root and copy teh timestamp Marco
+
+  TFile * f1 = new TFile(Form("../root_data/run%03d.root", runNum), "READ");
+  TMacro * m = (TMacro* ) f1->Get("timeStamp");
+  m->AddLine(Form("%d", runNum));
+
+  TFile * f2 = new TFile(Form("../root_data/gen_run%03d.root", runNum), "UPDATE");
+  f2->cd();
+  m->Write("timeStamp");
+
+  f1->Close();
+  f2->Close();
 
 
 }

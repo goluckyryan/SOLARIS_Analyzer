@@ -19,6 +19,8 @@
 #include <vector>
 #include <string>
 
+namespace mapping{
+
 const std::vector<std::string> detTypeName = {  "e",  "xf", "xn", "rdt"}; //C= The comment "//C=" is an indicator DON't Remove
 const std::vector<int>          detGroupID = {    0,     0,    0,     1}; //C& The comment "//C&" is an indicator DON't Remove
 const std::vector<int>            detMaxID = {  100,   200,  300,   400}; //C# The comment "//C#" is an indicator DON't Remove
@@ -28,7 +30,7 @@ const std::vector<std::string> groupName = { "Array", "Recoil"}; //C% The commen
 
 //!The mapping[i] must match as the IP setting in the DAQ
 
-const std::vector<std::vector<int>> mapping = {
+const std::vector<std::vector<int>> map = {
 {
 //C   0     1     2     3     4     5     6     7     8     9    10    11    12    13    14    15 // this line is an indicator DON'T Remove "//C " is an indcator
       0,  100,  200,    1,  101,  201,    2,  102,  202,    3,  103,  203,    4,  104,  204,   -1,  ///  0 - 15 
@@ -63,4 +65,63 @@ const std::vector<std::vector<int>> mapping = {
 }
 };
 
+//^===============================================================================
+int FindDetTypeIndex(int detID){
+  for( int k = 0; k < (int) detMaxID.size(); k++){
+    int low = (k == 0 ? 0 : detMaxID[k-1]);
+    int high = detMaxID[k];
+    if( low <=  detID  && detID < high ) {
+      return k;
+    }
+  }
+  return -1;
+}
+
+std::vector<int> ExtractDetNum(){
+  std::vector<int> detTypeNum;
+  for( int i = 0; i < (int) detTypeName.size(); i ++) detTypeNum.push_back(0);
+  for( int i = 0; i < (int) map.size(); i ++){
+    for( int j = 0; j < (int) map[i].size(); j++){
+      if( map[i][j] < 0) continue;
+      for( int k = 0; k < (int) detTypeName.size() ; k ++ ){
+        int low = (k == 0 ? 0 : detMaxID[k-1]);
+        int high = detMaxID[k];
+        if( low <=  map[i][j]  && map[i][j] < high ) {
+          detTypeNum[k]++;
+        }
+      }
+    }
+  }
+  return detTypeNum;
+}
+
+void PrintMapping(){
+
+  //------------                       Red          Green      Yellow       Cyan        blue      Magenta      Gray
+  std::vector<const char* > Color = {"\033[31m", "\033[32m", "\033[33m", "\033[36m", "\033[34m", "\033[35m", "\033[37m"};
+
+  printf("==================================== Mapping ===================================\n");
+  std::vector<int> detTypeNum = ExtractDetNum();
+  for(int i = 0 ; i < (int) detTypeName.size(); i++) {
+    printf(" %2d | %7s | %3d | %3d - %3d\n", i, detTypeName[i].c_str(), detTypeNum[i], (i == 0 ? 0 : detMaxID[i-1]), detMaxID[i]);
+  }
+  for( int i = 0; i < (int) map.size(); i++){
+    printf("Digi-%d ------------------------------------------------------------------------ \n", i);
+    for( int j = 0; j < (int) map[i].size(); j++){
+      if( map[i][j] < 0 ){
+        printf("%4d,", map[i][j]); 
+      }else{
+        int colorIndex = FindDetTypeIndex(map[i][j]);
+        printf("%s%4d\033[0m,", Color[colorIndex], map[i][j]);
+      }
+      if( j % 16 == 15 ) printf("\n");
+    }
+  }
+  printf("================================================================================\n");
+}
+
+const std::vector<int>  detNum = ExtractDetNum();
+const int nDetType = detNum.size();
+     
+} // namespace solarismap
 #endif
