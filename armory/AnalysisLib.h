@@ -8,6 +8,43 @@
 #include <TMacro.h>
 #include <TList.h>
 
+namespace AnalysisLib {
+
+std::vector<std::string> SplitStr(std::string tempLine, std::string splitter, int shift = 0){
+
+  std::vector<std::string> output;
+
+  size_t pos;
+  do{
+    pos = tempLine.find(splitter); /// fine splitter
+    if( pos == 0 ){ ///check if it is splitter again
+      tempLine = tempLine.substr(pos+1);
+      continue;
+    }
+
+    std::string secStr;
+    if( pos == std::string::npos ){
+      secStr = tempLine;
+    }else{
+      secStr = tempLine.substr(0, pos+shift);
+      tempLine = tempLine.substr(pos+shift);
+    }
+
+    ///check if secStr is begin with space
+    while( secStr.substr(0, 1) == " ") secStr = secStr.substr(1);
+    
+    ///check if secStr is end with space
+    while( secStr.back() == ' ') secStr = secStr.substr(0, secStr.size()-1);
+
+    output.push_back(secStr);
+    ///printf(" |%s---\n", secStr.c_str());
+    
+  }while(pos != std::string::npos );
+
+  return output;
+}
+
+
 struct DetGeo{
    
   double Bfield;      /// T
@@ -75,40 +112,6 @@ struct ReactionConfig{
   
 
 };
-
-std::vector<std::string> SplitStr(std::string tempLine, std::string splitter, int shift = 0){
-
-  std::vector<std::string> output;
-
-  size_t pos;
-  do{
-    pos = tempLine.find(splitter); /// fine splitter
-    if( pos == 0 ){ ///check if it is splitter again
-      tempLine = tempLine.substr(pos+1);
-      continue;
-    }
-
-    std::string secStr;
-    if( pos == std::string::npos ){
-      secStr = tempLine;
-    }else{
-      secStr = tempLine.substr(0, pos+shift);
-      tempLine = tempLine.substr(pos+shift);
-    }
-
-    ///check if secStr is begin with space
-    while( secStr.substr(0, 1) == " ") secStr = secStr.substr(1);
-    
-    ///check if secStr is end with space
-    while( secStr.back() == ' ') secStr = secStr.substr(0, secStr.size()-1);
-
-    output.push_back(secStr);
-    ///printf(" |%s---\n", secStr.c_str());
-    
-  }while(pos != std::string::npos );
-
-  return output;
-}
 
 ///Using TMacro to load the detectorGeo frist,
 ///this indrect method is good for loading detectorGeo from TMacro in root file
@@ -306,7 +309,304 @@ void PrintReactionConfig(ReactionConfig reaction){
 
 }
 
+DetGeo detGeo;
+ReactionConfig reactionConfig;
 
+void LoadDetGeoAndReactionConfigFile(string detGeoFileName = "detectorGeo.txt", string reactionConfigFileName = "reactionConfig.txt"){
+  printf("=======================\n");
+  printf(" loading detector geometery : %s.", detGeoFileName.c_str());
+  TMacro * haha = new TMacro();
+  if( haha->ReadFile(detGeoFileName.c_str()) > 0 ) {
+    detGeo = AnalysisLib::LoadDetectorGeo(haha);    
+    printf("... done.\n");
+    AnalysisLib::PrintDetGeo(detGeo);
+  }else{
+    printf("... fail\n");
+  }
+
+  printf("=======================\n");
+  printf(" loading reaction config : %s.", reactionConfigFileName.c_str());
+  TMacro * kaka = new TMacro();
+  if( kaka->ReadFile(reactionConfigFileName.c_str()) > 0 ) {
+    reactionConfig  = AnalysisLib::LoadReactionConfig(kaka);
+    printf("..... done.\n");
+    AnalysisLib::PrintReactionConfig(reactionConfig);
+  }else{
+    printf("..... fail\n");
+  }
+
+  delete haha;
+  delete kaka;
+
+}
+
+//************************************** Correction parameters;
+
+std::vector<float> xnCorr;                 //correction of xn to match xf
+std::vector<float> xScale;                 // correction of x to be (0,1)
+std::vector<std::vector<float>> xfxneCorr; //correction of xn and xf to match e
+std::vector<std::vector<float>> eCorr;     // correction to e, ch -> MeV
+std::vector<std::vector<float>> rdtCorr;   // correction of rdt, ch -> MeV
+
+//~========================================= xf = xn correction
+void LoadXNCorr(bool verbose = false, const char * fileName = "correction_xf_xn.dat"){
+  printf(" loading xf-xn correction.");
+  xnCorr.clear();
+  ifstream file;
+  file.open(fileName);
+  if( file.is_open() ){
+    float a;
+    while( file >> a ) xnCorr.push_back(a);
+    printf(".......... done.\n");
+  }else{
+    printf(".......... fail.\n");
+  }
+  file.close();
+  if( verbose ) for(int i = 0; i < (int) xnCorr.size(); i++) printf("%2d | %10.3f\n", i, xnCorr[i]);
+}
+
+
+//~========================================= X-Scale correction
+void LoadXScaleCorr(bool verbose = false, const char * fileName = "correction_scaleX.dat"){
+  printf(" loading x-Scale correction.");
+  xScale.clear();
+  ifstream file;
+  file.open(fileName);
+  if( file.is_open() ){
+    float a, b;
+    while( file >> a ) xScale.push_back(a);  
+    printf("........ done.\n");
+  }else{
+    printf("........ fail.\n");
+  }
+  file.close();  
+  if( verbose ) for(int i = 0; i < (int) xScale.size(); i++) printf("%2d | %10.3f\n", i, xnCorr[i]);
+}
+
+//~========================================= e = xf + xn correction
+void LoadXFXN2ECorr(bool verbose = false, const char * fileName = "correction_xfxn_e.dat"){
+  printf(" loading xf/xn-e correction.");
+  xfxneCorr.clear();
+  ifstream file;
+  file.open(fileName);
+  if( file.is_open() ){
+    float a, b;
+    while( file >> a >> b) xfxneCorr.push_back({a, b});
+    printf("........ done.\n");
+  }else{
+    printf("........ fail.\n");
+  }
+  file.close();
+  if( verbose ) for(int i = 0; i < (int) xfxneCorr.size(); i++) printf("%2d | %10.3f, %10.3f\n", i, xfxneCorr[i][0], xfxneCorr[i][1]);
+} 
+
+//~========================================= e correction
+void LoadECorr(bool verbose = false, const char * fileName = "correction_e.dat"){
+  printf(" loading e correction.");
+  eCorr.clear();
+  ifstream file;
+  file.open(fileName);
+  if( file.is_open() ){
+    float a, b;
+    while( file >> a >> b) eCorr.push_back( {a, b} );  // 1/a1,  a0 , e' = e * a1 + a0
+    printf(".............. done.\n");
+  }else{
+    printf(".............. fail.\n");
+  }
+  file.close();
+  if( verbose ) for(int i = 0; i < (int) eCorr.size(); i++) printf("%2d | %10.3f, %10.3f\n", i, eCorr[i][0], eCorr[i][1]);
+}
+
+//~========================================= rdt correction
+void LoadRDTCorr(bool verbose = false, const char * fileName = "correction_rdt.dat"){
+  printf(" loading rdt correction.");
+  rdtCorr.clear();
+  ifstream file;
+  file.open(fileName);
+  if( file.is_open() ){
+    float a, b;
+    while( file >> a >> b) rdtCorr.push_back({a, b});
+    printf("............ done.\n");
+  }else{
+    printf("............ fail.\n");
+  }
+  file.close();
+  if( verbose ) for(int i = 0; i < (int) rdtCorr.size(); i++) printf("%2d | %10.3f, %10.3f\n", i, rdtCorr[i][0], rdtCorr[i][1]);
+}
+
+double q, alpha, Et, betRel, gamm, G, massB, mass; //variables for Ex calculation
+bool hasReactionPara = false;
+
+//~========================================= reaction parameters
+void LoadReactionParas(bool verbose = false){
+   
+  //check is the transfer.root is using the latest reactionConfig.txt   
+  //sicne reaction.dat is generated as a by-product of transfer.root
+  //TFile * transfer = new TFile("transfer.root");
+  //TString aaa1 = "";
+  //TString aaa2 = "";
+  //if( transfer->IsOpen() ){
+  //  TMacro * reactionConfig = (TMacro *) transfer->FindObjectAny("reactionConfig");
+  //  TMacro presentReactionConfig ("reactionConfig.txt");
+  //  aaa1 = ((TMD5*) reactionConfig->Checksum())->AsString();
+  //  aaa2 = ((TMD5*) presentReactionConfig.Checksum())->AsString();
+  //}
+  //printf("%s\n", aaa1.Data());
+  //printf("%s\n", aaa2.Data());
+
+  //if( aaa1 != aaa2 ) {
+  //  printf("########################## recalculate transfer.root \n");
+  //  system("../Cleopatra/Transfer");
+  //  printf("########################## transfer.root updated\n");
+  //}
+  printf(" loading reaction parameters");
+  ifstream file;
+  file.open("reaction.dat");
+  hasReactionPara = false;
+  if( file.is_open() ){
+    string x;
+    int i = 0;
+    while( file >> x ){
+      if( x.substr(0,2) == "//" )  continue;
+      if( i == 0 ) mass = atof(x.c_str());
+      if( i == 1 ) q    = atof(x.c_str());
+      if( i == 2 ) betRel = atof(x.c_str()); 
+      if( i == 3 ) Et   = atof(x.c_str()); 
+      if( i == 4 ) massB = atof(x.c_str()); 
+      i = i + 1;
+    }
+    printf("........ done.\n");
+
+    hasReactionPara = true;
+    alpha = 299.792458 * abs(detGeo.Bfield) * q / TMath::TwoPi()/1000.; //MeV/mm
+    gamm = 1./TMath::Sqrt(1-betRel*betRel);
+    G = alpha * gamm * betRel * detGeo.detPerpDist ;
+
+    if( verbose ){
+      printf("\tmass-b    : %f MeV/c2 \n", mass);
+      printf("\tcharge-b  : %f \n", q);
+      printf("\tE-total   : %f MeV \n", Et);
+      printf("\tmass-B    : %f MeV/c2 \n", massB);
+      printf("\tbeta      : %f \n", betRel);
+      printf("\tB-field   : %f T \n", detGeo.Bfield);
+      printf("\tslope     : %f MeV/mm \n", alpha * betRel);
+      printf("\tdet radius: %f mm \n", detGeo.detPerpDist);
+      printf("\tG-coeff   : %f MeV \n", G);
+      printf("=================================\n");
+    }
+
+  }else{
+    printf("........ fail.\n");
+    hasReactionPara = false;
+  }
+  file.close();
+   
+}
+
+std::vector<double> CalExTheta(double e, double z){
+  if( !hasReactionPara) return {TMath::QuietNaN(), TMath::QuietNaN()};
+
+  double y = e + mass; // to give the KE + mass of proton;
+  double Z = alpha * gamm * betRel * z;
+  double H = TMath::Sqrt(TMath::Power(gamm * betRel,2) * (y*y - mass * mass) ) ;
+ 
+  if( TMath::Abs(Z) < H ) {
+    ///using Newton's method to solve 0 ==	H * sin(phi) - G * tan(phi) - Z = f(phi) 
+    double tolerrence = 0.001;
+    double phi = 0;  ///initial phi = 0 -> ensure the solution has f'(phi) > 0
+    double nPhi = 0; /// new phi
+
+    int iter = 0;
+    do{
+      phi = nPhi;
+      nPhi = phi - (H * TMath::Sin(phi) - G * TMath::Tan(phi) - Z) / (H * TMath::Cos(phi) - G /TMath::Power( TMath::Cos(phi), 2));					 
+      iter ++;
+      if( iter > 10 || TMath::Abs(nPhi) > TMath::PiOver2()) break;
+    }while( TMath::Abs(phi - nPhi ) > tolerrence);
+    phi = nPhi;
+
+    /// check f'(phi) > 0
+    double Df = H * TMath::Cos(phi) - G / TMath::Power( TMath::Cos(phi),2);
+    if( Df > 0 && TMath::Abs(phi) < TMath::PiOver2()  ){
+      double K = H * TMath::Sin(phi);
+      double x = TMath::ACos( mass / ( y * gamm - K));
+      double momt = mass * TMath::Tan(x); /// momentum of particel b or B in CM frame
+      double EB = TMath::Sqrt(mass*mass + Et*Et - 2*Et*TMath::Sqrt(momt*momt + mass * mass));
+      Ex = EB - massB;
+
+      double hahaha1 = gamm* TMath::Sqrt(mass * mass + momt * momt) - y;
+      double hahaha2 = gamm* betRel * momt;
+      thetaCM = TMath::ACos(hahaha1/hahaha2) * TMath::RadToDeg();
+
+    }else{
+      Ex = TMath::QuietNaN();
+      thetaCM = TMath::QuietNaN();
+    }
+  }else{
+    Ex = TMath::QuietNaN();
+    thetaCM = TMath::QuietNaN();
+  }
+
+  return {Ex, thetaCM};
+
+}
+
+//************************************** TCutG
+
+TObjArray * LoadListOfTCut(TString fileName, TString cutName = "cutList"){
+
+  TObjArray * cutList = nullptr;
+
+  TFile * fCut = new TFile(fileName);
+  bool isCutFileOpen = fCut->IsOpen();
+  if(!isCutFileOpen) {
+    printf( "Failed to open rdt-cutfile 1 : %s\n" , fileName.Data());
+  }else{
+    cutList = (TObjArray *) fCut->FindObjectAny(cutName);
+
+    if( cutList ){
+      int numCut = cutList->GetEntries();
+      printf("=========== found %d cutG in %s \n", numCut, fCut->GetName());
+
+      for(int i = 0; i < numCut ; i++){
+        printf("cut name : %s , VarX: %s, VarY: %s, numPoints: %d \n",
+          cutList->At(i)->GetName(),
+          ((TCutG*)cutList->At(i))->GetVarX(),
+          ((TCutG*)cutList->At(i))->GetVarY(),
+          ((TCutG*)cutList->At(i))->GetN()
+        );
+      }
+    }
+  }
+
+  return cutList;
+}
+
+TCutG * LoadSingleTCut( TString fileName, TString cutName = "cutEZ"){
+  
+  TCutG * cut = nullptr;
+  
+  TFile * fCut = new TFile(fileName);
+  bool isCutFileOpen = fCut->IsOpen(); 
+  if( !isCutFileOpen)  {
+    printf( "Failed to open E-Z cutfile : %s\n" , fileName.Data());
+  }else{
+    cut = (TCutG *) fCut->FindObjectAny(cutName);
+    if( cut != NULL ) {
+        printf("Found EZ cut| name : %s, VarX: %s, VarY: %s, numPoints: %d \n", 
+          cut->GetName(),
+          cut->GetVarX(),
+          cut->GetVarY(),
+          cut->GetN()
+        );
+    }
+  }
+
+  return cut;
+}
+
+
+//************************************** Others
 std::vector<std::vector<double>> combination(std::vector<double> arr, int r){
   
   std::vector<std::vector<double>> output;
@@ -477,7 +777,6 @@ std::vector<std::vector<double>> FindMatchingPair(std::vector<double> enX, std::
       
     }
     
-    
     printf("fitEnergy = ");for( int k = 0; k < (int) fitEnergy.size() ; k++){ printf("%7.2f, ", fitEnergy[k]); }; printf("\n");
     printf("refEnergy = ");for( int k = 0; k < (int) refEnergy.size() ; k++){ printf("%7.2f, ", refEnergy[k]); }; printf("\n");
     
@@ -489,5 +788,7 @@ std::vector<std::vector<double>> FindMatchingPair(std::vector<double> enX, std::
    
 }
 
+
+}
 
 #endif

@@ -11,16 +11,28 @@
 #define AutoFit_C
 
 #include <TF1.h>
+#include <TH1.h>
+#include <TH2.h>
 #include <TGraph.h>
 #include <TColor.h>
 #include <TSpectrum.h>
 #include <TMath.h>
 #include <TRandom.h>
 #include <TMarker.h>
+#include <TCanvas.h>
+#include <TROOT.h>
+#include <TStyle.h>
+#include <TLatex.h>
+
 #include <vector>
+#include <algorithm>
+#include <cstdio>
+#include <string>
+#include <fstream>
+
+namespace AutoFit{
 
 //Global fit paramaters
-
 std::vector<double> BestFitMean;
 std::vector<double> BestFitCount;
 std::vector<double> BestFitSigma;
@@ -91,9 +103,9 @@ TColor RGBWheel(double ang){
 
   ang = ang * TMath::DegToRad();
   
-  double r = max(0., (1+2*cos(ang))/3.);
-  double g = max(0., (1 - cos(ang) + sqrt(3)* sin(ang))/3.);
-  double b = max(0., (1 - cos(ang) - sqrt(3)* sin(ang))/3.);
+  double r = std::max(0., (1+2*cos(ang))/3.);
+  double g = std::max(0., (1 - cos(ang) + sqrt(3)* sin(ang))/3.);
+  double b = std::max(0., (1 - cos(ang) - sqrt(3)* sin(ang))/3.);
 
   TColor col(r,g,b);
 
@@ -273,8 +285,8 @@ void GoodnessofFit(TH1F * hist, TF1 * fit){
    printf("################################################\n");  
 }
 
-vector<double> energy, height, sigma, lowE, highE ;
-vector<int> energyFlag, sigmaFlag;
+std::vector<double> energy, height, sigma, lowE, highE ;
+std::vector<int> energyFlag, sigmaFlag;
 
 bool loadFitParameters(TString fitParaFile){
   
@@ -289,7 +301,7 @@ bool loadFitParameters(TString fitParaFile){
 
   printf("====================================================================== \n");
   printf("----- loading fit parameters from : %s", fitParaFile.Data());
-  ifstream file;
+  std::ifstream file;
   file.open(fitParaFile.Data());
 
   if( !file){
@@ -298,7 +310,7 @@ bool loadFitParameters(TString fitParaFile){
   }
 
   while( file.good()) {
-    string tempLine;
+    std::string tempLine;
     getline(file, tempLine);
 
     if( tempLine.substr(0, 1) == "#" ) continue;
@@ -307,7 +319,7 @@ bool loadFitParameters(TString fitParaFile){
     
     ///printf("%s\n", tempLine.c_str());
 
-    vector<string> temp = SplitStrAF(tempLine, " ");
+    std::vector<std::string> temp = SplitStrAF(tempLine, " ");
 
     if( temp.size() < 7 ) continue;
 
@@ -491,7 +503,7 @@ void fitGaussPol(TH1F * hist, double mean, double sigmaMax, int degPol, double x
 //########################################
 //#### fit 2 gauss + pol-1  // not updated
 //########################################
-vector<double> fit2GaussP1(TH1F * hist, double mean1, double sigma1, 
+std::vector<double> fit2GaussP1(TH1F * hist, double mean1, double sigma1, 
                                        double mean2, double sigma2, 
                            double xMin, double xMax, TString optStat = "", bool newCanvas = false){
 
@@ -503,7 +515,7 @@ vector<double> fit2GaussP1(TH1F * hist, double mean1, double sigma1,
 
   recentFitMethod = "fit2GaussP1";
   
-  vector<double> output;
+  std::vector<double> output;
   output.clear();
 
   gStyle->SetOptStat(optStat);  
@@ -684,7 +696,7 @@ void fitGF3Pol(TH1F * hist, double mean, double sigmaMax, double ratio, double b
    //GoodnessofFit(hist, fit);
 
   ///                  0       1        2        3       4       5   
-  string label[8] = {"Area", "mean", "sigma", "ratio", "beta", "step"};
+  std::string label[8] = {"Area", "mean", "sigma", "ratio", "beta", "step"};
   printf("---------- The detail\n");
   for(int i = 0 ; i < 6 ; i++){
     printf("%d | %8s | %f (%f) \n", i, label[i].c_str(), paraA[i], paraE[i]);
@@ -749,7 +761,7 @@ void fitGF3Pol(TH1F * hist, double mean, double sigmaMax, double ratio, double b
 //##############################################
 //##### Auto Fit n-Gauss with estimated BG 
 //##############################################
-vector<double> fitAuto(TH1F * hist, int bgEst = 10, 
+std::vector<double> fitAuto(TH1F * hist, int bgEst = 10, 
                        double peakThreshold = 0.05, 
                        double sigmaMax = 0, 
                        int peakDensity = 4, 
@@ -817,7 +829,7 @@ vector<double> fitAuto(TH1F * hist, int bgEst = 10,
 
   int * inX = new int[nPeaks];
   TMath::Sort(nPeaks, xpos, inX, 0 );
-  vector<double> energy, height;
+  std::vector<double> energy, height;
   for( int j = 0; j < nPeaks; j++){
     energy.push_back(xpos[inX[j]]);
     height.push_back(ypos[inX[j]]);
@@ -930,7 +942,7 @@ vector<double> fitAuto(TH1F * hist, int bgEst = 10,
   
   double bw = specS->GetBinWidth(1);
 
-  vector<double> exPos;
+  std::vector<double> exPos;
   for(int i = 0; i < nPeaks ; i++){
     exPos.push_back(paraA[numParPerPeak*i+1]);
     printf("%2d , count: %8.0f(%3.0f), mean: %8.4f(%8.4f), sigma: %8.4f(%8.4f) \n", 
@@ -1004,7 +1016,7 @@ vector<double> fitAuto(TH1F * hist, int bgEst = 10,
 //########################################
 //###### NOT tested
 //########################################
-vector<double> fitNGF3(TH1 * hist, int bgEst = 10, 
+std::vector<double> fitNGF3(TH1 * hist, int bgEst = 10, 
                        double peakThreshold = 0.1, 
                        double sigmaMax = 20, 
                        int peakDensity = 4, 
@@ -1067,7 +1079,7 @@ vector<double> fitNGF3(TH1 * hist, int bgEst = 10,
 
   int * inX = new int[nPeaks];
   TMath::Sort(nPeaks, xpos, inX, 0 );
-  vector<double> energy, height;
+  std::vector<double> energy, height;
   for( int j = 0; j < nPeaks; j++){
     energy.push_back(xpos[inX[j]]);
     height.push_back(ypos[inX[j]]);
@@ -1137,7 +1149,7 @@ vector<double> fitNGF3(TH1 * hist, int bgEst = 10,
   
   double bw = specS->GetBinWidth(1);
 
-  vector<double> exPos;
+  std::vector<double> exPos;
   for(int i = 0; i < nPeaks ; i++){
     exPos.push_back(paraA[numParPerPeak*i+1]);
     double totCount = paraA[numParPerPeak*i] + paraA[numParPerPeak*i+3];
@@ -1987,10 +1999,10 @@ void fitNGaussPolSub(TH1F * hist, int degPol,  TString fitFile = "AutoFit_para.t
 
 int nClick = 0;
 bool peakFlag = 1;
-vector<double> xPeakList;
-vector<double> yPeakList;
-vector<double> xBGList;
-vector<double> yBGList;
+std::vector<double> xPeakList;
+std::vector<double> yPeakList;
+std::vector<double> xBGList;
+std::vector<double> yBGList;
 
 TH1F * tempHist;
 int markerStyle = 23;
@@ -2844,5 +2856,6 @@ void fitSpecial(TH1F * hist, TString fitFile = "AutoFit_para.txt"){
   
 }
 
+}
 
 #endif 

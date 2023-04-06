@@ -49,5 +49,6 @@ void GeneralSortAgent(Int_t runNum, int nWorker = 1, int traceMethod = -1){
   f1->Close();
   f2->Close();
 
+  delete chain;
 
 }
