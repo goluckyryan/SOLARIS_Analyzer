@@ -122,6 +122,9 @@ void PrintMapping(){
 
 const std::vector<int>  detNum = ExtractDetNum();
 const int nDetType = detNum.size();
+
+const int NARRAY = detNum[0]; //@ assumed
+const int NRDT   = detNum[3]; //@ assumed
      
 } // namespace solarismap
 #endif
