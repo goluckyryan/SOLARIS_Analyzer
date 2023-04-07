@@ -11,13 +11,12 @@ fi
 
 
 if [ $# -eq 0 ] || [ $1 == "-help"  ]; then
-  echo "$ Process_Run [RunNum] [EventBuild] [GeneralSort] [TraceMethod] [DataHoSei]"
+  echo "$ Process_Run [RunNum] [EventBuild] [GeneralSort] [TraceMethod] [Monitor]"
   echo "        RunNum = run number / \"lastRun\" "
   echo "      EventBld = 2/1/0/-1/-2   || 2 = with Trace"  
   echo "   GeneralSort = n/0/-n        || n = number of worker"  
   echo "   TraceMethod = -1/0/1/2      || -1 no trace, 0 save trace, 1 fit, 2 trapezoid(not implemented)"  
-  echo "     DataHoSei = 2/1/0         || 1 = single run,  2 = using the list in ChainMonitors.C"
-  echo "                                  10 = single run and post to websrv, 20 = list runs and post to websrv"
+  echo "       Monitor = 2/1/0         || 1 = single run,  2 = using the list in ChainMonitors.C"
   echo ""
   echo "       * negative option = force (except for TraceMethod)."
   echo "       * Defult timeWindow for Event builder is 100 tick = 800 ns."
@@ -28,18 +27,15 @@ fi;
 
 RUN=$1
 runNum=$1
-EventBld=0
+EventBld=2
 nWorker=1
-TraceMethod=0
+TraceMethod=-1
 isMonitor=0
 
 if [ $# -ge 2 ]; then EventBld=$2; fi
 if [ $# -ge 3 ]; then nWorker=$3; fi
 if [ $# -ge 4 ]; then TraceMethod=$4; fi
 if [ $# -ge 5 ]; then isMonitor=$5; fi
-
-source ${SOLARISANADIR}/armory/Process_BasicConfig
-source ${SOLARISANADIR}/working/expName.sh
 
 if [ "$RUN" == "lastRun" ]; then
   RUN=$runID
@@ -48,21 +44,41 @@ fi
 RUN=${RUN%0} #remove zero
 RUN=$(printf '%03d' $RUN) ##add back the zero
 
-#################################### 
-if [ ${PCID} -eq 1 ]; then
-  source Process_EventBuilder $RUN $EventBld $timeWin
+################################### Setting display
+echo "#################################################"
+echo "###           Process_Run                   #####"
+echo "#################################################"
+echo "###          RunID : ${RUN}"
+echo "###  Event Builder : $EventBld"
+echo "###   General Sort : $nWorker  worker(s)"
+echo "###   Trace Method : $TraceMethod"
+echo "###        Monitor : $isMonitor"
+echo "#################################################"
 
-else
-  source Process_Download $RUN
+source ${SOLARISANADIR}/armory/Process_BasicConfig
+source ${SOLARISANADIR}/working/expName.sh
+
+if [ "$PWD" != "${SOLARISANADIR}/working" ]; then
+  echo "============= go to the Working directory"
+  cd "${SOLARISANADIR}/working"
+fi
+
+
+#################################### CHECK IS RUN DATA EXIST
+isRunDataExist=true
+
+#################################### EVENT BUILDER
+source Process_Download $RUN
   
+if [ $isRunDataExist ]; then
   source Process_EventBuilder $RUN $EventBld $timeWin
-
 fi
 
 #################################### GeneralSort
 
-source Process_Sort $RUN $nWorker $TraceMethod
-
+if [ $isRunDataExist ]; then
+  source Process_Sort $RUN $nWorker $TraceMethod
+fi
 #################################### Monitor
 
 

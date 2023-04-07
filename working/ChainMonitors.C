@@ -2,45 +2,19 @@
 #include "TObjArray.h"
 #include "TFile.h"
 #include "TMacro.h"
-
-
-std::string create_range_string(const std::vector<int>& nums) {
-    char range_str[100]; // buffer to hold the range string
-    int pos = 0; // current position in the buffer
-    int start = 0; // start of the current range
-    int end = 0; // end of the current range
-    for (int i = 1; i <= nums.size(); i++) {
-        if (i == nums.size() || nums[i] != nums[i-1]+1) {
-            end = i-1;
-            if (start == end) {
-                pos += std::sprintf(range_str+pos, "%d", nums[start]);
-            } else if (end == start+1) {
-                pos += std::sprintf(range_str+pos, "%d_%d", nums[start], nums[end]);
-            } else {
-                pos += std::sprintf(range_str+pos, "%d-%d", nums[start], nums[end]);
-            }
-            if (i < nums.size()) {
-                pos += std::sprintf(range_str+pos, "_");
-            }
-            start = i;
-        }
-    }
-    return std::string(range_str, pos);
-}
+std::string create_range_string(const std::vector<int>& nums);
 
 void ChainMonitors(int RUNNUM = -1, int RUNNUM2 = -1) {
-
-
   ///default saveCanvas = false, no save Cavas
   ///                   = true, save Canvas
   
   TChain * chain = new TChain("gen_tree");
-
   if( RUNNUM == -1){
     /// this list only for manual Chain sort
     ///********** start Marker for AutoCalibration.
 
     chain->Add("../root_data/gen_run005.root");
+    chain->Add("../root_data/gen_run003.root");
      ///chain->Add("../root_data/trace_run135.root");
   
     ///********** end Marker for AutoCalibration.
@@ -101,6 +75,36 @@ void ChainMonitors(int RUNNUM = -1, int RUNNUM2 = -1) {
   //Some input to TSelector
   Monitor * selector = new Monitor();
   selector->SetCanvasTitle(title);
+  selector->SetStartStopTimes(startTime, stopTime);
   chain->Process(selector, "");
+
+  delete chain;
+  delete selector;
   
+}
+
+
+std::string create_range_string(const std::vector<int>& nums) {
+  std::string range_str;
+  int lastNum = nums[0];
+  int rangeStart = lastNum;
+  for (int i = 1; i < nums.size(); i++) {
+    if (nums[i] == lastNum + 1) {
+      lastNum = nums[i];
+    } else {
+      if (rangeStart == lastNum) {
+        range_str += std::to_string(rangeStart) + "_";
+      } else {
+          range_str += std::to_string(rangeStart) + "-" + std::to_string(lastNum) + "_";
+      }
+      rangeStart = lastNum = nums[i];
+    }
+  }
+  // Add the last range
+  if (rangeStart == lastNum) {
+    range_str += std::to_string(rangeStart);
+  } else {
+    range_str += std::to_string(rangeStart) + "-" + std::to_string(lastNum);
+  }
+  return range_str;
 }

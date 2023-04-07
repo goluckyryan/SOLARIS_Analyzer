@@ -6,6 +6,7 @@
 #include <TFile.h>
 #include <TSelector.h>
 #include <TH1.h>
+#include <TMath.h>
 #include <TH2.h>
 #include <TStyle.h>
 #include <TCutG.h>
@@ -67,14 +68,16 @@ public :
    float * x, * z;
    float * xCal, * xfCal, * xnCal, * eCal;
    
-   ULong64_t startTime ;
-   ULong64_t endTime ;
+   std::vector<ULong64_t> startTime ;
+   std::vector<ULong64_t> endTime ;
+
+   double timeRangeInMin[2];
+   ULong64_t baseTimeStamp;
+   int treeID;
 
    int padID;
 
    Monitor(TTree * /*tree*/ =0) : fChain(0) {
-
-      printf("------ %s\n", __func__);
 
         e   = new Float_t   [mapping::NARRAY];
        xf   = new Float_t   [mapping::NARRAY];
@@ -100,13 +103,17 @@ public :
 
       padID = 0;
 
-      timeRange[0] = 0;
-      timeRange[1] = 100;
+      timeRangeInMin[0] = 0;
+      timeRangeInMin[1] = 100;
+
+      startTime.clear();
+      endTime.clear();
+
+      baseTimeStamp = 0;
+      treeID = -1;
 
    }
    virtual ~Monitor() {
-
-      printf("------ %s\n", __func__);
 
       delete   e  ;
       delete  xf  ;
@@ -123,8 +130,6 @@ public :
       delete xfCal;
       delete xnCal;
       delete eCal;
-
-      printf("------end of %s\n", __func__);
 
    }
    virtual Int_t   Version() const { return 2; }
@@ -145,9 +150,20 @@ public :
    void SetCanvasTitle(TString title) {fCanvasTitle = title;}
    TString GetCanvasTitle() const {return fCanvasTitle;}
 
-   int timeRange[2];
-   void SetTimeRange0(int minute){ timeRange[0] = minute;}
-   void SetTimeRange1(int minute){ timeRange[1] = minute;}
+   void SetStartStopTimes(std::vector<ULong64_t> t1, std::vector<ULong64_t> t2) {
+      startTime = t1;
+      endTime = t2;
+
+      timeRangeInMin[0] = startTime[0] * tick2min;
+      timeRangeInMin[1] = endTime[0] * tick2min;
+      for( int i = 1; i < (int) endTime.size(); i++) timeRangeInMin[1] +=  ((endTime[i] - startTime[i]) * tick2min);  
+
+      double duration = timeRangeInMin[1] - timeRangeInMin[0];
+
+      timeRangeInMin[0] = TMath::Floor( timeRangeInMin[0] - duration * 0.1);
+      timeRangeInMin[1] = TMath::Ceil( timeRangeInMin[1] + duration * 0.1);
+
+   }
    
    void Draw2DHist(TH2F * hist);
    
@@ -168,7 +184,7 @@ public :
 #ifdef Monitor_cxx
 void Monitor::Init(TTree *tree){
 
-   printf("========== %s \n", __func__);
+   printf("============================================ Branch Pointer Inititization. \n");
 
    // Set branch addresses and branch pointers
    if (!tree) return;
@@ -184,10 +200,10 @@ void Monitor::Init(TTree *tree){
 
    TBranch * br = (TBranch *) fChain->GetListOfBranches()->FindObject("rdt");
    if( br == NULL ){
-      printf(" ++++++++ no Recoil.\n");
+      printf(" ++++++++ no Recoil Branch.\n");
       isRDTExist = false;
    }else{
-      printf(" ++++++++ FOund Recoil.\n");
+      printf(" ++++++++ Found Recoil Branch.\n");
       isRDTExist = true;
       fChain->SetBranchAddress("rdt"  , rdt,   &b_RDT);
       fChain->SetBranchAddress("rdt_t", rdt_t, &b_RDTTimestamp);
@@ -225,15 +241,12 @@ void Monitor::Init(TTree *tree){
       fChain->SetBranchAddress("trdt_r", trdt_r, &b_Trace_RDT_RiseTime);
    }
    */
-
-  
-   startTime = 0;
-   endTime = 0;
    
-   printf("=================================== End of Branch Pointer Inititization. \n");
+   printf("============================================ End of Branch Pointer Inititization. \n");
 }
 
 Bool_t Monitor::Notify(){
+
    return kTRUE;
 }
 

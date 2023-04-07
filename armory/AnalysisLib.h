@@ -316,7 +316,7 @@ DetGeo detGeo;
 ReactionConfig reactionConfig;
 
 void LoadDetGeoAndReactionConfigFile(std::string detGeoFileName = "detectorGeo.txt", std::string reactionConfigFileName = "reactionConfig.txt"){
-  printf("=======================\n");
+  printf("=====================================================\n");
   printf(" loading detector geometery : %s.", detGeoFileName.c_str());
   TMacro * haha = new TMacro();
   if( haha->ReadFile(detGeoFileName.c_str()) > 0 ) {
@@ -327,7 +327,7 @@ void LoadDetGeoAndReactionConfigFile(std::string detGeoFileName = "detectorGeo.t
     printf("... fail\n");
   }
 
-  printf("=======================\n");
+  printf("=====================================================\n");
   printf(" loading reaction config : %s.", reactionConfigFileName.c_str());
   TMacro * kaka = new TMacro();
   if( kaka->ReadFile(reactionConfigFileName.c_str()) > 0 ) {
@@ -495,7 +495,7 @@ void LoadReactionParas(bool verbose = false){
       printf("\tslope     : %f MeV/mm \n", alpha * betRel);
       printf("\tdet radius: %f mm \n", detGeo.detPerpDist);
       printf("\tG-coeff   : %f MeV \n", G);
-      printf("=================================\n");
+      printf("=====================================================\n");
     }
 
   }else{
@@ -554,6 +554,8 @@ std::vector<double> CalExTheta(double e, double z){
 
 TObjArray * LoadListOfTCut(TString fileName, TString cutName = "cutList"){
 
+  if( fileName == "" ) return nullptr;
+
   TObjArray * cutList = nullptr;
 
   TFile * fCut = new TFile(fileName);
@@ -583,6 +585,7 @@ TObjArray * LoadListOfTCut(TString fileName, TString cutName = "cutList"){
 
 TCutG * LoadSingleTCut( TString fileName, TString cutName = "cutEZ"){
   
+  if( fileName == "" ) return nullptr;
   TCutG * cut = nullptr;
   
   TFile * fCut = new TFile(fileName);

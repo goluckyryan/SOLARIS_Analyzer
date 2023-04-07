@@ -24,6 +24,9 @@
 #include "../Cleopatra/Isotope.h"
 #include "Mapping.h"
 
+#define tick2ns 8. // 1clock tick = 8 ns
+#define tick2min tick2ns / 1e9/60.
+
 using namespace std;
 
 //############################################ User setting
@@ -119,7 +122,6 @@ TH1F ** hrdtg;
 
 TH2F ** hrdt2D;
 TH2F ** hrdt2Dg;
-TH2F ** hrdt2Dsum;
 
 TH1F * hrdtRate1;
 TH1F * hrdtRate2;
@@ -139,7 +141,7 @@ TH1I * htdiffg;
 double zRange[2] = {-1000, 0}; // zMin, zMax
 TLatex text;
 
-int numCol, numRow;
+int numCol, numRow, numDet;
 ULong64_t NumEntries = 0;
 ULong64_t ProcessedEntries = 0;
 Float_t Frac = 0.1; ///Progress bar
@@ -175,8 +177,6 @@ void Monitor::Begin(TTree *tree){
   printf("###########################################################\n");
   
   //===================================================== loading parameter
-  printf("################## loading parameter files\n"); 
-  
   AnalysisLib::LoadDetGeoAndReactionConfigFile();
   AnalysisLib::LoadXNCorr();
   AnalysisLib::LoadXFXN2ECorr();
@@ -193,6 +193,15 @@ void Monitor::Begin(TTree *tree){
 
   numRow = AnalysisLib::detGeo.nDet;
   numCol = mapping::NARRAY/numRow;
+  numDet = mapping::NARRAY;
+
+  zRange[0] = AnalysisLib::detGeo.zMax - 50;
+  zRange[1] = AnalysisLib::detGeo.zMax + 50;
+
+  printf("=====================================================\n");
+  printf("    z Range : %5.0f - %5.0f mm\n", zRange[0], zRange[1]);
+  printf(" time Range : %5.0f - %5.0f min\n", timeRangeInMin[0], timeRangeInMin[1]);
+  printf("=====================================================\n");
 
   //================  Get Recoil cuts;
   cutG = new TCutG();
@@ -205,7 +214,7 @@ void Monitor::Begin(TTree *tree){
   
   
   //========================= Generate all of the histograms needed for drawing later on
-  printf("======================================== Histograms declaration\n");
+  printf("============================================ Histograms declaration\n");
 
   gROOT->cd();
 
@@ -263,7 +272,6 @@ void Monitor::Begin(TTree *tree){
 
   hrdt2D    = new TH2F * [mapping::NRDT/2];
   hrdt2Dg   = new TH2F * [mapping::NRDT/2];
-  hrdt2Dsum = new TH2F * [mapping::NRDT/2];
 
   for (Int_t i = 0; i < mapping::NRDT ; i++) {
     if( i % 2 == 0 ) hrdt[i]  = new TH1F(Form("hrdt%d",i), Form("Raw Recoil E(ch=%d); E (channel)",i),         500,  rdtERange[0],  rdtERange[1]);
@@ -276,12 +284,11 @@ void Monitor::Begin(TTree *tree){
       int tempID = i / 2;
       hrdt2D[tempID]    = new TH2F(Form("hrdt2D%d",tempID),    Form("Raw Recoil DE vs Eres (dE=%d, E=%d); Eres (channel); DE (channel)", i+1, i),       500, rdtERange[0], rdtERange[1],500,rdtDERange[0],rdtDERange[1]);
       hrdt2Dg[tempID]   = new TH2F(Form("hrdt2Dg%d",tempID),   Form("Gated Raw Recoil DE vs Eres (dE=%d, E=%d); Eres (channel); DE (channel)",i+1, i),  500, rdtERange[0], rdtERange[1],500,rdtDERange[0], rdtDERange[1]);
-      hrdt2Dsum[tempID] = new TH2F(Form("hrdt2Dsum%d",tempID), Form("Raw Recoil DE vs Eres+DE (dE=%d, E=%d); Eres+DE (channel); DE (channel)", i+1, i), 500, rdtERange[0], rdtERange[1]+rdtDERange[1], 500, rdtDERange[0], rdtDERange[1]);
     }
   }
   
-  hrdtRate1 = new TH1F("hrdtRate1", "recoil rate 1 / min; min; count / 1 min", timeRange[1] - timeRange[0], timeRange[0], timeRange[1]);
-  hrdtRate2 = new TH1F("hrdtRate2", "recoil rate 2 / min; min; count / 1 min", timeRange[1] - timeRange[0], timeRange[0], timeRange[1]);
+  hrdtRate1 = new TH1F("hrdtRate1", "recoil rate 1 / min; min; count / 1 min", timeRangeInMin[1] - timeRangeInMin[0], timeRangeInMin[0], timeRangeInMin[1]);
+  hrdtRate2 = new TH1F("hrdtRate2", "recoil rate 2 / min; min; count / 1 min", timeRangeInMin[1] - timeRangeInMin[0], timeRangeInMin[0], timeRangeInMin[1]);
   hrdtRate1->SetLineColor(2);
   hrdtRate2->SetLineColor(4);
 
@@ -295,7 +302,7 @@ void Monitor::Begin(TTree *tree){
   htdiff  = new TH1I("htdiff" ,"Coincident time (recoil-dE - array); time [ch = 10ns]; count", coinTimeRange[1] - coinTimeRange[0], coinTimeRange[0], coinTimeRange[1]);   
   htdiffg = new TH1I("htdiffg","Coincident time (recoil-dE - array) w/ recoil gated; time [ch = 10ns]; count", coinTimeRange[1] - coinTimeRange[0], coinTimeRange[0], coinTimeRange[1]);
   
-  printf("======================================== End of histograms Declaration\n");
+  printf("============================================ End of histograms Declaration\n");
   StpWatch.Start();
 
 }
@@ -305,19 +312,23 @@ void Monitor::Begin(TTree *tree){
 //^###########################################################
 Bool_t Monitor::Process(Long64_t entry){
 
-  if( entry == 0 ) printf("========== %s \n", __func__);
+  if( entry == 0 ) {
+    treeID ++;
+    baseTimeStamp = (treeID == 0 ? 0 : endTime[treeID-1]);
+    printf("============================================ %s , treeID : %d\n", __func__, treeID);
+  }
 
   if( ProcessedEntries > maxNumberEvent ) return kTRUE;
   ProcessedEntries++;
   
   //@*********** Progress Bar ******************************************/ 
-  if (ProcessedEntries>NumEntries*Frac-1) {
+  if (ProcessedEntries >= NumEntries*Frac - 1 ) {
     TString msg; msg.Form("%llu", NumEntries/1000);
     int len = msg.Sizeof();
     printf(" %3.0f%% (%*llu/%llu k) processed in %6.1f sec | expect %6.1f sec\n",
               Frac*100, len, ProcessedEntries/1000,NumEntries/1000,StpWatch.RealTime(), StpWatch.RealTime()/Frac);
     StpWatch.Start(kFALSE);
-    Frac+=0.1;
+    Frac += 0.1;
   }
 
   //@********** Get Branch *********************************************/
@@ -533,12 +544,13 @@ Bool_t Monitor::Process(Long64_t entry){
     hrdtID->Fill(i, rdt[i]);
     hrdt[i]->Fill(rdt[i]);
   
-    if( i % 2 == 0  ){        
-      
-    recoilMulti++; // when both dE and E are hit
-        hrdt2D[i/2]->Fill(rdt[i],rdt[i+1]); //E-dE
+    if( i % 2 == 0  ){            
+      recoilMulti++; // when both dE and E are hit
+      hrdt2D[i/2]->Fill(rdt[i],rdt[i+1]); //E-dE
     }
   }
+
+  hrdtRate1->Fill( (e_t[1] + baseTimeStamp) * tick2min );
    
   //@******************* Multi-hit *************************************/
   hmultEZ->Fill(multiEZ);
@@ -597,7 +609,7 @@ Bool_t Monitor::Process(Long64_t entry){
 //^ * Terminate
 //^###########################################################
 void Monitor::Terminate(){
-  printf("============================== finishing.\n");
+  printf("============================================ Drawing Canvas.\n");
 
   gROOT->cd();
 
@@ -700,7 +712,7 @@ void Monitor::Terminate(){
   ///----------------------------------- Canvas - 10
   //PlotRDT(3,0);
   
-  //TH1F * helumDBIC = new TH1F("helumDBIC", "elum(d)/BIC; time [min]; count/min", timeRange[1]-timeRange[0], timeRange[0], timeRange[1]);
+  //TH1F * helumDBIC = new TH1F("helumDBIC", "elum(d)/BIC; time [min]; count/min", timeRangeInMin[1]-timeRangeInMin[0], timeRangeInMin[0], timeRangeInMin[1]);
   //helumDBIC = (TH1F*) helum4D->Clone();
   //helumDBIC->SetTitle("elum(d)/BIC; time [min]; count/min");
   //helumDBIC->SetName("helumDBIC");
@@ -726,10 +738,8 @@ void Monitor::Terminate(){
   //padID++; cCanvas->cd(padID);
   //htac->Draw();
 
-  
-  /*
   ///----------------------------------- Canvas - 13
-  padID++; cCanvas->cd(padID);
+  //padID++; cCanvas->cd(padID);
   
   ///hicT14N->Draw("");
   ///hicT14C->Draw("same");
@@ -741,35 +751,27 @@ void Monitor::Terminate(){
   ///----------------------------------- Canvas - 14
   padID++; cCanvas->cd(padID);
   
-  ///hrdtRate1->Draw("");
-  ///hrdtRate2->Draw("same");
+  hrdtRate1->Draw("");
+  hrdtRate2->Draw("same");
   
   ///----------------------------------- Canvas - 15
-  padID++; cCanvas->cd(padID);  
+  //padID++; cCanvas->cd(padID);  
     
   ///----------------------------------- Canvas - 16
-  padID++; cCanvas->cd(padID); 
-  
-
+  //padID++; cCanvas->cd(padID); 
 
   ///----------------------------------- Canvas - 17
-  padID++; cCanvas->cd(padID);    
-  
+  //padID++; cCanvas->cd(padID);    
 
   ///----------------------------------- Canvas - 18
-  padID++; cCanvas->cd(padID);
-
+  //padID++; cCanvas->cd(padID);
 
   ///----------------------------------- Canvas - 19
-  padID++; cCanvas->cd(padID);
-  
-
+  //padID++; cCanvas->cd(padID);
   
   ///----------------------------------- Canvas - 20
-  padID++; cCanvas->cd(padID);
+  //padID++; cCanvas->cd(padID);
   
-  htac->Draw();
-  */
   
   /************************************/
   gStyle->GetAttDate()->SetTextSize(0.02);
@@ -780,19 +782,19 @@ void Monitor::Terminate(){
   /************************************/
   StpWatch.Start(kFALSE);
   
-  //gROOT->ProcessLine(".L ../armory/Monitor_Util.C"); //TODO some pointer is empty
-  //printf("=============== loaded Monitor_Utils.C\n");
-  gROOT->ProcessLine(".L ../armory/AutoFit.C");
-  printf("=============== loaded armory/AutoFit.C\n");
+  gROOT->ProcessLine(".L ../armory/Monitor_Util.C"); //TODO some pointer is empty
+  printf("============================================ loaded Monitor_Utils.C\n");
+  //gROOT->ProcessLine(".L ../armory/AutoFit.C");
+  //printf("============================================ loaded armory/AutoFit.C\n");
   // gROOT->ProcessLine(".L ../armory/RDTCutCreator.C");
-  // printf("=============== loaded armory/RDTCutCreator.C\n");
+  // printf("============================================ loaded armory/RDTCutCreator.C\n");
   // gROOT->ProcessLine(".L ../armory/Check_rdtGate.C");
-  // printf("=============== loaded armory/Check_rdtGate.C\n");
+  // printf("============================================ loaded armory/Check_rdtGate.C\n");
   // gROOT->ProcessLine(".L ../armory/readTrace.C");
-  // printf("=============== loaded Armory/readTrace.C\n");
+  // printf("============================================ loaded Armory/readTrace.C\n");
   // gROOT->ProcessLine(".L ../armory/readRawTrace.C");
-  // printf("=============== loaded Armory/readRawTrace.C\n");
-  // gROOT->ProcessLine("listDraws()");
+  // printf("============================================ loaded Armory/readRawTrace.C\n");
+  gROOT->ProcessLine("listDraws()");
   
   /************************* Save histograms to root file*/
   
