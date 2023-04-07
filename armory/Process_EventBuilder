@@ -91,7 +91,8 @@ elif [ ${EventBld} -ge 1 ]; then
 
   else
       echo -e "${GREEN} root data are newer than raw data. No need to merged again.${NC}"
-      echo -e "${GREEN}You can Force merging using option -${EventBld}, ${ORANGE} see ./process_run.sh -help${NC}"
+      echo -e "${GREEN} You can Force merging using option -${EventBld}, ${ORANGE} see ./process_run.sh -help${NC}"
+      echo -e "${LRED}>>>>>>>>>>>>>>>>>>>>> Event Building Skipped. ${NC}"
   fi
 
 else

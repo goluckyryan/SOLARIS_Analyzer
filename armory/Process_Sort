@@ -76,13 +76,14 @@ else
 
     if [ $rootDataTime -ge $genRootDataTime ]; then
 
-      echo -e "${LRED}>>>>>>>>>>>>>>>>>>>>> Event Building $(date) ${NC}"
+      echo -e "${LRED}>>>>>>>>>>>>>>>>>>>>> GeneralSort $(date) ${NC}"
       root -l -q -b "$SOLARISANADIR/armory/GeneralSortAgent.C($runNum, $nWorker, $TraceMethod)"
-      echo -e "${LRED}<<<<<<<<<<<<<<<< Done Event Building $(date) ${NC}"
+      echo -e "${LRED}<<<<<<<<<<<<<<<< Done GeneralSort $(date) ${NC}"
 
     else
-      echo -e "${GREEN}gen_run$RUN.root is newer than run$RUN.root. No need to GeneralSort again.${NC}"
-      echo -e "${GREEN}You can Force GeneralSort using option -${nWorker}, ${ORANGE} see Process_Run -help${NC}"
+      echo -e "${GREEN} gen_run$RUN.root is newer than run$RUN.root. No need to GeneralSort again.${NC}"
+      echo -e "${GREEN} You can Force GeneralSort using option -${nWorker}, ${ORANGE} see Process_Run -help${NC}"
+      echo -e "${LRED}>>>>>>>>>>>>>>>>>>>>> GeneralSort Skipped. ${NC}"
     fi
 
   fi

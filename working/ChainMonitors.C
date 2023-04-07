@@ -37,7 +37,7 @@ void ChainMonitors(int RUNNUM = -1, int RUNNUM2 = -1) {
   printf("\033[0;31m========================================== Number of Files : %2d\n",fileList->GetEntries());
   fileList->Print();
   printf("========================================== Number of Files : %2d\033[0m\n",fileList->GetEntries());
-  printf(" number of entries : %llu \n", chain->GetEntries());
+  printf("---------------------------------- Total Number of entries : %llu \n", chain->GetEntries());
 
   double totDuration = 0;
   std::vector<ULong64_t> startTime;
@@ -69,8 +69,6 @@ void ChainMonitors(int RUNNUM = -1, int RUNNUM2 = -1) {
   std::sort(runList.begin(), runList.end());
   TString title = "Run:" +  create_range_string(runList);
   title += Form(" | %.0f min", totDuration/60.) ;
-
-  printf("%s\n", title.Data());
   
   //Some input to TSelector
   Monitor * selector = new Monitor();

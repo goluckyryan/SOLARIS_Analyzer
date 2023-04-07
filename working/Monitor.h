@@ -274,7 +274,7 @@ template<typename T> void Monitor::CreateListOfHist1D(T ** &histList,
                                                     const char * TitleForm, 
                                                     int binX, float xMin, float xMax){
 
-
+   //printf(" Making %d of %s.\n", size, namePrefix);
    histList = new T * [size];
    for(int i = 0; i < size; i++) histList[i] = new T(Form("%s%d", namePrefix, i), Form(TitleForm, i), binX, xMin, xMax);  
 }
@@ -286,7 +286,7 @@ template<typename T> void Monitor::CreateListOfHist2D(T ** &histList,
                                                     int binX, float xMin, float xMax,
                                                     int binY, float yMin, float yMax){
 
-
+   //printf(" Making %d of %s.\n", size, namePrefix);
    histList = new T * [size];
    for(int i = 0; i < size; i++) histList[i] = new T(Form("%s%d", namePrefix, i), Form(TitleForm, i), binX, xMin, xMax, binY, yMin, yMax);   
 }

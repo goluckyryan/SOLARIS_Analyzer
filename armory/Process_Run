@@ -18,7 +18,7 @@ if [ $# -eq 0 ] || [ $1 == "-help"  ]; then
   echo "   TraceMethod = -1/0/1/2      || -1 no trace, 0 save trace, 1 fit, 2 trapezoid(not implemented)"  
   echo "       Monitor = 2/1/0         || 1 = single run,  2 = using the list in ChainMonitors.C"
   echo ""
-  echo "       * negative option = force (except for TraceMethod)."
+  echo "       * negative option = force (except for TraceMethod and Monitor)."
   echo "       * Defult timeWindow for Event builder is 100 tick = 800 ns."
   echo ""
   exit 1
@@ -30,7 +30,7 @@ runNum=$1
 EventBld=2
 nWorker=1
 TraceMethod=-1
-isMonitor=0
+isMonitor=1
 
 if [ $# -ge 2 ]; then EventBld=$2; fi
 if [ $# -ge 3 ]; then nWorker=$3; fi
@@ -81,6 +81,13 @@ if [ $isRunDataExist ]; then
 fi
 #################################### Monitor
 
+if [ $isMonitor -eq 0 ]; then
+  echo -e "${LRED}>>>>>>>>>>>>>>>>>>>>> Monitor Skipped by user. ${NC}"
+elif [  $isMonitor -eq 1 ]; then
+  root -l "ChainMonitors.C($RUN)"
+elif [  $isMonitor -eq 2 ]; then
+  root -l "ChainMonitors.C"
+fi
 
 
 

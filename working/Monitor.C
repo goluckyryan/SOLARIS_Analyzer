@@ -185,11 +185,11 @@ void Monitor::Begin(TTree *tree){
   AnalysisLib::LoadRDTCorr();
   AnalysisLib::LoadReactionParas(true);
 
-  if( (int) AnalysisLib::xnCorr.size()    < mapping::NARRAY ) { isXNCorrOK = false;     printf("!!!!!!!! size of xnCorr < NARRAY .\n"); }
-  if( (int) AnalysisLib::xfxneCorr.size() < mapping::NARRAY ) { isXFXNCorrOK = false;   printf("!!!!!!!! size of xfxneCorr < NARRAY .\n"); }
-  if( (int) AnalysisLib::eCorr.size()     < mapping::NARRAY ) { isXScaleCorrOK = false; printf("!!!!!!!! size of eCorr < NARRAY .\n"); }
-  if( (int) AnalysisLib::xScale.size()    < mapping::NARRAY ) { isECorrOK = false;      printf("!!!!!!!! size of xScale < NARRAY .\n"); }
-  if( (int) AnalysisLib::rdtCorr.size()   < mapping::NRDT   ) { isRDTCorrOK = false;    printf("!!!!!!!! size of rdtCorr < NRDT .\n"); }
+  if( (int) AnalysisLib::xnCorr.size()    < mapping::NARRAY ) { isXNCorrOK = false;     printf(" !!!!!!!! size of xnCorr < NARRAY .\n"); }
+  if( (int) AnalysisLib::xfxneCorr.size() < mapping::NARRAY ) { isXFXNCorrOK = false;   printf(" !!!!!!!! size of xfxneCorr < NARRAY .\n"); }
+  if( (int) AnalysisLib::eCorr.size()     < mapping::NARRAY ) { isXScaleCorrOK = false; printf(" !!!!!!!! size of eCorr < NARRAY .\n"); }
+  if( (int) AnalysisLib::xScale.size()    < mapping::NARRAY ) { isECorrOK = false;      printf(" !!!!!!!! size of xScale < NARRAY .\n"); }
+  if( (int) AnalysisLib::rdtCorr.size()   < mapping::NRDT   ) { isRDTCorrOK = false;    printf(" !!!!!!!! size of rdtCorr < NRDT .\n"); }
 
   numRow = AnalysisLib::detGeo.nDet;
   numCol = mapping::NARRAY/numRow;
