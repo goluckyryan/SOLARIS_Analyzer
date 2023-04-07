@@ -780,17 +780,17 @@ void Monitor::Terminate(){
   /************************************/
   StpWatch.Start(kFALSE);
   
-  //gROOT->ProcessLine(".L ../Armory/Monitor_Util.C"); //TODO some pointer is empty
+  //gROOT->ProcessLine(".L ../armory/Monitor_Util.C"); //TODO some pointer is empty
   //printf("=============== loaded Monitor_Utils.C\n");
-  gROOT->ProcessLine(".L ../Armory/AutoFit.C");
-  printf("=============== loaded Armory/AutoFit.C\n");
-  // gROOT->ProcessLine(".L ../Armory/RDTCutCreator.C");
-  // printf("=============== loaded Armory/RDTCutCreator.C\n");
-  // gROOT->ProcessLine(".L ../Armory/Check_rdtGate.C");
-  // printf("=============== loaded Armory/Check_rdtGate.C\n");
-  // gROOT->ProcessLine(".L ../Armory/readTrace.C");
+  gROOT->ProcessLine(".L ../armory/AutoFit.C");
+  printf("=============== loaded armory/AutoFit.C\n");
+  // gROOT->ProcessLine(".L ../armory/RDTCutCreator.C");
+  // printf("=============== loaded armory/RDTCutCreator.C\n");
+  // gROOT->ProcessLine(".L ../armory/Check_rdtGate.C");
+  // printf("=============== loaded armory/Check_rdtGate.C\n");
+  // gROOT->ProcessLine(".L ../armory/readTrace.C");
   // printf("=============== loaded Armory/readTrace.C\n");
-  // gROOT->ProcessLine(".L ../Armory/readRawTrace.C");
+  // gROOT->ProcessLine(".L ../armory/readRawTrace.C");
   // printf("=============== loaded Armory/readRawTrace.C\n");
   // gROOT->ProcessLine("listDraws()");
   

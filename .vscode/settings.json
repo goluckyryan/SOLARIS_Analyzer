@@ -204,5 +204,6 @@
       "bold": false,
       "italic": false
     }
-  ]
+  ],
+  "C_Cpp.errorSquiggles": "disabled"
 }

@@ -100,6 +100,9 @@ public :
 
       padID = 0;
 
+      timeRange[0] = 0;
+      timeRange[1] = 100;
+
    }
    virtual ~Monitor() {
 
