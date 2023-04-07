@@ -3,10 +3,13 @@
 
 #include <cstdio>
 #include <vector>
+#include <fstream>
 #include <string>
 
 #include <TMacro.h>
 #include <TList.h>
+#include <TObjArray.h>
+#include <TCutG.h>
 
 namespace AnalysisLib {
 
@@ -312,7 +315,7 @@ void PrintReactionConfig(ReactionConfig reaction){
 DetGeo detGeo;
 ReactionConfig reactionConfig;
 
-void LoadDetGeoAndReactionConfigFile(string detGeoFileName = "detectorGeo.txt", string reactionConfigFileName = "reactionConfig.txt"){
+void LoadDetGeoAndReactionConfigFile(std::string detGeoFileName = "detectorGeo.txt", std::string reactionConfigFileName = "reactionConfig.txt"){
   printf("=======================\n");
   printf(" loading detector geometery : %s.", detGeoFileName.c_str());
   TMacro * haha = new TMacro();
@@ -352,7 +355,7 @@ std::vector<std::vector<float>> rdtCorr;   // correction of rdt, ch -> MeV
 void LoadXNCorr(bool verbose = false, const char * fileName = "correction_xf_xn.dat"){
   printf(" loading xf-xn correction.");
   xnCorr.clear();
-  ifstream file;
+  std::ifstream file;
   file.open(fileName);
   if( file.is_open() ){
     float a;
@@ -370,7 +373,7 @@ void LoadXNCorr(bool verbose = false, const char * fileName = "correction_xf_xn.
 void LoadXScaleCorr(bool verbose = false, const char * fileName = "correction_scaleX.dat"){
   printf(" loading x-Scale correction.");
   xScale.clear();
-  ifstream file;
+  std::ifstream file;
   file.open(fileName);
   if( file.is_open() ){
     float a, b;
@@ -387,7 +390,7 @@ void LoadXScaleCorr(bool verbose = false, const char * fileName = "correction_sc
 void LoadXFXN2ECorr(bool verbose = false, const char * fileName = "correction_xfxn_e.dat"){
   printf(" loading xf/xn-e correction.");
   xfxneCorr.clear();
-  ifstream file;
+  std::ifstream file;
   file.open(fileName);
   if( file.is_open() ){
     float a, b;
@@ -404,7 +407,7 @@ void LoadXFXN2ECorr(bool verbose = false, const char * fileName = "correction_xf
 void LoadECorr(bool verbose = false, const char * fileName = "correction_e.dat"){
   printf(" loading e correction.");
   eCorr.clear();
-  ifstream file;
+  std::ifstream file;
   file.open(fileName);
   if( file.is_open() ){
     float a, b;
@@ -421,7 +424,7 @@ void LoadECorr(bool verbose = false, const char * fileName = "correction_e.dat")
 void LoadRDTCorr(bool verbose = false, const char * fileName = "correction_rdt.dat"){
   printf(" loading rdt correction.");
   rdtCorr.clear();
-  ifstream file;
+  std::ifstream file;
   file.open(fileName);
   if( file.is_open() ){
     float a, b;
@@ -460,11 +463,11 @@ void LoadReactionParas(bool verbose = false){
   //  printf("########################## transfer.root updated\n");
   //}
   printf(" loading reaction parameters");
-  ifstream file;
+  std::ifstream file;
   file.open("reaction.dat");
   hasReactionPara = false;
   if( file.is_open() ){
-    string x;
+    std::string x;
     int i = 0;
     while( file >> x ){
       if( x.substr(0,2) == "//" )  continue;
@@ -506,6 +509,9 @@ void LoadReactionParas(bool verbose = false){
 std::vector<double> CalExTheta(double e, double z){
   if( !hasReactionPara) return {TMath::QuietNaN(), TMath::QuietNaN()};
 
+  double Ex = TMath::QuietNaN();
+  double thetaCM = TMath::QuietNaN();
+
   double y = e + mass; // to give the KE + mass of proton;
   double Z = alpha * gamm * betRel * z;
   double H = TMath::Sqrt(TMath::Power(gamm * betRel,2) * (y*y - mass * mass) ) ;
@@ -537,16 +543,9 @@ std::vector<double> CalExTheta(double e, double z){
       double hahaha1 = gamm* TMath::Sqrt(mass * mass + momt * momt) - y;
       double hahaha2 = gamm* betRel * momt;
       thetaCM = TMath::ACos(hahaha1/hahaha2) * TMath::RadToDeg();
-
-    }else{
-      Ex = TMath::QuietNaN();
-      thetaCM = TMath::QuietNaN();
     }
-  }else{
-    Ex = TMath::QuietNaN();
-    thetaCM = TMath::QuietNaN();
+    
   }
-
   return {Ex, thetaCM};
 
 }

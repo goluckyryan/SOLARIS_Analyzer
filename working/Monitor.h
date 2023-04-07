@@ -1,5 +1,5 @@
-#ifndef Monitors_h
-#define Monitors_h
+#ifndef Monitor_h
+#define Monitor_h
 
 #include <TROOT.h>
 #include <TChain.h>
@@ -13,7 +13,7 @@
 #include "Mapping.h"
 #include "../armory/AnalysisLib.h"
 
-class Monitors : public TSelector {
+class Monitor : public TSelector {
 public :
    TTree          *fChain;   //!pointer to the analyzed TTree or TChain
 
@@ -38,19 +38,19 @@ public :
    TBranch        *b_RDTTimestamp;   //!
 
    // trace analysis data
-   Float_t        * we; //!
-   Float_t        * weR; //!
-   Float_t        * weT; //!
-   Float_t        * wrdt; //!
-   Float_t        * wrdtT; //!
-   Float_t        * wrdtR; //!
+   // Float_t        * we; //!
+   // Float_t        * weR; //!
+   // Float_t        * weT; //!
+   // Float_t        * wrdt; //!
+   // Float_t        * wrdtT; //!
+   // Float_t        * wrdtR; //!
    
-   TBranch        *b_Trace_Energy;   //!
-   TBranch        *b_Trace_Energy_RiseTime;   //!
-   TBranch        *b_Trace_Energy_Time;   //!
-   TBranch        *b_Trace_RDT;   //!
-   TBranch        *b_Trace_RDT_Time;   //!
-   TBranch        *b_Trace_RDT_RiseTime;   //!
+   // TBranch        *b_Trace_Energy;   //!
+   // TBranch        *b_Trace_Energy_RiseTime;   //!
+   // TBranch        *b_Trace_Energy_Time;   //!
+   // TBranch        *b_Trace_RDT;   //!
+   // TBranch        *b_Trace_RDT_Time;   //!
+   // TBranch        *b_Trace_RDT_RiseTime;   //!
    
    bool isArrayTraceExist;
    bool isRDTTraceExist;
@@ -70,7 +70,11 @@ public :
    ULong64_t startTime ;
    ULong64_t endTime ;
 
-   Monitors(TTree * /*tree*/ =0) : fChain(0) {
+   int padID;
+
+   Monitor(TTree * /*tree*/ =0) : fChain(0) {
+
+      printf("------ %s\n", __func__);
 
         e   = new Float_t   [mapping::NARRAY];
        xf   = new Float_t   [mapping::NARRAY];
@@ -88,15 +92,18 @@ public :
       xnCal = new float [mapping::NARRAY];
       eCal  = new float [mapping::NARRAY];
 
-
       isXNCorrOK = true;
       isXFXNCorrOK = true;
       isXScaleCorrOK = true;
       isECorrOK = true;
       isRDTCorrOK = true;
 
+      padID = 0;
+
    }
-   virtual ~Monitors() {
+   virtual ~Monitor() {
+
+      printf("------ %s\n", __func__);
 
       delete   e  ;
       delete  xf  ;
@@ -113,6 +120,8 @@ public :
       delete xfCal;
       delete xnCal;
       delete eCal;
+
+      printf("------end of %s\n", __func__);
 
    }
    virtual Int_t   Version() const { return 2; }
@@ -144,16 +153,17 @@ public :
    void PlotRDT(int id, bool isRaw);
    //void PlotCRDTPolar();
 
-   //template<typename T> T ** CreateListOfHist(T ** &histList, int size, const char * namePrefix, const char * TitleForm, int binX, float xMin, float xMax, int binY = 0, float yMin = 0, float yMax = 0);
+   template<typename T> void CreateListOfHist1D(T ** &histList, int size, const char * namePrefix, const char * TitleForm, int binX, float xMin, float xMax);
+   template<typename T> void CreateListOfHist2D(T ** &histList, int size, const char * namePrefix, const char * TitleForm, int binX, float xMin, float xMax, int binY, float yMin, float yMax);
 
-   ClassDef(Monitors,0);
+   ClassDef(Monitor,0);
 };
 
 #endif
 
 
-#ifdef Monitors_cxx
-void Monitors::Init(TTree *tree){
+#ifdef Monitor_cxx
+void Monitor::Init(TTree *tree){
 
    printf("========== %s \n", __func__);
 
@@ -220,7 +230,7 @@ void Monitors::Init(TTree *tree){
    printf("=================================== End of Branch Pointer Inititization. \n");
 }
 
-Bool_t Monitors::Notify(){
+Bool_t Monitor::Notify(){
    return kTRUE;
 }
 
@@ -232,19 +242,38 @@ void DrawLine(TH1 * hist, double pos){
    line->Draw("");
    
 }
-
-
-void Monitors::SlaveBegin(TTree * /*tree*/){
-   /// not use, if use, place in Monitors.C
+void Monitor::SlaveBegin(TTree * /*tree*/){
+   /// not use, if use, place in Monitor.C
    TString option = GetOption();
 }
 
 
-void Monitors::SlaveTerminate(){
-  /// not use, if use, place in Monitors.C
+void Monitor::SlaveTerminate(){
+  /// not use, if use, place in Monitor.C
 }
 
+template<typename T> void Monitor::CreateListOfHist1D(T ** &histList, 
+                                                    int size, 
+                                                    const char * namePrefix, 
+                                                    const char * TitleForm, 
+                                                    int binX, float xMin, float xMax){
 
+
+   histList = new T * [size];
+   for(int i = 0; i < size; i++) histList[i] = new T(Form("%s%d", namePrefix, i), Form(TitleForm, i), binX, xMin, xMax);  
+}
+
+template<typename T> void Monitor::CreateListOfHist2D(T ** &histList, 
+                                                    int size, 
+                                                    const char * namePrefix, 
+                                                    const char * TitleForm, 
+                                                    int binX, float xMin, float xMax,
+                                                    int binY, float yMin, float yMax){
+
+
+   histList = new T * [size];
+   for(int i = 0; i < size; i++) histList[i] = new T(Form("%s%d", namePrefix, i), Form(TitleForm, i), binX, xMin, xMax, binY, yMin, yMax);   
+}
 
 /*###########################################################
  * Plotting Function
@@ -259,7 +288,7 @@ void DrawBox(TH1* hist, double x1, double x2, Color_t color, float alpha){
 
 }
 
-void Monitors::Draw2DHist(TH2F * hist){
+void Monitor::Draw2DHist(TH2F * hist){
    
    if( hist->Integral() < 3000 ){
       hist->SetMarkerStyle(20);
@@ -271,7 +300,7 @@ void Monitors::Draw2DHist(TH2F * hist){
 }
 
 
-void Monitors::PlotEZ(bool isRaw){
+void Monitor::PlotEZ(bool isRaw){
    padID++; cCanvas->cd(padID);
 
    if( isRaw ) {
@@ -321,7 +350,7 @@ void Monitors::PlotEZ(bool isRaw){
 
 }
 
-void Monitors::PlotTDiff(bool isGated, bool isLog){
+void Monitor::PlotTDiff(bool isGated, bool isLog){
    padID++; cCanvas->cd(padID); 
    if( isLog ) cCanvas->cd(padID)->SetLogy(1);
    double yMax = 0;
@@ -344,7 +373,7 @@ void Monitors::PlotTDiff(bool isGated, bool isLog){
    DrawBox(htdiff, timeGate[0], timeGate[1], kGreen, 0.2);
 }
 
-void Monitors::PlotRDT(int id, bool isRaw){
+void Monitor::PlotRDT(int id, bool isRaw){
    padID++; cCanvas->cd(padID);
 
    if( isRaw ){
@@ -359,10 +388,10 @@ void Monitors::PlotRDT(int id, bool isRaw){
 
 }
 
-//void Monitors::PlotCRDTPolar(){
+//void Monitor::PlotCRDTPolar(){
 //  padID++; cCanvas->cd(padID);
 //  cCanvas->cd(padID)->DrawFrame(-50, -50, 50, 50);
 //  hcrdtPolar->Draw("same colz pol");
 //}
 
-#endif // #ifdef Monitors_cxx
+#endif // #ifdef Monitor_cxx

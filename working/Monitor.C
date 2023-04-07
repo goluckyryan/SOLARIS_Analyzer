@@ -1,4 +1,4 @@
-#define Monitors_cxx
+#define Monitor_cxx
 
 #include <TH2.h>
 #include <TH1.h>
@@ -86,70 +86,57 @@ TString ezCutFile   = "";//"ezCut.root";
 *                                                                 *
 *******************************************************************/
 //======== raw data
-TH1F** he;
-TH1F** hxf;
-TH1F** hxn;
-
-TH2F** hxfVxn;
-TH2F** heVxs;
-
-TH1F* hMultiHit; 
-TH2F** heVx; // e vs (xf-xn)/e
-
-TH2F* heVID;
-TH2F* hxfVID;
-TH2F* hxnVID;
+TH1F ** he, ** hxf, ** hxn, * hMultiHit; //basic data
+TH2F ** hxfVxn, ** heVxs, ** heVx; // correlation
+TH2F * heVID, * hxfVID, * hxnVID; // vs ID
 
 //====== cal data
-TH1F** heCal;
-TH2F** hxfCalVxnCal; 
-TH2F** heVxsCal; // raw e vs xf
-TH2F** heCalVxCal; // eCal vs xCal
-TH2F** heCalVxCalG; // eCal vs xCal
+TH1F ** heCal;
+TH2F ** hxfCalVxnCal; 
+TH2F ** heVxsCal; // raw e vs xf
+TH2F ** heCalVxCal; // eCal vs xCal
+TH2F ** heCalVxCalG; // eCal vs xCal
 
-TH2F* heCalID; // e vs detID
-TH2F* heCalVz;
-TH2F* heCalVzGC;
-TH2F** hecalVzRow;
+TH2F  * heCalID; // e vs detID
+TH2F  * heCalVz;
+TH2F  * heCalVzGC;
+TH2F ** hecalVzRow;
 
 //====== Ex data
-TH1F* hEx;
-TH1F** hExi;
-TH2F** hExVxCal;
+TH1F  * hEx;
+TH1F ** hExi;
+TH2F ** hExVxCal;
 
-TH2F* hExThetaCM;
+TH2F * hExThetaCM;
 
-TH1F* hExCut1;
-TH1F* hExCut2;
+TH1F * hExCut1;
+TH1F * hExCut2;
 
 //======= Recoil
-TH2F* hrdtID;
-TH1F** hrdt; // single recoil
-TH1F** hrdtg; 
+TH2F * hrdtID;
+TH1F ** hrdt; // single recoil
+TH1F ** hrdtg; 
 
-TH2F** hrdt2D;
-TH2F** hrdt2Dg;
-TH2F** hrdt2Dsum;
+TH2F ** hrdt2D;
+TH2F ** hrdt2Dg;
+TH2F ** hrdt2Dsum;
 
-TH1F* hrdtRate1;
-TH1F* hrdtRate2;
+TH1F * hrdtRate1;
+TH1F * hrdtRate2;
 
 //======= multi-Hit
-TH2I *hmult;
-TH1I *hmultEZ;
-TH2I *hArrayRDTMatrix;
-TH2I *hArrayRDTMatrixG;
+TH2I * hmult;
+TH1I * hmultEZ;
+TH2I * hArrayRDTMatrix;
+TH2I * hArrayRDTMatrixG;
 
 //======= ARRAY-RDT time diff
-TH1I *htdiff;
-TH1I *htdiffg;
+TH1I * htdiff;
+TH1I * htdiffg;
 
 /***************************
  ***************************/
 double zRange[2] = {-1000, 0}; // zMin, zMax
-
-double Ex, thetaCM;
-int padID = 0;
 TLatex text;
 
 int numCol, numRow;
@@ -159,11 +146,8 @@ Float_t Frac = 0.1; ///Progress bar
 TStopwatch StpWatch;
 
 //======= Canvas
-TCanvas *cCanvas;
+TCanvas * cCanvas;
 TString canvasTitle;
-int lastRunID;
-bool contFlag;
-double runTime=0;
 
 //======= Recoil Cut
 TCutG* cutG; //!  //general temeprary pointer to cut
@@ -172,23 +156,19 @@ TObjArray * cutList1;
 TObjArray * cutList2;
 
 //======= Other Cuts
-TCutG* EZCut;
-Bool_t isEZCutFileOpen;
+TCutG * EZCut;
 
-#include "Monitors.h"
+#include "Monitor.h"
 
 //^###########################################################
 //^ * Begin
 //^###########################################################
-void Monitors::Begin(TTree *tree){
+void Monitor::Begin(TTree *tree){
 
   TString option = GetOption();
 
   NumEntries = tree->GetEntries();
-  
   canvasTitle = GetCanvasTitle();
-  lastRunID = -1;
-  contFlag = false;
   
   printf("###########################################################\n");
   printf("##########           SOLARIS Monitors.C           #########\n");
@@ -229,36 +209,22 @@ void Monitors::Begin(TTree *tree){
 
   gROOT->cd();
 
-  he     = new TH1F * [mapping::NARRAY];
-  hxf    = new TH1F * [mapping::NARRAY];
-  hxn    = new TH1F * [mapping::NARRAY];
-  hxfVxn = new TH2F * [mapping::NARRAY];
-  heVxs  = new TH2F * [mapping::NARRAY];
-  heVx   = new TH2F * [mapping::NARRAY];
+  CreateListOfHist1D(he,    mapping::NARRAY, "he",  "Raw e (ch=%d); e (channel); count",            200, rawEnergyRange[0], rawEnergyRange[1]);
+  CreateListOfHist1D(hxf,   mapping::NARRAY, "hxf", "Raw xf (ch=%d); e (channel); count",           200, rawEnergyRange[0], rawEnergyRange[1]);
+  CreateListOfHist1D(hxn,   mapping::NARRAY, "hxn", "Raw xn (ch=%d); e (channel); count",           200, rawEnergyRange[0], rawEnergyRange[1]);
 
-  heCal        = new TH1F * [mapping::NARRAY];
-  hxfCalVxnCal = new TH2F * [mapping::NARRAY];
-  heVxsCal     = new TH2F * [mapping::NARRAY];
-  heCalVxCal   = new TH2F * [mapping::NARRAY];
-  heCalVxCalG  = new TH2F * [mapping::NARRAY];
+  CreateListOfHist2D(hxfVxn, mapping::NARRAY, "hxfVxn", "Raw xf vs. xn (ch=%d);xf (channel);xn (channel)",      500,                 0, rawEnergyRange[1], 500,                 0, rawEnergyRange[1]);
+  CreateListOfHist2D(heVxs,  mapping::NARRAY, "heVxs",  "Raw e vs xf+xn (ch=%d); xf+xn (channel); e (channel)", 500, rawEnergyRange[0], rawEnergyRange[1], 500, rawEnergyRange[0], rawEnergyRange[1]);
+  CreateListOfHist2D(heVx,   mapping::NARRAY, "heVx",   "Raw PSD E vs. X (ch=%d);X (channel);E (channel)",      500,              -0.1,               1.1, 500, rawEnergyRange[0], rawEnergyRange[1]);
 
-  for (Int_t i = 0; i < mapping::NARRAY; i++) {//array loop
-    
-    he[i]      = new TH1F(Form("he%d", i),     Form("Raw e (ch=%d); e (channel); count", i),                   2000, rawEnergyRange[0], rawEnergyRange[1]);
-    hxf[i]     = new TH1F(Form("hxf%d", i),    Form("Raw xf (ch=%d); xf (channel); count", i),                  200, rawEnergyRange[0], rawEnergyRange[1]);
-    hxn[i]     = new TH1F(Form("hxn%d", i),    Form("Raw xn (ch=%d); xn (channel); count", i),                  200, rawEnergyRange[0], rawEnergyRange[1]);
-    hxfVxn[i]  = new TH2F(Form("hxfVxn%d",i),  Form("Raw xf vs. xn (ch=%d);xf (channel);xn (channel)",i),       500,                 0, rawEnergyRange[1], 500,                 0, rawEnergyRange[1]);
-    heVxs[i]   = new TH2F(Form("heVxs%d", i),  Form("Raw e vs xf+xn (ch=%d); xf+xn (channel); e (channel)", i), 500, rawEnergyRange[0], rawEnergyRange[1], 500, rawEnergyRange[0], rawEnergyRange[1]);
-    heVx[i]    = new TH2F(Form("heVx%d",i),         Form("Raw PSD E vs. X (ch=%d);X (channel);E (channel)",i),  500,              -0.1,               1.1, 500, rawEnergyRange[0], rawEnergyRange[1]);
-    
-    heCal[i]        = new TH1F(Form("heCal%d", i),       Form("Corrected e (ch=%d); e (MeV); count", i),                                          2000,   energyRange[0], energyRange[1]);
-    hxfCalVxnCal[i] = new TH2F(Form("hxfCalVxnCal%d",i), Form("Corrected XF vs. XN (ch=%d);XF (channel);XN (channel)",i),                         500,                 0, rawEnergyRange[1], 500,                 0, rawEnergyRange[1]);      
-    heVxsCal[i]     = new TH2F(Form("heVxsCal%d", i),    Form("Raw e vs Corrected xf+xn (ch=%d); corrected xf+xn (channel); Raw e (channel)", i), 500, rawEnergyRange[0], rawEnergyRange[1], 500, rawEnergyRange[0], rawEnergyRange[1]);           
-    heCalVxCal[i]   = new TH2F(Form("heCalVxCal%d",i),   Form("Cal PSD E vs. X (ch=%d);X (cm);E (MeV)",i),                                        500,              -2.5,  AnalysisLib::detGeo.detLength + 2.5, 500,    energyRange[0],    energyRange[1]);
-    heCalVxCalG[i]  = new TH2F(Form("heCalVxCalG%d",i),  Form("Cal PSD E vs. X (ch=%d);X (cm);E (MeV)",i),                                        500,              -2.5,  AnalysisLib::detGeo.detLength + 2.5, 500,    energyRange[0],    energyRange[1]);
-  }
+  CreateListOfHist1D(heCal, mapping::NARRAY, "heCal",       "Corrected e (ch=%d); e (MeV); count", 2000,    energyRange[0],    energyRange[1]);
 
-  heVID    = new TH2F("heVID",    "Raw e vs channel", mapping::NARRAY, 0, mapping::NARRAY, 500, rawEnergyRange[0], rawEnergyRange[1]);
+  CreateListOfHist2D(hxfCalVxnCal, mapping::NARRAY, "hxfCalVxnCal", "Corrected XF vs. XN (ch=%d);XF (channel);XN (channel)",                         500,                 0, rawEnergyRange[1], 500,                 0, rawEnergyRange[1]);      
+  CreateListOfHist2D(heVxsCal    , mapping::NARRAY, "heVxsCal",     "Raw e vs Corrected xf+xn (ch=%d); corrected xf+xn (channel); Raw e (channel)",  500, rawEnergyRange[0], rawEnergyRange[1], 500, rawEnergyRange[0], rawEnergyRange[1]);           
+  CreateListOfHist2D(heCalVxCal  , mapping::NARRAY, "heCalVxCal",   "Cal PSD E vs. X (ch=%d);X (cm);E (MeV)",                                        500,              -2.5,  AnalysisLib::detGeo.detLength + 2.5, 500,    energyRange[0],    energyRange[1]);
+  CreateListOfHist2D(heCalVxCalG , mapping::NARRAY, "heCalVxCalG",  "Cal PSD E vs. X (ch=%d);X (cm);E (MeV)",                                        500,              -2.5,  AnalysisLib::detGeo.detLength + 2.5, 500,    energyRange[0],    energyRange[1]);
+
+  heVID    = new TH2F("heVID",    "Raw e vs channel",  mapping::NARRAY, 0, mapping::NARRAY, 500, rawEnergyRange[0], rawEnergyRange[1]);
   hxfVID   = new TH2F("hxfVID",   "Raw xf vs channel", mapping::NARRAY, 0, mapping::NARRAY, 500, rawEnergyRange[0], rawEnergyRange[1]);
   hxnVID   = new TH2F("hxnVID",   "Raw xn vs channel", mapping::NARRAY, 0, mapping::NARRAY, 500, rawEnergyRange[0], rawEnergyRange[1]);
   
@@ -269,7 +235,7 @@ void Monitors::Begin(TTree *tree){
   //====================== E-Z plot
   heCalVz   = new TH2F("heCalVz",  "E vs. Z;Z (mm);E (MeV)"      , 400, zRange[0], zRange[1], 400, energyRange[0], energyRange[1]);
   heCalVzGC = new TH2F("heCalVzGC","E vs. Z gated;Z (mm);E (MeV)", 400, zRange[0], zRange[1], 400, 0, energyRange[1]);
-  
+
   hecalVzRow = new TH2F * [numRow];
   for( int i = 0; i < numRow; i++){
     hecalVzRow[i] = new TH2F(Form("heCalVzRow%d", i), Form("E vs. Z (ch=%d-%d); Z (cm); E (MeV)", numCol*i, numCol*(i+1)-1), 500, zRange[0], zRange[1], 500, energyRange[0], energyRange[1]);
@@ -282,13 +248,10 @@ void Monitors::Begin(TTree *tree){
   hExCut2  = new TH1F("hExCut2",Form("excitation spectrum w/ goodFlag; Ex [MeV] ; Count / %4.0f keV", exRange[0]), (int) (exRange[2]-exRange[1])/exRange[0]*1000, exRange[1], exRange[2]);
   hExCut1->SetLineColor(2);
   hExCut2->SetLineColor(4);
-  
-  hExi     = new TH1F * [mapping::NARRAY];
-  hExVxCal = new TH2F * [mapping::NARRAY];
-  for(int i = 0 ; i < mapping::NARRAY; i++){
-    hExi[i]     = new TH1F(Form("hExi%02d", i),  Form("Ex (det=%i) w/goodFlag; Ex [MeV]; Count / %4.0f keV",i, exRange[0]), (int) (exRange[2]-exRange[1])/exRange[0]*1000, exRange[1], exRange[2]);
-    hExVxCal[i] = new TH2F(Form("hExVxCal%d",i), Form("Ex vs X (ch=%d); X (cm); Ex (MeV)", i),    500,   -0.1,  1.1, (int) (exRange[2]-exRange[1])/exRange[0]*1000, exRange[1], exRange[2]);
-  }
+
+  TString haha = "Ex (det=%i) w/goodFlag; Ex [MeV]; Count / " +std::to_string(exRange[0]) + "keV";
+  CreateListOfHist1D(hExi,     mapping::NARRAY, "hExi",      haha.Data(), (int) (exRange[2]-exRange[1])/exRange[0]*1000, exRange[1], exRange[2]);
+  CreateListOfHist2D(hExVxCal, mapping::NARRAY, "hExVxCal", "Ex vs X (ch=%d); X (cm); Ex (MeV)",    500,   -0.1,  1.1, (int) (exRange[2]-exRange[1])/exRange[0]*1000, exRange[1], exRange[2]);
   
   hExThetaCM = new TH2F("hExThetaCM", "Ex vs ThetaCM; ThetaCM [deg]; Ex [MeV]", 200, thetaCMRange[0], thetaCMRange[1],  (int) (exRange[2]-exRange[1])/exRange[0]*1000, exRange[1], exRange[2]);
   
@@ -332,7 +295,6 @@ void Monitors::Begin(TTree *tree){
   htdiff  = new TH1I("htdiff" ,"Coincident time (recoil-dE - array); time [ch = 10ns]; count", coinTimeRange[1] - coinTimeRange[0], coinTimeRange[0], coinTimeRange[1]);   
   htdiffg = new TH1I("htdiffg","Coincident time (recoil-dE - array) w/ recoil gated; time [ch = 10ns]; count", coinTimeRange[1] - coinTimeRange[0], coinTimeRange[0], coinTimeRange[1]);
   
-
   printf("======================================== End of histograms Declaration\n");
   StpWatch.Start();
 
@@ -341,7 +303,7 @@ void Monitors::Begin(TTree *tree){
 //^###########################################################
 //^ * Process
 //^###########################################################
-Bool_t Monitors::Process(Long64_t entry){
+Bool_t Monitor::Process(Long64_t entry){
 
   if( entry == 0 ) printf("========== %s \n", __func__);
 
@@ -547,7 +509,7 @@ Bool_t Monitors::Process(Long64_t entry){
     if( !isTimeGateOn ) coinFlag = true;
     
     //================ E-Z gate
-    if( isEZCutFileOpen ) { 
+    if( EZCut ) { 
       if( EZCut->IsInside(z[detID], eCal[detID])  ) ezGate = true;
     }else{
       ezGate = true;
@@ -562,9 +524,9 @@ Bool_t Monitors::Process(Long64_t entry){
       isGoodEventFlag = true;
     }
       
-  }//end of array loop
     
-  if( !isEZCutFileOpen ) ezGate = true;
+  }//end of array loop
+  if( EZCut == nullptr ) ezGate = true;
     
   //@*********** RECOILS ***********************************************/    
   for( int i = 0; i < mapping::NRDT ; i++){
@@ -594,54 +556,14 @@ Bool_t Monitors::Process(Long64_t entry){
     if( eCal[detID] <  eCalCut[0] ) continue ;
     if( eCal[detID] >  eCalCut[1] ) continue ;
 
+    double Ex, thetaCM;
+
     if( AnalysisLib::hasReactionPara ){
 
       std::vector<double> ExThetaCM = AnalysisLib::CalExTheta(eCal[detID], x[detID]);
-
       Ex = ExThetaCM[0];
       thetaCM = ExThetaCM[1];
 
-      //  ///======== Ex calculation by Ryan 
-      //  double y = eCal[detID] + mass; // to give the KE + mass of proton;
-      //  double Z = alpha * gamm * betRel * z[detID];
-      //  double H = TMath::Sqrt(TMath::Power(gamm * betRel,2) * (y*y - mass * mass) ) ;
- 
-      //  if( TMath::Abs(Z) < H ) {
-      //    ///using Newton's method to solve 0 ==	H * sin(phi) - G * tan(phi) - Z = f(phi) 
-      //    double tolerrence = 0.001;
-      //    double phi = 0;  ///initial phi = 0 -> ensure the solution has f'(phi) > 0
-      //    double nPhi = 0; /// new phi
-
-      //    int iter = 0;
-      //    do{
-      //      phi = nPhi;
-      //      nPhi = phi - (H * TMath::Sin(phi) - G * TMath::Tan(phi) - Z) / (H * TMath::Cos(phi) - G /TMath::Power( TMath::Cos(phi), 2));					 
-      //      iter ++;
-      //      if( iter > 10 || TMath::Abs(nPhi) > TMath::PiOver2()) break;
-      //    }while( TMath::Abs(phi - nPhi ) > tolerrence);
-      //    phi = nPhi;
-
-      //    /// check f'(phi) > 0
-      //    double Df = H * TMath::Cos(phi) - G / TMath::Power( TMath::Cos(phi),2);
-      //    if( Df > 0 && TMath::Abs(phi) < TMath::PiOver2()  ){
-      //      double K = H * TMath::Sin(phi);
-      //      double x = TMath::ACos( mass / ( y * gamm - K));
-      //      double momt = mass * TMath::Tan(x); /// momentum of particel b or B in CM frame
-      //      double EB = TMath::Sqrt(mass*mass + Et*Et - 2*Et*TMath::Sqrt(momt*momt + mass * mass));
-      //      Ex = EB - massB;
-
-      //      double hahaha1 = gamm* TMath::Sqrt(mass * mass + momt * momt) - y;
-      //      double hahaha2 = gamm* betRel * momt;
-      //      thetaCM = TMath::ACos(hahaha1/hahaha2) * TMath::RadToDeg();
-
-      //    }else{
-      //      Ex = TMath::QuietNaN();
-      //      thetaCM = TMath::QuietNaN();
-      //    }
-      //  }else{
-      //    Ex = TMath::QuietNaN();
-      //    thetaCM = TMath::QuietNaN();
-      //  }
     }else{
       Ex = TMath::QuietNaN();
       thetaCM = TMath::QuietNaN();
@@ -674,19 +596,10 @@ Bool_t Monitors::Process(Long64_t entry){
 //^###########################################################
 //^ * Terminate
 //^###########################################################
-void Monitors::Terminate(){
+void Monitor::Terminate(){
   printf("============================== finishing.\n");
 
   gROOT->cd();
-  
-  int strLen = canvasTitle.Sizeof();
-  canvasTitle.Remove(strLen-3);
-  
-  TString runTimeStr = "";
-  if( runTime > 0. ) {
-    runTimeStr = Form("%.0f min", runTime);
-    canvasTitle += " | " + runTimeStr;
-  }
 
   //############################################ User is free to edit this section
   //--- Canvas Size
@@ -867,19 +780,19 @@ void Monitors::Terminate(){
   /************************************/
   StpWatch.Start(kFALSE);
   
-  gROOT->ProcessLine(".L ../Armory/Monitor_Util.C");
-  printf("=============== loaded Monitor_Utils.C\n");
+  //gROOT->ProcessLine(".L ../Armory/Monitor_Util.C"); //TODO some pointer is empty
+  //printf("=============== loaded Monitor_Utils.C\n");
   gROOT->ProcessLine(".L ../Armory/AutoFit.C");
   printf("=============== loaded Armory/AutoFit.C\n");
-  gROOT->ProcessLine(".L ../Armory/RDTCutCreator.C");
-  printf("=============== loaded Armory/RDTCutCreator.C\n");
-  gROOT->ProcessLine(".L ../Armory/Check_rdtGate.C");
-  printf("=============== loaded Armory/Check_rdtGate.C\n");
-  gROOT->ProcessLine(".L ../Armory/readTrace.C");
-  printf("=============== loaded Armory/readTrace.C\n");
-  //gROOT->ProcessLine(".L ../Armory/readRawTrace.C");
-  //printf("=============== loaded Armory/readRawTrace.C\n");
-  gROOT->ProcessLine("listDraws()");
+  // gROOT->ProcessLine(".L ../Armory/RDTCutCreator.C");
+  // printf("=============== loaded Armory/RDTCutCreator.C\n");
+  // gROOT->ProcessLine(".L ../Armory/Check_rdtGate.C");
+  // printf("=============== loaded Armory/Check_rdtGate.C\n");
+  // gROOT->ProcessLine(".L ../Armory/readTrace.C");
+  // printf("=============== loaded Armory/readTrace.C\n");
+  // gROOT->ProcessLine(".L ../Armory/readRawTrace.C");
+  // printf("=============== loaded Armory/readRawTrace.C\n");
+  // gROOT->ProcessLine("listDraws()");
   
   /************************* Save histograms to root file*/
   

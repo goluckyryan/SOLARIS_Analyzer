@@ -11,6 +11,9 @@
 //^   Array-xf :  100 - 199
 //^   Array-xn :  200 - 299
 //^   Recoil   :  300 - 399
+//^   Enum     :  400 - 499
+//^   EZERO    :  500 - 599
+//^   Apollo   :  600 - 699
 //^   
 //^   line comment is '//^'   
 //^ 
@@ -21,12 +24,12 @@
 
 namespace mapping{
 
-const std::vector<std::string> detTypeName = {  "e",  "xf", "xn", "rdt"}; //C= The comment "//C=" is an indicator DON't Remove
-const std::vector<int>          detGroupID = {    0,     0,    0,     1}; //C& The comment "//C&" is an indicator DON't Remove
-const std::vector<int>            detMaxID = {  100,   200,  300,   400}; //C# The comment "//C#" is an indicator DON't Remove
-const std::vector<int>           detParity = {    1,     1,    1,     1}; 
+const std::vector<std::string> detTypeName = {  "e",  "xf", "xn", "rdt", "eNum"}; //C= The comment "//C=" is an indicator DON't Remove
+const std::vector<int>          detGroupID = {    0,     0,    0,     1,      2}; //C& The comment "//C&" is an indicator DON't Remove
+const std::vector<int>            detMaxID = {  100,   200,  300,   400,    500}; //C# The comment "//C#" is an indicator DON't Remove
+const std::vector<int>           detParity = {    1,     1,    1,     1,      1}; 
 
-const std::vector<std::string> groupName = { "Array", "Recoil"}; //C% The comment "//C%" is an indicator DON't Remove
+const std::vector<std::string>   groupName = { "Array", "Recoil", "ELUM"}; //C% The comment "//C%" is an indicator DON't Remove
 
 //!The mapping[i] must match as the IP setting in the DAQ
 
