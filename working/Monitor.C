@@ -183,7 +183,7 @@ void Monitor::Begin(TTree *tree){
   AnalysisLib::LoadXScaleCorr();
   AnalysisLib::LoadECorr();
   AnalysisLib::LoadRDTCorr();
-  AnalysisLib::LoadReactionParas(true);
+  AnalysisLib::LoadReactionParasForArray1(true);
 
   if( (int) AnalysisLib::xnCorr.size()    < mapping::NARRAY ) { isXNCorrOK = false;     printf(" !!!!!!!! size of xnCorr < NARRAY .\n"); }
   if( (int) AnalysisLib::xfxneCorr.size() < mapping::NARRAY ) { isXFXNCorrOK = false;   printf(" !!!!!!!! size of xfxneCorr < NARRAY .\n"); }
@@ -191,7 +191,7 @@ void Monitor::Begin(TTree *tree){
   if( (int) AnalysisLib::xScale.size()    < mapping::NARRAY ) { isECorrOK = false;      printf(" !!!!!!!! size of xScale < NARRAY .\n"); }
   if( (int) AnalysisLib::rdtCorr.size()   < mapping::NRDT   ) { isRDTCorrOK = false;    printf(" !!!!!!!! size of rdtCorr < NRDT .\n"); }
 
-  numRow = AnalysisLib::detGeo.nDet;
+  numRow = AnalysisLib::detGeo.array1.nDet;
   numCol = mapping::NARRAY/numRow;
   numDet = mapping::NARRAY;
 
@@ -230,8 +230,8 @@ void Monitor::Begin(TTree *tree){
 
   CreateListOfHist2D(hxfCalVxnCal, mapping::NARRAY, "hxfCalVxnCal", "Corrected XF vs. XN (ch=%d);XF (channel);XN (channel)",                         500,                 0, rawEnergyRange[1], 500,                 0, rawEnergyRange[1]);      
   CreateListOfHist2D(heVxsCal    , mapping::NARRAY, "heVxsCal",     "Raw e vs Corrected xf+xn (ch=%d); corrected xf+xn (channel); Raw e (channel)",  500, rawEnergyRange[0], rawEnergyRange[1], 500, rawEnergyRange[0], rawEnergyRange[1]);           
-  CreateListOfHist2D(heCalVxCal  , mapping::NARRAY, "heCalVxCal",   "Cal PSD E vs. X (ch=%d);X (cm);E (MeV)",                                        500,              -2.5,  AnalysisLib::detGeo.detLength + 2.5, 500,    energyRange[0],    energyRange[1]);
-  CreateListOfHist2D(heCalVxCalG , mapping::NARRAY, "heCalVxCalG",  "Cal PSD E vs. X (ch=%d);X (cm);E (MeV)",                                        500,              -2.5,  AnalysisLib::detGeo.detLength + 2.5, 500,    energyRange[0],    energyRange[1]);
+  CreateListOfHist2D(heCalVxCal  , mapping::NARRAY, "heCalVxCal",   "Cal PSD E vs. X (ch=%d);X (cm);E (MeV)",                                        500,              -2.5,  AnalysisLib::detGeo.array1.detLength + 2.5, 500,    energyRange[0],    energyRange[1]);
+  CreateListOfHist2D(heCalVxCalG , mapping::NARRAY, "heCalVxCalG",  "Cal PSD E vs. X (ch=%d);X (cm);E (MeV)",                                        500,              -2.5,  AnalysisLib::detGeo.array1.detLength + 2.5, 500,    energyRange[0],    energyRange[1]);
 
   heVID    = new TH2F("heVID",    "Raw e vs channel",  mapping::NARRAY, 0, mapping::NARRAY, 500, rawEnergyRange[0], rawEnergyRange[1]);
   hxfVID   = new TH2F("hxfVID",   "Raw xf vs channel", mapping::NARRAY, 0, mapping::NARRAY, 500, rawEnergyRange[0], rawEnergyRange[1]);
@@ -448,10 +448,10 @@ Bool_t Monitor::Process(Long64_t entry){
     if( abs(xCal[detID] - 0.5) > xGate/2. ) continue; 
     
     //@==================== calculate Z
-    if( AnalysisLib::detGeo.firstPos > 0 ) {
-      z[detID] = AnalysisLib::detGeo.detLength*(1.0-xCal[detID]) + AnalysisLib::detGeo.detPos[detID%numCol];
+    if( AnalysisLib::detGeo.array1.firstPos > 0 ) {
+      z[detID] = AnalysisLib::detGeo.array1.detLength*(1.0-xCal[detID]) + AnalysisLib::detGeo.array1.detPos[detID%numCol];
     }else{
-      z[detID] = AnalysisLib::detGeo.detLength*(xCal[detID]-1.0) + AnalysisLib::detGeo.detPos[detID%numCol];
+      z[detID] = AnalysisLib::detGeo.array1.detLength*(xCal[detID]-1.0) + AnalysisLib::detGeo.array1.detPos[detID%numCol];
     }
 
     //@===================== multiplicity
@@ -460,7 +460,7 @@ Bool_t Monitor::Process(Long64_t entry){
     //@=================== Array fill
     heVx[detID]->Fill(x[detID],e[detID]);
     
-    heCalVxCal[detID]->Fill(xCal[detID]*AnalysisLib::detGeo.detLength,eCal[detID]);
+    heCalVxCal[detID]->Fill(xCal[detID]*AnalysisLib::detGeo.array1.detLength,eCal[detID]);
     heCalVz->Fill(z[detID],eCal[detID]);
 
     //@=================== Recoil Gate
@@ -529,7 +529,7 @@ Bool_t Monitor::Process(Long64_t entry){
     if( coinFlag && (rdtgate1 || rdtgate2) && ezGate){ 
       heCalVzGC->Fill( z[detID] , eCal[detID] );
     
-      heCalVxCalG[detID]->Fill(xCal[detID]*AnalysisLib::detGeo.detLength,eCal[detID]);
+      heCalVxCalG[detID]->Fill(xCal[detID]*AnalysisLib::detGeo.array1.detLength,eCal[detID]);
   
       multiEZ ++;
       isGoodEventFlag = true;
