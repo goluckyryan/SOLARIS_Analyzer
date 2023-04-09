@@ -48,6 +48,54 @@ std::vector<std::string> SplitStr(std::string tempLine, std::string splitter, in
   return output;
 }
 
+struct Array{
+
+  double detPerpDist;    /// distance from axis
+  double detWidth;       /// width   
+  double detLength;      /// length
+  double blocker;
+  double firstPos;       /// meter
+  double eSigma;         /// intrinsic energy resolution MeV
+  double zSigma;         /// intrinsic position resolution mm  
+  bool  detFaceOut;      ///detector_facing_Out_or_In
+  std::vector<double> pos;  /// near position in meter
+  int nDet, mDet;      /// nDet = number of different pos, mDet, number of same pos
+  std::vector<double> detPos; ///absolute position of detector
+
+  double zMin, zMax;
+  
+  void DeduceAbsolutePos(){
+    nDet = pos.size();
+    detPos.clear();
+    
+    for(int id = 0; id < nDet; id++){
+      if( firstPos > 0 ) detPos.push_back(firstPos + pos[id]);
+      if( firstPos < 0 ) detPos.push_back(firstPos - pos[nDet - 1 - id]);
+      ///printf("%d | %f, %f \n", id, pos[id], detPos[id]);
+    }
+
+    zMin = TMath::Min(detPos.front(), detPos.back()) - (firstPos < 0 ? detLength : 0);
+    zMax = TMath::Max(detPos.front(), detPos.back()) + (firstPos > 0 ? detLength : 0);
+  }
+
+  void PrintArray(){
+    for(int i = 0; i < nDet ; i++){
+      if( firstPos > 0 ){
+        printf("%d, %8.2f mm - %8.2f mm \n", i, detPos[i], detPos[i] + detLength);
+      }else{
+        printf("%d, %8.2f mm - %8.2f mm \n", i, detPos[i] - detLength , detPos[i]);
+      }
+    }
+
+    printf("   Blocker Position: %8.2f mm \n", firstPos > 0 ? firstPos - blocker : firstPos + blocker );
+    printf("     First Position: %8.2f mm \n", firstPos);
+    printf("     number of det : %d x %d \n", mDet, nDet);
+    printf("   detector facing : %s\n", detFaceOut ? "Out" : "In");
+    printf("      energy resol.: %f MeV\n", eSigma);
+    printf("       pos-Z resol.: %f mm \n", zSigma);
+  }
+
+};
 
 struct DetGeo{
    
@@ -55,9 +103,6 @@ struct DetGeo{
   int BfieldSign ;    /// sign of B-field
   double BfieldTheta; /// rad, 0 = z-axis, pi/2 = y axis, pi = -z axis
   double bore;        /// bore , mm
-  double detPerpDist;    /// distance from axis
-  double detWidth;       /// width   
-  double detLength;         /// length
   
   double recoilPos;      /// recoil, downstream
   double recoilInnerRadius;    /// radius recoil inner
@@ -67,21 +112,15 @@ struct DetGeo{
 
   double elumPos1, elumPos2; /// imaginary elum, only sensitive to light recoil
 
-  double blocker;
-  double firstPos;     /// meter
+  //===================1st array
+  Array array1;
 
-  double eSigma;    /// intrinsic energy resolution MeV
-  double zSigma;    /// intrinsic position resolution mm
-  
-  std::vector<double> pos;  /// near position in meter
-  int nDet, mDet;      /// nDet = number of different pos, mDet, number of same pos
+  //==================2nd array
+  bool   is2ndArrayExist;
+  Array array2;
+
   double zMin, zMax;   /// range of detectors
-
-  std::vector<double> detPos; ///absolute position of detector
-
   bool isCoincidentWithRecoil;
-
-  bool  detFaceOut;    ///detector_facing_Out_or_In
 
 };
 
@@ -128,53 +167,85 @@ DetGeo LoadDetectorGeo(TMacro * macro){
   TList * haha = macro->GetListOfLines();
   int numLine = (haha)->GetSize();
 
-  detGeo.pos.clear();
+  detGeo.array1.pos.clear();
+  detGeo.array2.pos.clear();
+  detGeo.is2ndArrayExist = false;
+
+  int detFlag = 0;
+  int detLine = 0;
 
   for( int i = 0 ; i < numLine; i++){
 
     std::vector<std::string> str = SplitStr(macro->GetListOfLines()->At(i)->GetName(), " ");
 
-    ///printf("%d | %s\n", i,  str[0].c_str());
+    //printf("%3d | %s\n", i,  str[0].c_str());
 
-    if( str[0].find_first_of("#") == 0 ) break;
-
-    if ( i == 0 ) {
-      detGeo.Bfield = atof(str[0].c_str());
-      detGeo.BfieldSign = detGeo.Bfield > 0 ? 1: -1;
+    if( str[0].find("####") != std::string::npos ) break;
+    if( str[0].find("#===") != std::string::npos ) {
+      detFlag ++;
+      detLine = 0;
+      continue;;
     }
-    if ( i ==  1 ) detGeo.BfieldTheta       = atof(str[0].c_str());
-    if ( i ==  2 ) detGeo.bore              = atof(str[0].c_str());
-    if ( i ==  3 ) detGeo.detPerpDist       = atof(str[0].c_str());
-    if ( i ==  4 ) detGeo.detWidth          = atof(str[0].c_str());
-    if ( i ==  5 ) detGeo.detLength         = atof(str[0].c_str());
-    if ( i ==  6 ) detGeo.recoilPos         = atof(str[0].c_str());
-    if ( i ==  7 ) detGeo.recoilInnerRadius = atof(str[0].c_str());
-    if ( i ==  8 ) detGeo.recoilOuterRadius = atof(str[0].c_str());
-    if ( i ==  9 ) detGeo.isCoincidentWithRecoil = str[0] == "false" ? false: true;
-    if ( i == 10 ) detGeo.recoilPos1        = atof(str[0].c_str());
-    if ( i == 11 ) detGeo.recoilPos2        = atof(str[0].c_str());
-    if ( i == 12 ) detGeo.elumPos1          = atof(str[0].c_str());
-    if ( i == 13 ) detGeo.elumPos2          = atof(str[0].c_str());
-    if ( i == 14 ) detGeo.blocker           = atof(str[0].c_str());
-    if ( i == 15 ) detGeo.firstPos          = atof(str[0].c_str());
-    if ( i == 16 ) detGeo.eSigma            = atof(str[0].c_str());
-    if ( i == 17 ) detGeo.zSigma            = atof(str[0].c_str());
-    if ( i == 18 ) detGeo.detFaceOut        = str[0] == "Out" ? true : false;
-    if ( i == 19 ) detGeo.mDet              = atoi(str[0].c_str());
-    if ( i >= 20 ) (detGeo.pos).push_back(atof(str[0].c_str()));
+
+    if( detFlag == 0 ){
+      if ( i == 0 ) {
+        detGeo.Bfield = atof(str[0].c_str());
+        detGeo.BfieldSign = detGeo.Bfield > 0 ? 1: -1;
+      }
+      if ( i ==  1 ) detGeo.BfieldTheta       = atof(str[0].c_str());
+      if ( i ==  2 ) detGeo.bore              = atof(str[0].c_str());
+      if ( i ==  3 ) detGeo.recoilPos         = atof(str[0].c_str());
+      if ( i ==  4 ) detGeo.recoilInnerRadius = atof(str[0].c_str());
+      if ( i ==  5 ) detGeo.recoilOuterRadius = atof(str[0].c_str());
+      if ( i ==  6 ) detGeo.isCoincidentWithRecoil = str[0] == "false" ? false: true;
+      if ( i ==  7 ) detGeo.recoilPos1        = atof(str[0].c_str());
+      if ( i ==  8 ) detGeo.recoilPos2        = atof(str[0].c_str());
+      if ( i ==  9 ) detGeo.elumPos1          = atof(str[0].c_str());
+      if ( i == 10 ) detGeo.elumPos2          = atof(str[0].c_str());
+    }
+
+    if( detFlag == 1){
+      if ( detLine == 0 ) detGeo.array1.detPerpDist       = atof(str[0].c_str());
+      if ( detLine == 1 ) detGeo.array1.detWidth          = atof(str[0].c_str());
+      if ( detLine == 2 ) detGeo.array1.detLength         = atof(str[0].c_str());
+      if ( detLine == 3 ) detGeo.array1.blocker           = atof(str[0].c_str());
+      if ( detLine == 4 ) detGeo.array1.firstPos          = atof(str[0].c_str());
+      if ( detLine == 5 ) detGeo.array1.eSigma            = atof(str[0].c_str());
+      if ( detLine == 6 ) detGeo.array1.zSigma            = atof(str[0].c_str());
+      if ( detLine == 7 ) detGeo.array1.detFaceOut        = str[0] == "Out" ? true : false;
+      if ( detLine == 8 ) detGeo.array1.mDet              = atoi(str[0].c_str());
+      if ( detLine >= 9 ) (detGeo.array1.pos).push_back(atof(str[0].c_str()));
+      detLine ++;
+    }
+
+    if( detFlag == 2){
+      if ( detLine ==  0 ) detGeo.is2ndArrayExist    = str[0] == "false" ? false: true;
+      if ( detLine ==  1 ) detGeo.array2.detPerpDist       = atof(str[0].c_str());
+      if ( detLine ==  2 ) detGeo.array2.detWidth          = atof(str[0].c_str());
+      if ( detLine ==  3 ) detGeo.array2.detLength         = atof(str[0].c_str());
+      if ( detLine ==  4 ) detGeo.array2.blocker           = atof(str[0].c_str());
+      if ( detLine ==  5 ) detGeo.array2.firstPos          = atof(str[0].c_str());
+      if ( detLine ==  6 ) detGeo.array2.eSigma            = atof(str[0].c_str());
+      if ( detLine ==  7 ) detGeo.array2.zSigma            = atof(str[0].c_str());
+      if ( detLine ==  8 ) detGeo.array2.detFaceOut        = str[0] == "Out" ? true : false;
+      if ( detLine ==  9 ) detGeo.array2.mDet              = atoi(str[0].c_str());
+      if ( detLine >= 10 ) (detGeo.array2.pos).push_back(atof(str[0].c_str()));
+      detLine ++;
+    }
+
   }
 
-  detGeo.nDet = (detGeo.pos).size();
-  (detGeo.detPos).clear();
-  
-  for(int id = 0; id < detGeo.nDet; id++){
-    if( detGeo.firstPos > 0 ) detGeo.detPos.push_back(detGeo.firstPos + detGeo.pos[id]);
-    if( detGeo.firstPos < 0 ) detGeo.detPos.push_back(detGeo.firstPos - detGeo.pos[detGeo.nDet - 1 - id]);
-    ///printf("%d | %f, %f \n", id, detGeo.pos[id], detGeo.detPos[id]);
-  }
+  detGeo.array1.DeduceAbsolutePos();
 
-  detGeo.zMin = TMath::Min(detGeo.detPos.front(), detGeo.detPos.back()) - (detGeo.firstPos < 0 ? detGeo.detLength : 0);
-  detGeo.zMax = TMath::Max(detGeo.detPos.front(), detGeo.detPos.back()) + (detGeo.firstPos > 0 ? detGeo.detLength : 0);
+  detGeo.zMin = detGeo.array1.zMin;
+  detGeo.zMax = detGeo.array1.zMax;
+
+  if( detGeo.is2ndArrayExist) {
+    detGeo.array2.DeduceAbsolutePos();
+
+    detGeo.zMin = TMath::Min(detGeo.array1.zMin, detGeo.array2.zMin);
+    detGeo.zMax = TMath::Min(detGeo.array1.zMax, detGeo.array2.zMax);
+  }
   
   return detGeo;
 }
@@ -187,21 +258,14 @@ void PrintDetGeo(DetGeo detGeo){
     printf("                                      +---- field angle != 0 is not supported!!! \n");
   }
   printf("     Recoil detector pos: %8.2f mm, radius: %6.2f - %6.2f mm \n", detGeo.recoilPos, detGeo.recoilInnerRadius, detGeo.recoilOuterRadius);
-  printf("        Blocker Position: %8.2f mm \n", detGeo.firstPos > 0 ? detGeo.firstPos - detGeo.blocker : detGeo.firstPos + detGeo.blocker );
-  printf("          First Position: %8.2f mm \n", detGeo.firstPos);
   printf("------------------------------------- Detector Position \n");
-  for(int i = 0; i < detGeo.nDet ; i++){
-     if( detGeo.firstPos > 0 ){
-        printf("%d, %8.2f mm - %8.2f mm \n", i, detGeo.detPos[i], detGeo.detPos[i] + detGeo.detLength);
-     }else{
-        printf("%d, %8.2f mm - %8.2f mm \n", i, detGeo.detPos[i] - detGeo.detLength , detGeo.detPos[i]);
-     }
+  detGeo.array1.PrintArray();
+
+  if( detGeo.is2ndArrayExist){
+    printf("--------------------------------- 2nd Detector Position \n");
+    detGeo.array2.PrintArray();
   }
 
-  printf("   number of det : %d x %d \n", detGeo.mDet, detGeo.nDet);
-  printf(" detector facing : %s\n", detGeo.detFaceOut ? "Out" : "In");
-  printf("    energy resol.: %f MeV\n", detGeo.eSigma);
-  printf("     pos-Z resol.: %f mm \n", detGeo.zSigma);
 
   if( detGeo.elumPos1 != 0 || detGeo.elumPos2 != 0 || detGeo.recoilPos1 != 0 || detGeo.recoilPos2 != 0){
     printf("=================================== Auxillary/Imaginary Detectors\n");
@@ -442,7 +506,7 @@ double q, alpha, Et, betRel, gamm, G, massB, mass; //variables for Ex calculatio
 bool hasReactionPara = false;
 
 //~========================================= reaction parameters
-void LoadReactionParas(bool verbose = false){
+void LoadReactionParasForArray1(bool verbose = false){
    
   //check is the transfer.root is using the latest reactionConfig.txt   
   //sicne reaction.dat is generated as a by-product of transfer.root
@@ -484,7 +548,7 @@ void LoadReactionParas(bool verbose = false){
     hasReactionPara = true;
     alpha = 299.792458 * abs(detGeo.Bfield) * q / TMath::TwoPi()/1000.; //MeV/mm
     gamm = 1./TMath::Sqrt(1-betRel*betRel);
-    G = alpha * gamm * betRel * detGeo.detPerpDist ;
+    G = alpha * gamm * betRel * detGeo.array1.detPerpDist ;
 
     if( verbose ){
       printf("\tmass-b    : %f MeV/c2 \n", mass);
@@ -494,7 +558,7 @@ void LoadReactionParas(bool verbose = false){
       printf("\tbeta      : %f \n", betRel);
       printf("\tB-field   : %f T \n", detGeo.Bfield);
       printf("\tslope     : %f MeV/mm \n", alpha * betRel);
-      printf("\tdet radius: %f mm \n", detGeo.detPerpDist);
+      printf("\tdet radius: %f mm \n", detGeo.array1.detPerpDist);
       printf("\tG-coeff   : %f MeV \n", G);
       printf("=====================================================\n");
     }
