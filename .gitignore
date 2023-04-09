@@ -8,3 +8,13 @@ EventBuilder
 
 data_raw
 root_data
+
+Cleopatra/ExtractXSec
+Cleopatra/ExtractXSecFromText
+Cleopatra/FindThetaCM
+Cleopatra/InFileCreator
+Cleopatra/Isotope
+Cleopatra/IsotopeShort
+Cleopatra/PlotSimulation
+Cleopatra/PlotTGraphTObjArray
+Cleopatra/Transfer

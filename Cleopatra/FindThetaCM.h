@@ -12,6 +12,7 @@
 
 #include "TFile.h"
 #include "TTree.h"
+#include "TF1.h"
 #include "TMacro.h"
 #include "TObjArray.h"
 #include "TGraph.h"
@@ -33,13 +34,13 @@ void FindThetaCM(double Ex, int nDivision=1, double XRATION = 0.95,
   double xBeam, yBeam; // mm
 
    /**///========================================================= load files
-  ReactionConfig reactionConfig;
-  DetGeo detGeo;
+  AnalysisLib::ReactionConfig reactionConfig;
+  AnalysisLib::DetGeo detGeo;
   TMacro * haha = new TMacro();
   if( haha->ReadFile(basicConfig.c_str()) > 0 ){
-    reactionConfig = LoadReactionConfig(haha);
+    reactionConfig = AnalysisLib::LoadReactionConfig(haha);
 
-    PrintReactionConfig(reactionConfig);
+    AnalysisLib::PrintReactionConfig(reactionConfig);
 
     KEAmean = reactionConfig.beamEnergy;
     KEAsigma = reactionConfig.beamEnergySigma;
@@ -100,19 +101,19 @@ void FindThetaCM(double Ex, int nDivision=1, double XRATION = 0.95,
    printf("----- loading detector geometery : %s.", detGeoFileName.c_str());
    TMacro * kaka = new TMacro();
    if( kaka->ReadFile(detGeoFileName.c_str()) > 0 ){
-     detGeo = LoadDetectorGeo(kaka);
+     detGeo = AnalysisLib::LoadDetectorGeo(kaka);
      
-     pos = detGeo.detPos;
-     a = detGeo.detPerpDist;
-     length = detGeo.detLength;
-     firstPos = detGeo.firstPos;
-     iDet = detGeo.nDet;
-     jDet = detGeo.mDet;
+     pos = detGeo.array1.detPos;
+     a = detGeo.array1.detPerpDist;
+     length = detGeo.array1.detLength;
+     firstPos = detGeo.array1.firstPos;
+     iDet = detGeo.array1.nDet;
+     jDet = detGeo.array1.mDet;
      BField = detGeo.Bfield;
      
      printf("... done.\n");
 
-     PrintDetGeo(detGeo);
+     AnalysisLib::PrintDetGeo(detGeo);
      
    }else{
      printf("... fail\n");

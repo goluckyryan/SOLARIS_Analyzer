@@ -74,7 +74,7 @@ int InFileCreator(string readFile, string infile, double angMin, double angMax, 
     if( tempLine.size() < 5 ) continue;
 
     //split line using space
-    vector<string> str0 = SplitStr(tempLine, " ");
+    vector<string> str0 = AnalysisLib::SplitStr(tempLine, " ");
     if ( str0.size() == 0 ) continue;
 
     printf("  %s\n", tempLine.c_str());
@@ -83,8 +83,8 @@ int InFileCreator(string readFile, string infile, double angMin, double angMax, 
     ///  printf(" str0[%d] %s \n", i,  str0[i].c_str());
     ///}
 
-    vector<string> str1 = SplitStr(str0[0], "(", 0);
-    vector<string> str2 = SplitStr(str1[1], ")", 1);
+    vector<string> str1 = AnalysisLib::SplitStr(str0[0], "(", 0);
+    vector<string> str2 = AnalysisLib::SplitStr(str1[1], ")", 1);
     
     str2[0] = "(" + str2[0];
     

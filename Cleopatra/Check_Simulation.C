@@ -109,7 +109,7 @@ void Check_Simulation(TString filename = "transfer.root",
   TMacro * reactionConfigTxt = (TMacro *) file->FindObjectAny("reactionConfig");
   TString Reaction=reactionConfigTxt->GetName(); 
 
-  ReactionConfig reactionConfig = LoadReactionConfig(reactionConfigTxt);
+  AnalysisLib::ReactionConfig reactionConfig = AnalysisLib::LoadReactionConfig(reactionConfigTxt);
 
   int nEvent = reactionConfig.numEvents;
    printf("number of events generated : %d \n", nEvent);
@@ -137,15 +137,15 @@ void Check_Simulation(TString filename = "transfer.root",
   printf(" loading detector Geometry.\n");
   TMacro * detGeoTxt = (TMacro *) file->FindObjectAny("detGeo");  
 
-  DetGeo detGeo = LoadDetectorGeo(detGeoTxt);
+  AnalysisLib::DetGeo detGeo = AnalysisLib::LoadDetectorGeo(detGeoTxt);
 
   double field = detGeo.Bfield;  
   TString fdmsg = field > 0 ? "out of plan" : "into plan";
   TString msg2;
   msg2.Form("field = %.2f T, %s", field, fdmsg.Data());
 
-  double prepDist = detGeo.detPerpDist;
-  double length = detGeo.detLength;
+  double prepDist = detGeo.array1.detPerpDist;
+  double length = detGeo.array1.detLength;
   double posRecoil = detGeo.recoilPos;
   double rhoRecoilIn = detGeo.recoilInnerRadius;
   double rhoRecoilOut = detGeo.recoilOuterRadius;
@@ -153,11 +153,11 @@ void Check_Simulation(TString filename = "transfer.root",
   double posRecoil1 = detGeo.recoilPos1;
   double posRecoil2 = detGeo.recoilPos2;
 
-  vector<double> pos = detGeo.detPos;
+  vector<double> pos = detGeo.array1.detPos;
 
-  float firstPos = detGeo.firstPos;
-  int rDet = detGeo.nDet;
-  int cDet = detGeo.mDet;
+  float firstPos = detGeo.array1.firstPos;
+  int rDet = detGeo.array1.nDet;
+  int cDet = detGeo.array1.mDet;
 
   double elum1 = detGeo.elumPos1;
   
@@ -191,7 +191,7 @@ void Check_Simulation(TString filename = "transfer.root",
      string temp = exListMacro->GetListOfLines()->At(i)->GetName();
      if( temp[0] == '#' ) break;
      if( temp[0] == '/' ) continue;
-     vector<string> tempStr = SplitStr(temp, " ");
+     vector<string> tempStr = AnalysisLib::SplitStr(temp, " ");
      printf("%d | %s \n", i, tempStr[0].c_str());
      exList.push_back(atof(tempStr[0].c_str()));
    }
@@ -413,7 +413,7 @@ void Check_Simulation(TString filename = "transfer.root",
          //check gate text length, if > 30, break by "&&" 
          int ll = gate.Length();
          if( ll > 30 ) {
-           vector<string> strList = SplitStr( (string) gate.Data(), "&&");
+           vector<string> strList = AnalysisLib::SplitStr( (string) gate.Data(), "&&");
            for( int i = 0; i < strList.size(); i++){
               text.DrawLatex(0., 0.6 - 0.05*i, (TString) strList[i]);
            }

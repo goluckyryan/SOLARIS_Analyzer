@@ -85,7 +85,7 @@ MyMainFrame::MyMainFrame(const TGWindow *p,UInt_t w,UInt_t h) {
    TGVerticalFrame *hframe2 = new TGVerticalFrame(fMain,600,800 );
    hframe->AddFrame(hframe2,new TGLayoutHints( kLHintsExpandX | kLHintsExpandY, 2,2,2,2));
 
-   fileName = "reactionConfig.txt";
+   fileName = "../working/reactionConfig.txt";
    
    TGHorizontalFrame *hframe00 = new TGHorizontalFrame(hframe2,600,600 );
    hframe2->AddFrame(hframe00, new TGLayoutHints(kLHintsCenterX | kLHintsExpandX , 2,2,2,2));
@@ -566,7 +566,7 @@ void MyMainFrame::Command(int ID) {
      TH1F * temp = (TH1F*) gROOT->FindObjectAny("hExCal");
      
      if( temp != NULL ){
-        fitAuto(temp, -1);
+        AutoFit::fitAuto(temp, -1);
         statusLabel->SetText("Auto Fit hExCal");
      }else{
         statusLabel->SetText("Cannot find historgram hExCal. Please Run Plot Simulation first.");        

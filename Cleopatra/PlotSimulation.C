@@ -1,7 +1,7 @@
 
 #include <fstream>
 #include <stdlib.h>
-#include "../Armory/Check_Simulation.C"
+#include "Check_Simulation.C"
 
 using namespace std;
 

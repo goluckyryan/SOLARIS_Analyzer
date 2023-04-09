@@ -37,9 +37,9 @@ void Transfer(
   printf("----- loading reaction setting from %s. \n", basicConfig.c_str());
   printf("\e[32m#################################### Beam \e[0m\n");
 
-  const ReactionConfig reactionConfig = reaction.GetRectionConfig();
+  const AnalysisLib::ReactionConfig reactionConfig = reaction.GetRectionConfig();
 
-  PrintReactionConfig(reactionConfig);
+  AnalysisLib::PrintReactionConfig(reactionConfig);
 
   vector<float> ExAList = reactionConfig.beamEx;
   int nExA = (int) ExAList.size();
@@ -49,7 +49,7 @@ void Transfer(
   HELIOS helios;
   helios.SetDetectorGeometry(heliosDetGeoFile);
 
-  const DetGeo detGeo = helios.GetDetectorGeometry();
+  const AnalysisLib::DetGeo detGeo = helios.GetDetectorGeometry();
   
   printf("==================================== E-Z plot slope\n");
   double  betaRect = reaction.GetReactionBeta() ;
@@ -128,7 +128,7 @@ void Transfer(
       if( line.substr(0,2) == "//" ) continue;
       if( line.substr(0,2) == "#=" ) break;
 
-      vector<string> str = SplitStr(line, " ");
+      vector<string> str = AnalysisLib::SplitStr(line, " ");
 
       ExKnown.push_back(atof(str[0].c_str()));
       ExStrength.push_back(atof(str[1].c_str()));
@@ -597,9 +597,9 @@ void Transfer(
       trajectory orb_b = helios.GetTrajectory_b();
       trajectory orb_B = helios.GetTrajectory_B();
       
-      e = helios.GetEnergy() + gRandom->Gaus(0, detGeo.eSigma);
+      e = helios.GetEnergy() + gRandom->Gaus(0, detGeo.array1.eSigma);
 
-      double ranX = gRandom->Gaus(0, detGeo.zSigma);
+      double ranX = gRandom->Gaus(0, detGeo.array1.zSigma);
       z = orb_b.z + ranX;
       detX = helios.GetDetX() + ranX;
  

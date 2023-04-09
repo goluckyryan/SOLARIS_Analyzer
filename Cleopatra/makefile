@@ -23,7 +23,7 @@ FindThetaCM: FindThetaCM.C FindThetaCM.h ../Cleopatra/HELIOS_LIB.h ../Cleopatra/
 Transfer: Transfer.C Transfer.h ../Cleopatra/HELIOS_LIB.h ../Cleopatra/Isotope.h ../Cleopatra/constant.h
 	$(CC) Transfer.C -o Transfer `root-config --cflags --glibs`
 
-PlotSimulation: PlotSimulation.C ../Armory/Check_Simulation.C
+PlotSimulation: PlotSimulation.C Check_Simulation.C
 	$(CC) PlotSimulation.C -o PlotSimulation `root-config --cflags --glibs`
 
 Isotope: ../Cleopatra/Isotope.h ../Cleopatra/Isotope.C

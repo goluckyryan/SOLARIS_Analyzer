@@ -8,6 +8,7 @@
 
 #include <TMacro.h>
 #include <TList.h>
+#include <TFile.h>
 #include <TMath.h>
 #include <TObjArray.h>
 #include <TCutG.h>
@@ -153,7 +154,6 @@ struct ReactionConfig{
   bool isRedo;         ///isReDo
   std::vector<float> beamEx;        ///excitation_energy_of_A[MeV]
   
-
 };
 
 ///Using TMacro to load the detectorGeo frist,

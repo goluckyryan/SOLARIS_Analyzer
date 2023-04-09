@@ -79,11 +79,11 @@ public:
    double GetReactionGamma() {return gamma;}
    double GetCMTotalEnergy() {return Etot;}
 
-   ReactionConfig GetRectionConfig() { return reaction;}
+   AnalysisLib::ReactionConfig GetRectionConfig() { return reaction;}
    
 private:
 
-   ReactionConfig reaction;
+   AnalysisLib::ReactionConfig reaction;
 
    string nameA, namea, nameb, nameB;
    double thetaIN, phiIN;
@@ -201,7 +201,7 @@ void TransferReaction::SetReactionFromFile(string settingFile){
 
    TMacro * haha = new TMacro();
    if( haha->ReadFile(settingFile.c_str()) > 0 ) {
-      reaction = LoadReactionConfig(haha);
+      reaction = AnalysisLib::LoadReactionConfig(haha);
 
      SetA(reaction.beamA, reaction.beamZ);
      Seta(reaction.targetA, reaction.targetZ);
@@ -501,7 +501,7 @@ public:
    trajectory GetTrajectory_b() {return orbitb;}
    trajectory GetTrajectory_B() {return orbitB;}
 
-   DetGeo GetDetectorGeometry() {return detGeo;}
+   AnalysisLib::DetGeo GetDetectorGeometry() {return detGeo;}
    
 private:   
       
@@ -522,7 +522,7 @@ private:
       t.loop = -1;
    }
 
-   DetGeo detGeo;
+   AnalysisLib::DetGeo detGeo;
    
    trajectory orbitb, orbitB;
    
@@ -607,7 +607,7 @@ bool HELIOS::SetDetectorGeometry(string filename){
 
    TMacro * haha = new TMacro();
    if( haha->ReadFile(filename.c_str()) > 0 ) {
-    detGeo = LoadDetectorGeo(haha);
+    detGeo = AnalysisLib::LoadDetectorGeo(haha);
 
     PrintDetGeo(detGeo);
 
@@ -615,22 +615,22 @@ bool HELIOS::SetDetectorGeometry(string filename){
     BfieldTheta = detGeo.BfieldTheta;
     sign = detGeo.BfieldSign;
     bore = detGeo.bore;
-    perpDist = detGeo.detPerpDist;
-    width = detGeo.detWidth;
     posRecoil = detGeo.recoilPos;
     rhoRecoilin = detGeo.recoilInnerRadius;
     rhoRecoilout = detGeo.recoilOuterRadius;
-    length = detGeo.detLength;
-    blocker = detGeo.blocker;
-    firstPos = detGeo.firstPos;
-    pos = detGeo.detPos;
-    nDet = detGeo.nDet;
-    mDet = detGeo.mDet;
+
+    length = detGeo.array1.detLength;
+    width = detGeo.array1.detWidth;
+    perpDist = detGeo.array1.detPerpDist;
+    blocker = detGeo.array1.blocker;
+    firstPos = detGeo.array1.firstPos;
+    pos = detGeo.array1.detPos;
+    nDet = detGeo.array1.nDet;
+    mDet = detGeo.array1.mDet;
+    isFromOutSide = detGeo.array1.detFaceOut;
 
     isCoincidentWithRecoil = detGeo.isCoincidentWithRecoil;
 
-    isFromOutSide = detGeo.detFaceOut;
-    
     isDetReady = true;
    }else{
     printf("cannot read file %s.\n", filename.c_str());

@@ -419,7 +419,7 @@ int ExtractXSecFromText(string readFile){
     //printf("%d | %s\n", lineNum, line.c_str());
     
     //after the comment line, the next line must be column name
-    vector<string> header= SplitStr(line, " ");
+    vector<string> header= AnalysisLib::SplitStr(line, " ");
     //printf("---%lu #", header.size());
     //for( int i = 0; i < header.size(); i++){
     //  printf("%s|", header[i].c_str());
