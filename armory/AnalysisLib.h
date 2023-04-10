@@ -47,7 +47,7 @@ std::vector<std::string> SplitStr(std::string tempLine, std::string splitter, in
   }while(pos != std::string::npos );
 
   return output;
-}
+};
 
 struct Array{
 
@@ -117,7 +117,7 @@ struct DetGeo{
   Array array1;
 
   //==================2nd array
-  bool   is2ndArrayExist;
+  bool   use2ndArray;
   Array array2;
 
   double zMin, zMax;   /// range of detectors
@@ -169,7 +169,7 @@ DetGeo LoadDetectorGeo(TMacro * macro){
 
   detGeo.array1.pos.clear();
   detGeo.array2.pos.clear();
-  detGeo.is2ndArrayExist = false;
+  detGeo.use2ndArray = false;
 
   int detFlag = 0;
   int detLine = 0;
@@ -219,7 +219,7 @@ DetGeo LoadDetectorGeo(TMacro * macro){
     }
 
     if( detFlag == 2){
-      if ( detLine ==  0 ) detGeo.is2ndArrayExist    = str[0] == "false" ? false: true;
+      if ( detLine ==  0 ) detGeo.use2ndArray    = str[0] == "true" ? true : false;
       if ( detLine ==  1 ) detGeo.array2.detPerpDist       = atof(str[0].c_str());
       if ( detLine ==  2 ) detGeo.array2.detWidth          = atof(str[0].c_str());
       if ( detLine ==  3 ) detGeo.array2.detLength         = atof(str[0].c_str());
@@ -240,7 +240,7 @@ DetGeo LoadDetectorGeo(TMacro * macro){
   detGeo.zMin = detGeo.array1.zMin;
   detGeo.zMax = detGeo.array1.zMax;
 
-  if( detGeo.is2ndArrayExist) {
+  if( detGeo.use2ndArray) {
     detGeo.array2.DeduceAbsolutePos();
 
     detGeo.zMin = TMath::Min(detGeo.array1.zMin, detGeo.array2.zMin);
@@ -250,7 +250,7 @@ DetGeo LoadDetectorGeo(TMacro * macro){
   return detGeo;
 }
 
-void PrintDetGeo(DetGeo detGeo){
+void PrintDetGeo(DetGeo detGeo, bool printAll = true){
 
   printf("=====================================================\n");
   printf("                 B-field: %8.2f  T, Theta : %6.2f deg \n", detGeo.Bfield, detGeo.BfieldTheta);
@@ -258,14 +258,23 @@ void PrintDetGeo(DetGeo detGeo){
     printf("                                      +---- field angle != 0 is not supported!!! \n");
   }
   printf("     Recoil detector pos: %8.2f mm, radius: %6.2f - %6.2f mm \n", detGeo.recoilPos, detGeo.recoilInnerRadius, detGeo.recoilOuterRadius);
-  printf("------------------------------------- Detector Position \n");
-  detGeo.array1.PrintArray();
+  if( printAll ){
+    printf("------------------------------------- Detector Position \n");
+    detGeo.array1.PrintArray();
 
-  if( detGeo.is2ndArrayExist){
-    printf("--------------------------------- 2nd Detector Position \n");
-    detGeo.array2.PrintArray();
+    if( detGeo.use2ndArray){
+      printf("--------------------------------- 2nd Detector Position \n");
+      detGeo.array2.PrintArray();
+    }
+  }else{
+    if( detGeo.use2ndArray){
+      printf("--------------------------------- 2nd Detector Position \n");
+      detGeo.array2.PrintArray();
+    }else{
+      printf("------------------------------------- Detector Position \n");
+      detGeo.array1.PrintArray();
+    }
   }
-
 
   if( detGeo.elumPos1 != 0 || detGeo.elumPos2 != 0 || detGeo.recoilPos1 != 0 || detGeo.recoilPos2 != 0){
     printf("=================================== Auxillary/Imaginary Detectors\n");
@@ -334,7 +343,7 @@ ReactionConfig LoadReactionConfig(TMacro * macro){
 
   reaction.recoilHeavyA = reaction.beamA + reaction.targetA - reaction.recoilLightA;
   reaction.recoilHeavyZ = reaction.beamZ + reaction.targetZ - reaction.recoilLightZ;
-  
+
   return reaction;
 
 }
@@ -378,9 +387,12 @@ void PrintReactionConfig(ReactionConfig reaction){
 }
 
 DetGeo detGeo;
-ReactionConfig reactionConfig;
+ReactionConfig reactionConfig1;
+ReactionConfig reactionConfig2;
 
-void LoadDetGeoAndReactionConfigFile(std::string detGeoFileName = "detectorGeo.txt", std::string reactionConfigFileName = "reactionConfig.txt"){
+void LoadDetGeoAndReactionConfigFile(std::string detGeoFileName = "detectorGeo.txt", 
+                                     std::string reactionConfigFileName1 = "reactionConfig1.txt", 
+                                     std::string reactionConfigFileName2 = "reactionConfig2.txt"){
   printf("=====================================================\n");
   printf(" loading detector geometery : %s.", detGeoFileName.c_str());
   TMacro * haha = new TMacro();
@@ -391,20 +403,33 @@ void LoadDetGeoAndReactionConfigFile(std::string detGeoFileName = "detectorGeo.t
   }else{
     printf("... fail\n");
   }
+  delete haha;
 
   printf("=====================================================\n");
-  printf(" loading reaction config : %s.", reactionConfigFileName.c_str());
+  printf(" loading reaction1 config : %s.", reactionConfigFileName1.c_str());
   TMacro * kaka = new TMacro();
-  if( kaka->ReadFile(reactionConfigFileName.c_str()) > 0 ) {
-    reactionConfig  = AnalysisLib::LoadReactionConfig(kaka);
+  if( kaka->ReadFile(reactionConfigFileName1.c_str()) > 0 ) {
+    reactionConfig1  = AnalysisLib::LoadReactionConfig(kaka);
     printf("..... done.\n");
-    AnalysisLib::PrintReactionConfig(reactionConfig);
+    AnalysisLib::PrintReactionConfig(reactionConfig1);
   }else{
     printf("..... fail\n");
   }
-
-  delete haha;
   delete kaka;
+
+  if( detGeo.use2ndArray){
+    printf("=====================================================\n");
+    printf(" loading reaction2 config : %s.", reactionConfigFileName2.c_str());
+    TMacro * jaja = new TMacro();
+    if( jaja->ReadFile(reactionConfigFileName2.c_str()) > 0 ) {
+      reactionConfig2  = AnalysisLib::LoadReactionConfig(kaka);
+      printf("..... done.\n");
+      AnalysisLib::PrintReactionConfig(reactionConfig2);
+    }else{
+      printf("..... fail\n");
+    }
+    delete jaja;
+  }
 
 }
 
@@ -502,11 +527,28 @@ void LoadRDTCorr(bool verbose = false, const char * fileName = "correction_rdt.d
   if( verbose ) for(int i = 0; i < (int) rdtCorr.size(); i++) printf("%2d | %10.3f, %10.3f\n", i, rdtCorr[i][0], rdtCorr[i][1]);
 }
 
-double q, alpha, Et, betRel, gamm, G, massB, mass; //variables for Ex calculation
-bool hasReactionPara = false;
+
+struct ReactionParas{
+
+  double Et; // total energy in CM frame
+  double beta;  // Lorentz beta from Lab to CM
+  double gamma; // Lorentz gamma from Lab to CM
+  double alpha; // E-Z slope / beta
+  double G;    //The G-coefficient....
+  double massB; // heavy mass
+  double q;  // charge of light particle
+  double mass; //light mass
+  bool hasReactionPara;
+
+  double detPrepDist; 
+
+};
+
+ReactionParas reactParas1;
+ReactionParas reactParas2;
 
 //~========================================= reaction parameters
-void LoadReactionParasForArray1(bool verbose = false){
+void LoadReactionParas(int arrayID, bool verbose = false){
    
   //check is the transfer.root is using the latest reactionConfig.txt   
   //sicne reaction.dat is generated as a by-product of transfer.root
@@ -527,59 +569,86 @@ void LoadReactionParasForArray1(bool verbose = false){
   //  system("../Cleopatra/Transfer");
   //  printf("########################## transfer.root updated\n");
   //}
+
+  ReactionParas * reactParas = nullptr;
+
+  std::string fileName;
+
+  if( arrayID == 1){
+    reactParas = &AnalysisLib::reactParas1;
+    fileName = "reaction.dat";
+  }else if( arrayID == 2){
+    reactParas = &AnalysisLib::reactParas2;
+    fileName = "reaction2.dat";
+  }else{
+    printf("arrayID must be either 1 or 2. Abort.\n");
+    return;
+  }
+  reactParas->detPrepDist = AnalysisLib::detGeo.array1.detPerpDist;
+
   printf(" loading reaction parameters");
   std::ifstream file;
-  file.open("reaction.dat");
-  hasReactionPara = false;
+  file.open(fileName.c_str());
+  reactParas->hasReactionPara = false;
   if( file.is_open() ){
     std::string x;
     int i = 0;
     while( file >> x ){
       if( x.substr(0,2) == "//" )  continue;
-      if( i == 0 ) mass = atof(x.c_str());
-      if( i == 1 ) q    = atof(x.c_str());
-      if( i == 2 ) betRel = atof(x.c_str()); 
-      if( i == 3 ) Et   = atof(x.c_str()); 
-      if( i == 4 ) massB = atof(x.c_str()); 
+      if( i == 0 ) reactParas->mass   = atof(x.c_str());
+      if( i == 1 ) reactParas->q      = atof(x.c_str());
+      if( i == 2 ) reactParas->beta = atof(x.c_str()); 
+      if( i == 3 ) reactParas->Et     = atof(x.c_str()); 
+      if( i == 4 ) reactParas->massB  = atof(x.c_str()); 
       i = i + 1;
     }
     printf("........ done.\n");
 
-    hasReactionPara = true;
-    alpha = 299.792458 * abs(detGeo.Bfield) * q / TMath::TwoPi()/1000.; //MeV/mm
-    gamm = 1./TMath::Sqrt(1-betRel*betRel);
-    G = alpha * gamm * betRel * detGeo.array1.detPerpDist ;
+    reactParas->hasReactionPara = true;
+    reactParas->alpha = 299.792458 * abs(detGeo.Bfield) * reactParas->q / TMath::TwoPi()/1000.; //MeV/mm
+    reactParas->gamma = 1./TMath::Sqrt(1-reactParas->beta * reactParas->beta);
+    reactParas->G = reactParas->alpha * reactParas->gamma * reactParas->beta * reactParas->detPrepDist ;
 
     if( verbose ){
-      printf("\tmass-b    : %f MeV/c2 \n", mass);
-      printf("\tcharge-b  : %f \n", q);
-      printf("\tE-total   : %f MeV \n", Et);
-      printf("\tmass-B    : %f MeV/c2 \n", massB);
-      printf("\tbeta      : %f \n", betRel);
+      printf("\tmass-b    : %f MeV/c2 \n", reactParas->mass);
+      printf("\tcharge-b  : %f \n", reactParas->q);
+      printf("\tE-total   : %f MeV \n", reactParas->Et);
+      printf("\tmass-B    : %f MeV/c2 \n", reactParas->massB);
+      printf("\tbeta      : %f \n", reactParas->beta);
       printf("\tB-field   : %f T \n", detGeo.Bfield);
-      printf("\tslope     : %f MeV/mm \n", alpha * betRel);
-      printf("\tdet radius: %f mm \n", detGeo.array1.detPerpDist);
-      printf("\tG-coeff   : %f MeV \n", G);
+      printf("\tslope     : %f MeV/mm \n", reactParas->alpha * reactParas->beta);
+      printf("\tdet radius: %f mm \n", reactParas->detPrepDist);
+      printf("\tG-coeff   : %f MeV \n", reactParas->G);
       printf("=====================================================\n");
     }
 
   }else{
     printf("........ fail.\n");
-    hasReactionPara = false;
   }
   file.close();
    
 }
 
 std::vector<double> CalExTheta(double e, double z){
-  if( !hasReactionPara) return {TMath::QuietNaN(), TMath::QuietNaN()};
+
+  ReactionParas * reactParas = nullptr;
+
+  if( detGeo.array1.zMin <= z && z <= detGeo.array1.zMax ){
+    reactParas = &reactParas1;
+    if( !reactParas->hasReactionPara) return {TMath::QuietNaN(), TMath::QuietNaN()};
+  }
+  
+  if( detGeo.array2.zMin <= z && z <= detGeo.array2.zMax ){
+    reactParas = &reactParas2;
+    if( !reactParas->hasReactionPara) return {TMath::QuietNaN(), TMath::QuietNaN()};
+  }
 
   double Ex = TMath::QuietNaN();
   double thetaCM = TMath::QuietNaN();
 
-  double y = e + mass; // to give the KE + mass of proton;
-  double Z = alpha * gamm * betRel * z;
-  double H = TMath::Sqrt(TMath::Power(gamm * betRel,2) * (y*y - mass * mass) ) ;
+  double y = e + reactParas->mass; // to give the KE + mass of proton;
+  double Z = reactParas->alpha * reactParas->gamma * reactParas->beta * z;
+  double H = TMath::Sqrt(TMath::Power(reactParas->gamma * reactParas->beta,2) * (y*y - reactParas->mass * reactParas->mass) ) ;
  
   if( TMath::Abs(Z) < H ) {
     ///using Newton's method to solve 0 ==	H * sin(phi) - G * tan(phi) - Z = f(phi) 
@@ -590,26 +659,26 @@ std::vector<double> CalExTheta(double e, double z){
     int iter = 0;
     do{
       phi = nPhi;
-      nPhi = phi - (H * TMath::Sin(phi) - G * TMath::Tan(phi) - Z) / (H * TMath::Cos(phi) - G /TMath::Power( TMath::Cos(phi), 2));					 
+      nPhi = phi - (H * TMath::Sin(phi) - reactParas->G * TMath::Tan(phi) - Z) / (H * TMath::Cos(phi) - reactParas->G /TMath::Power( TMath::Cos(phi), 2));					 
       iter ++;
       if( iter > 10 || TMath::Abs(nPhi) > TMath::PiOver2()) break;
     }while( TMath::Abs(phi - nPhi ) > tolerrence);
     phi = nPhi;
 
     /// check f'(phi) > 0
-    double Df = H * TMath::Cos(phi) - G / TMath::Power( TMath::Cos(phi),2);
+    double Df = H * TMath::Cos(phi) - reactParas->G / TMath::Power( TMath::Cos(phi),2);
     if( Df > 0 && TMath::Abs(phi) < TMath::PiOver2()  ){
       double K = H * TMath::Sin(phi);
-      double x = TMath::ACos( mass / ( y * gamm - K));
-      double momt = mass * TMath::Tan(x); /// momentum of particel b or B in CM frame
-      double EB = TMath::Sqrt(mass*mass + Et*Et - 2*Et*TMath::Sqrt(momt*momt + mass * mass));
-      Ex = EB - massB;
+      double x = TMath::ACos( reactParas->mass / ( y * reactParas->gamma - K));
+      double momt = reactParas->mass * TMath::Tan(x); /// momentum of particel b or B in CM frame
+      double EB = TMath::Sqrt(reactParas->mass * reactParas->mass + reactParas->Et * reactParas->Et - 2 * reactParas->Et * TMath::Sqrt(momt*momt + reactParas->mass * reactParas->mass));
+      Ex = EB - reactParas->massB;
 
-      double hahaha1 = gamm* TMath::Sqrt(mass * mass + momt * momt) - y;
-      double hahaha2 = gamm* betRel * momt;
+      double hahaha1 = reactParas->gamma * TMath::Sqrt(reactParas->mass * reactParas->mass + momt * momt) - y;
+      double hahaha2 = reactParas->gamma * reactParas->beta * momt;
       thetaCM = TMath::ACos(hahaha1/hahaha2) * TMath::RadToDeg();
-    }
     
+    }
   }
   return {Ex, thetaCM};
 

@@ -444,22 +444,22 @@ public:
    bool SetDetectorGeometry(string filename);
    void SetBeamPosition(double x, double y) { xOff = x; yOff = y;}
    
-   void OverrideMagneticField(double BField){ this->Bfield = BField; this->sign = BField > 0 ? 1: -1;}
-   void OverrideMagneticFieldDirection(double BfieldThetaInDeg){ this->BfieldTheta = BfieldThetaInDeg;}
+   void OverrideMagneticField(double BField){ this->detGeo.Bfield = BField; this->detGeo.BfieldSign = BField > 0 ? 1: -1;}
+   void OverrideMagneticFieldDirection(double BfieldThetaInDeg){ this->detGeo.BfieldTheta = BfieldThetaInDeg;}
    void OverrideFirstPos(double firstPos){
       overrideFirstPos = true;
       printf("------ Overriding FirstPosition to : %8.2f mm \n", firstPos);
-      this->firstPos = firstPos;
+      this->array.firstPos = firstPos;
    }
    void OverrideDetectorDistance(double perpDist){
       overrideDetDistance = true;
       printf("------ Overriding Detector Distance to : %8.2f mm \n", perpDist);
-      this->perpDist = perpDist;
+      this->array.detPerpDist = perpDist;
    }
    
    void SetDetectorOutside(bool isOutside){
-      this->isFromOutSide = isOutside;
-      printf(" Detectors are facing %s\n", isFromOutSide ? "outside": "inside" );
+      this->array.detFaceOut = isOutside;
+      printf(" Detectors are facing %s\n", array.detFaceOut ? "outside": "inside" );
    }
    
    int DetAcceptance();
@@ -469,7 +469,7 @@ public:
    
    void CalTrajectoryPara(TLorentzVector P, int Z, int id); // id = 0 for Pb, id = 1 for PB.
    
-   int GetNumberOfDetectorsInSamePos(){return mDet;}
+   int GetNumberOfDetectorsInSamePos(){return array.mDet;}
    double GetEnergy(){return e;}
    double GetDetX(){return detX;} // position in each detector, range from -1, 1
    
@@ -486,17 +486,17 @@ public:
       return sqrt(x*x+y*y);
    }
    
-   double GetXPos(double ZPos){ return XPos( ZPos, orbitb.theta, orbitb.phi, orbitb.rho, sign); }
-   double GetYPos(double ZPos){ return YPos( ZPos, orbitb.theta, orbitb.phi, orbitb.rho, sign); }
-   double GetR(double ZPos)   { return RPos( ZPos, orbitb.theta, orbitb.phi, orbitb.rho, sign); }
+   double GetXPos(double ZPos){ return XPos( ZPos, orbitb.theta, orbitb.phi, orbitb.rho, detGeo.BfieldSign); }
+   double GetYPos(double ZPos){ return YPos( ZPos, orbitb.theta, orbitb.phi, orbitb.rho, detGeo.BfieldSign); }
+   double GetR(double ZPos)   { return RPos( ZPos, orbitb.theta, orbitb.phi, orbitb.rho, detGeo.BfieldSign); }
    
    double GetRecoilEnergy(){return eB;}
-   double GetRecoilXPos(double ZPos){ return XPos( ZPos, orbitB.theta, orbitB.phi, orbitB.rho, sign); }   
-   double GetRecoilYPos(double ZPos){ return YPos( ZPos, orbitB.theta, orbitB.phi, orbitB.rho, sign); }
-   double GetRecoilR(double ZPos)   { return RPos( ZPos, orbitB.theta, orbitB.phi, orbitB.rho, sign); }
+   double GetRecoilXPos(double ZPos){ return XPos( ZPos, orbitB.theta, orbitB.phi, orbitB.rho, detGeo.BfieldSign); }   
+   double GetRecoilYPos(double ZPos){ return YPos( ZPos, orbitB.theta, orbitB.phi, orbitB.rho, detGeo.BfieldSign); }
+   double GetRecoilR(double ZPos)   { return RPos( ZPos, orbitB.theta, orbitB.phi, orbitB.rho, detGeo.BfieldSign); }
    
-   double GetBField() {return Bfield;}
-   double GetDetRadius() {return perpDist;}
+   double GetBField() {return detGeo.Bfield;}
+   double GetDetRadius() {return array.detPerpDist;}
 
    trajectory GetTrajectory_b() {return orbitb;}
    trajectory GetTrajectory_B() {return orbitB;}
@@ -523,6 +523,7 @@ private:
    }
 
    AnalysisLib::DetGeo detGeo;
+   AnalysisLib::Array array;
    
    trajectory orbitb, orbitB;
    
@@ -536,22 +537,21 @@ private:
    double xOff, yOff; // beam position
    
    //detetcor Geometry
-   double Bfield; // T
-   int sign ; // sign of B-field
-   double BfieldTheta; // rad, 0 = z-axis, pi/2 = y axis, pi = -z axis
-   double bore; // bore , mm
-   double perpDist; // distance from axis
-   double width; // width   
-   double posRecoil; // recoil, downstream
-   double rhoRecoilin; // radius recoil inner
-   double rhoRecoilout; // radius recoil outter
-   double length; // length
-   double blocker;
-   double firstPos; // m 
-   vector<double> pos; // near position in m
-   int nDet, mDet; // nDet = number of different pos, mDet, number of same pos
-   
-   bool isFromOutSide;
+   //int sign ; // sign of B-field
+   // double Bfield; // T
+   // double BfieldTheta; // rad, 0 = z-axis, pi/2 = y axis, pi = -z axis
+   // double bore; // bore , mm
+   // double perpDist; // distance from axis
+   // double width; // width   
+   // double posRecoil; // recoil, downstream
+   // double rhoRecoilin; // radius recoil inner
+   // double rhoRecoilout; // radius recoil outter
+   // double length; // length
+   // double blocker;
+   // double firstPos; // m 
+   // vector<double> pos; // near position in m
+   // int nDet, mDet; // nDet = number of different pos, mDet, number of same pos   
+   // bool isFromOutSide;
 
    bool overrideDetDistance;
    bool overrideFirstPos;
@@ -575,24 +575,6 @@ HELIOS::HELIOS(){
    
    isDetReady = false;
 
-   Bfield = 0;
-   BfieldTheta = 0;
-   sign = 1;
-   bore = 1000;
-   perpDist = 10;
-   width = 10;
-   posRecoil = 0;
-   rhoRecoilin = 0;
-   rhoRecoilout = 0;
-   length = 0;
-   blocker = 0;
-   firstPos = 0;
-   pos.clear();
-   nDet = 0;
-   mDet = 0;
-   
-   isFromOutSide = true; //default is facing outside
-
    overrideDetDistance = false;
    overrideFirstPos = false;
    isCoincidentWithRecoil = false;
@@ -609,25 +591,13 @@ bool HELIOS::SetDetectorGeometry(string filename){
    if( haha->ReadFile(filename.c_str()) > 0 ) {
     detGeo = AnalysisLib::LoadDetectorGeo(haha);
 
-    PrintDetGeo(detGeo);
+    if( detGeo.use2ndArray ){
+      array = detGeo.array2;
+    }else{
+      array = detGeo.array1;
+    }
 
-    Bfield = detGeo.Bfield;
-    BfieldTheta = detGeo.BfieldTheta;
-    sign = detGeo.BfieldSign;
-    bore = detGeo.bore;
-    posRecoil = detGeo.recoilPos;
-    rhoRecoilin = detGeo.recoilInnerRadius;
-    rhoRecoilout = detGeo.recoilOuterRadius;
-
-    length = detGeo.array1.detLength;
-    width = detGeo.array1.detWidth;
-    perpDist = detGeo.array1.detPerpDist;
-    blocker = detGeo.array1.blocker;
-    firstPos = detGeo.array1.firstPos;
-    pos = detGeo.array1.detPos;
-    nDet = detGeo.array1.nDet;
-    mDet = detGeo.array1.mDet;
-    isFromOutSide = detGeo.array1.detFaceOut;
+    PrintDetGeo(detGeo, false);
 
     isCoincidentWithRecoil = detGeo.isCoincidentWithRecoil;
 
@@ -647,45 +617,45 @@ int HELIOS::DetAcceptance(){
    if( isDetReady == false ) return 0;
 
    // -1 ========= when recoil direction is not same side of array
-   if( firstPos < 0 && orbitb.z > 0 ) return -1;
-   if( firstPos > 0 && orbitb.z < 0 ) return -1;
+   if( array.firstPos < 0 && orbitb.z > 0 ) return -1;
+   if( array.firstPos > 0 && orbitb.z < 0 ) return -1;
 
    // -11 ======== rho is too small
-   if(  2 * orbitb.rho < perpDist ) return -11; 
+   if(  2 * orbitb.rho < array.detPerpDist ) return -11; 
    
    // -15 ========= if detRowID == -1, should be (2 * orbitb.rho < perpDist)
    if( orbitb.detRowID == -1 ) return -15;
    
    // -10 =========== when rho is too big . 
-   if( bore < 2 * orbitb.rho) return -10; 
+   if( detGeo.bore < 2 * orbitb.rho) return -10; 
    
    // -14 ========== check particle-B hit radius on recoil dectector
-   if( isCoincidentWithRecoil && orbitB.R > rhoRecoilout  ) return -14;
+   if( isCoincidentWithRecoil && orbitB.R > detGeo.recoilOuterRadius  ) return -14;
    //if( isCoincidentWithRecoil && (orbitB.R > rhoRecoilout || orbitB.R < rhoRecoilin) ) return -14;
    
    // -12 ========= check is particle-b was blocked by recoil detector
-   rhoHit = GetR(posRecoil);
-   if( orbitb.z > 0 && posRecoil > 0 && orbitb.z > posRecoil && rhoHit < rhoRecoilout ) return -12;
-   if( orbitb.z < 0 && posRecoil < 0 && orbitb.z < posRecoil && rhoHit < rhoRecoilout ) return -12;
+   rhoHit = GetR(detGeo.recoilPos);
+   if( orbitb.z > 0 && detGeo.recoilPos > 0 && orbitb.z > detGeo.recoilPos && rhoHit < detGeo.recoilOuterRadius ) return -12;
+   if( orbitb.z < 0 && detGeo.recoilPos < 0 && orbitb.z < detGeo.recoilPos && rhoHit < detGeo.recoilOuterRadius ) return -12;
    
    // -13 ========= not more than 3 loops
    if( orbitb.loop > 3 ) return -13;
    
    // -2 ========= calculate the "y"-distance from detector center
-   if( sqrt(orbitb.R*orbitb.R - perpDist*perpDist)> width/2 ) return -2; 
+   if( sqrt(orbitb.R*orbitb.R - array.detPerpDist * array.detPerpDist)> array.detWidth/2 ) return -2; 
    
    // -3 ==== when zPos further the range of whole array, more loop would not save
-   if( firstPos < 0 && orbitb.z < pos[0] - length ) return -3; 
-   if( firstPos > 0 && orbitb.z > pos[nDet-1] + length ) return -3; 
+   if( array.firstPos < 0 && orbitb.z < array.detPos[0] - array.detLength ) return -3; 
+   if( array.firstPos > 0 && orbitb.z > array.detPos[array.nDet-1] + array.detLength ) return -3; 
 
    // -4 ======== Hit on blacker
-   if( blocker != 0 && firstPos > 0 && pos[0] - blocker  < orbitb.z && orbitb.z < pos[0] ) return -4; 
-   if( blocker != 0 && firstPos < 0 && pos[nDet-1]  < orbitb.z && orbitb.z < pos[nDet-1] + blocker ) return -4; 
+   if( array.blocker != 0 && array.firstPos > 0 && array.detPos[0] - array.blocker  < orbitb.z && orbitb.z < array.detPos[0] ) return -4; 
+   if( array.blocker != 0 && array.firstPos < 0 && array.detPos[array.nDet-1]  < orbitb.z && orbitb.z < array.detPos[array.nDet-1] + array.blocker ) return -4; 
 
    // 2 ======  when zPos less then the nearest position, more loop may hit
    int increaseLoopFlag = 0;
-   if( firstPos < 0 && pos[nDet-1] < orbitb.z ) increaseLoopFlag = 2; 
-   if( firstPos > 0 && pos[0] > orbitb.z ) increaseLoopFlag = 2; 
+   if( array.firstPos < 0 && array.detPos[array.nDet-1] < orbitb.z ) increaseLoopFlag = 2; 
+   if( array.firstPos > 0 && array.detPos[0] > orbitb.z ) increaseLoopFlag = 2; 
    if (increaseLoopFlag == 2 ) {
       orbitb.z += orbitb.z0;
       orbitb.effLoop += 1.0;
@@ -695,33 +665,34 @@ int HELIOS::DetAcceptance(){
    }
    
    // 1 ======= check hit array z- position
-   if( firstPos < 0 ){
-      for( int i = 0; i < nDet; i++){
-         if( pos[i]-length <= orbitb.z && orbitb.z <= pos[i]) {
+   if( array.firstPos < 0 ){
+      for( int i = 0; i < array.nDet; i++){
+         if( array.detPos[i] - array.detLength <= orbitb.z && orbitb.z <= array.detPos[i]) {
             orbitb.detID = i;
-            detX = ( orbitb.z - (pos[i] + length/2 ))/ length*2 ;// range from -1 , 1 
+            detX = ( orbitb.z - (array.detPos[i] + array.detLength/2 ))/ array.detLength * 2 ;// range from -1 , 1 
             return 1;
          }
       }      
    }else{
-      for( int i = 0; i < nDet ; i++){
-         if( pos[i] <= orbitb.z && orbitb.z <= pos[i] + length)  {
-            ///printf(" %d | %f < z = %f < %f \n", i,  pos[i], orbitb.z, pos[i]+length); 
+      for( int i = 0; i < array.nDet ; i++){
+         if( array.detPos[i] <= orbitb.z && orbitb.z <= array.detPos[i] + array.detLength)  {
+            ///printf(" %d | %f < z = %f < %f \n", i,  array.detPos[i], orbitb.z, array.detPos[i]+length); 
             orbitb.detID = i;
-            detX = ( orbitb.z - (pos[i] - length/2 ))/ length*2 ;// range from -1 , 1 
+            detX = ( orbitb.z - (array.detPos[i] - array.detLength/2 ))/ array.detLength*2 ;// range from -1 , 1 
             return 1;
          }
       }
    }
+
    
    // -5 ======== check hit array gap
-   if( firstPos < 0 ){
-      for( int i = 0; i < nDet-1 ; i++){
-         if( pos[i] < orbitb.z && orbitb.z < pos[i+1] - length ) return -5; //increaseLoopFlag = 3; 
+   if( array.firstPos < 0 ){
+      for( int i = 0; i < array.nDet-1 ; i++){
+         if( array.detPos[i] < orbitb.z && orbitb.z < array.detPos[i+1] - array.detLength ) return -5; //increaseLoopFlag = 3; 
       }      
    }else{
-      for( int i = 0; i < nDet-1 ; i++){
-         if( pos[i] + length < orbitb.z && orbitb.z < pos[i+1]  ) return -5; //increaseLoopFlag = 3;
+      for( int i = 0; i < array.nDet-1 ; i++){
+         if( array.detPos[i] + array.detLength < orbitb.z && orbitb.z < array.detPos[i+1]  ) return -5; //increaseLoopFlag = 3;
       }
    }
    if (increaseLoopFlag == 3 ) {
@@ -741,7 +712,7 @@ void HELIOS::CalTrajectoryPara(TLorentzVector P, int Z, int id){
    if( id == 0 ){
       orbitb.theta = P.Theta();
       orbitb.phi = P.Phi();
-      orbitb.rho = P.Pt() / abs(Bfield) / Z / c * 1000; //mm
+      orbitb.rho = P.Pt() / abs(detGeo.Bfield) / Z / c * 1000; //mm
       orbitb.vt = P.Beta() * TMath::Sin(P.Theta()) * c ; // mm / nano-second  
       orbitb.vp = P.Beta() * TMath::Cos(P.Theta()) * c ; // mm / nano-second  
       orbitb.t0 = TMath::TwoPi() * orbitb.rho / orbitb.vt; // nano-second  
@@ -755,7 +726,7 @@ void HELIOS::CalTrajectoryPara(TLorentzVector P, int Z, int id){
    if( id == 1 ){
       orbitB.theta = P.Theta();
       orbitB.phi = P.Phi();
-      orbitB.rho = P.Pt() / abs(Bfield) / Z / c * 1000; //mm
+      orbitB.rho = P.Pt() / abs(detGeo.Bfield) / Z / c * 1000; //mm
       orbitB.vt = P.Beta() * TMath::Sin(P.Theta()) * c ; // mm / nano-second  
       orbitB.vp = P.Beta() * TMath::Cos(P.Theta()) * c ; // mm / nano-second  
       orbitB.t0 = TMath::TwoPi() * orbitB.rho / orbitB.vt; // nano-second  
@@ -776,7 +747,7 @@ int HELIOS::CalArrayHit(TLorentzVector Pb, int Zb){
    CalTrajectoryPara(Pb, Zb, 0);
    
    int targetLoop = 1;
-   int inOut = isFromOutSide == true ? 1: 0; //1 = from Outside, 0 = from inside
+   int inOut = array.detFaceOut == true ? 1: 0; //1 = from Outside, 0 = from inside
    
    bool debug = false;
    
@@ -792,18 +763,18 @@ int HELIOS::CalArrayHit(TLorentzVector Pb, int Zb){
    vector<double> zPossible;
    vector<int> dID; //detRowID
    
-   int iStart = ( sign == 1 ? 0 : -mDet );
-   int iEnd = ( sign == 1 ? 2*mDet : mDet );   
+   int iStart = ( detGeo.BfieldSign == 1 ? 0 : -array.mDet );
+   int iEnd = ( detGeo.BfieldSign == 1 ? 2 * array.mDet : array.mDet );   
    for( int i = iStart; i < iEnd ; i++){
       
-      double phiD = TMath::TwoPi()/mDet * i ;
+      double phiD = TMath::TwoPi()/array.mDet * i ;
       double dphi = orbitb.phi - phiD;
-      double aEff = perpDist - (xOff * TMath::Cos(phiD) + yOff * TMath::Sin(phiD)); 
-      double hahaha = asin( aEff/ orbitb.rho - sign * sin(dphi));
+      double aEff = array.detPerpDist - (xOff * TMath::Cos(phiD) + yOff * TMath::Sin(phiD)); 
+      double hahaha = asin( aEff/ orbitb.rho - detGeo.BfieldTheta * sin(dphi));
       
       int n = 2*targetLoop + inOut; 
       
-      double zP = orbitb.z0 /TMath::TwoPi() * ( sign * dphi + n * TMath::Pi() + pow(-1, n) * hahaha );
+      double zP = orbitb.z0 /TMath::TwoPi() * ( detGeo.BfieldSign * dphi + n * TMath::Pi() + pow(-1, n) * hahaha );
       
       if( debug ) {
          double xP = GetXPos(zP) ;
@@ -848,15 +819,15 @@ int HELIOS::CalArrayHit(TLorentzVector Pb, int Zb){
          orbitb.detRowID = (12+dID[i])%4;
          orbitb.t = orbitb.t0 * orbitb.effLoop;
          
-         double phiD = TMath::TwoPi()/mDet * dID[i] ;
+         double phiD = TMath::TwoPi()/array.mDet * dID[i] ;
          double dphi = orbitb.phi - phiD ;
          
          if( debug ) {
             // Check is in or out 
-            double hitDir = cos( orbitb.z/orbitb.z0 * TMath::TwoPi() - sign * dphi );
+            double hitDir = cos( orbitb.z/orbitb.z0 * TMath::TwoPi() - detGeo.BfieldSign * dphi );
             printf(" hitDir : %4.1f ", hitDir);
             if( ( inOut == 1 && hitDir > 0 ) || (inOut == 0 && hitDir < 0 ) ) {
-                printf(" != %f ", perpDist);
+                printf(" != %f ", array.detPerpDist);
                 orbitb.z = TMath::QuietNaN();
                 orbitb.loop = -1;
                 orbitb.detRowID = -1;
@@ -868,8 +839,8 @@ int HELIOS::CalArrayHit(TLorentzVector Pb, int Zb){
             double yPos = GetYPos(orbitb.z ) ;
             double a = xPos * cos(phiD) + yPos * sin(phiD);
             printf(" a : %f ", a);
-            if( abs(a - perpDist) > 0.01) { 
-                printf(" != %f ", perpDist);
+            if( abs(a - array.detPerpDist) > 0.01) { 
+                printf(" != %f ", array.detPerpDist);
                 orbitb.z = TMath::QuietNaN();
                 orbitb.loop = -1;
                 orbitb.detRowID = -1;
@@ -892,244 +863,16 @@ int HELIOS::CalRecoilHit(TLorentzVector PB, int ZB){
    
    CalTrajectoryPara(PB, ZB, 1);
    
-   orbitB.z = posRecoil;
-   orbitB.x = GetRecoilXPos(posRecoil)  ;
-   orbitB.y = GetRecoilYPos(posRecoil)  ;
-   orbitB.R = GetRecoilR(posRecoil);
+   orbitB.z = detGeo.recoilPos;
+   orbitB.x = GetRecoilXPos(detGeo.recoilPos)  ;
+   orbitB.y = GetRecoilYPos(detGeo.recoilPos)  ;
+   orbitB.R = GetRecoilR(detGeo.recoilPos);
    orbitB.effLoop = orbitB.z/orbitB.z0;
    orbitB.t  = orbitB.t0 * orbitB.effLoop ;
    
    return 1;
 }
 
-/*
-int HELIOS::CalHit(TLorentzVector Pb, int Zb, TLorentzVector PB, int ZB, double xOff, double yOff){
-   
-   //initialization
-   int hit = 0;
-   const double c = 299.792458; // mm/ns, standard speed for MeV conversion
-   theta = TMath::QuietNaN();
-   e = TMath::QuietNaN();
-   z = TMath::QuietNaN();
-   detX = TMath::QuietNaN();
-   t = TMath::QuietNaN();
-   rho = TMath::QuietNaN();
-   dphi = TMath::QuietNaN();
-   detID = -1;
-   loop = -1;
-   detRowID = -1;
-   
-   eB = TMath::QuietNaN();
-   zB = TMath::QuietNaN();
-   tB = TMath::QuietNaN();
-   rhoB = TMath::QuietNaN();
-   rxHit = TMath::QuietNaN();
-   ryHit = TMath::QuietNaN();
-   phiB = TMath::QuietNaN();
-   
-   //range of detector azimuth angle, for beam at center
-   double azimu = TMath::Pi()/ mDet; 
-   double azimuDet = TMath::ATan2(width/2., perpDist);
-   
-   //rotate Pb and PB to B-Field 
-   //Pb.RotateX(BfieldTheta);
-   //PB.RotateX(BfieldTheta);
-
-   //====================== X-Y plane, light particle
-   rho = Pb.Pt() / abs(Bfield) / Zb / c * 1000; //mm
-   theta = Pb.Theta();
-   phi = Pb.Phi();
-   
-   //======================  recoil detector
-   thetaB = PB.Theta();
-   phiB = PB.Phi();
-   rhoB = PB.Pt() / abs(Bfield) / ZB / c * 1000; //mm
-   vt0B = PB.Beta() * TMath::Sin(thetaB) * c ; // mm / nano-second  
-   vp0B = PB.Beta() * TMath::Cos(thetaB) * c ; // mm / nano-second  
-   //tB   = TMath::TwoPi() * rhoB / vt0B; // nano-second
-   tB   = posRecoil / vp0B; // nano-second
-   eB   = PB.E() - PB.M();
-   zB   = vp0B * tB;
-   rhoBHit = GetRecoilR(posRecoil);
-   rxHit = GetRecoilXPos(posRecoil);
-   ryHit = GetRecoilYPos(posRecoil);
-      
-   if( isDetReady == false ) {
-      //====================== infinite small detector   
-      vt0 = Pb.Beta() * TMath::Sin(theta) * c ; // mm / nano-second  
-      vp0 = Pb.Beta() * TMath::Cos(theta) * c ; // mm / nano-second  
-      t = TMath::TwoPi() * rho / vt0; // nano-second   
-      z = vp0 * t; // mm        
-      e = Pb.E() - Pb.M();
-      dphi = TMath::TwoPi();
-      
-      return 0;
-   }
-
-   if( bore > 2 * rho && 2*rho > perpDist && ((firstPos > 0 && theta < TMath::PiOver2())  || (firstPos < 0 && theta > TMath::PiOver2())) ){
-      //====================== infinite small detector   
-      vt0 = Pb.Beta() * TMath::Sin(theta) * c ; // mm / nano-second  
-      vp0 = Pb.Beta() * TMath::Cos(theta) * c ; // mm / nano-second  
-      t0 = TMath::TwoPi() * rho / vt0; // nano-second   
-      z0 = vp0 * t0; // mm        
-      
-      //========== check particle-B hit radius on recoil dectector
-      if(isCoincidentWithRecoil && rhoBHit > rhoRecoilout ) return -2; // when particle-B miss the recoil detector
-
-      //========= check is particle-b was blocked by recoil detector
-      rhoHit = GetR(posRecoil) ;// radius of light particle b at recoil detector
-      if( z0 > 0 && posRecoil > 0 && z0 > posRecoil && rhoHit < rhoRecoilout) {
-          return -1 ;  // when particle-b blocked by recoil detector
-      }
-      if( z0 < 0 && posRecoil < 0 && z0 < posRecoil && rhoHit < rhoRecoilout) {
-          return -1 ;
-      }
-
-      //================ Calulate z hit
-      double zHit = TMath::QuietNaN();
-      bool isHit = false;
-      bool isHitFromOutside = false;
-      bool isReachArrayCoverage = false;
-      
-      loop = 0;
-      int startJ = (int) fmod(TMath::Ceil(mDet*phi/TMath::TwoPi() - 0.5) ,mDet) ;
-
-      //printf("======================= T : %5.2f,  theta : %7.2f , phi : %7.2f \n", Pb.E() - Pb.M(), theta*TMath::RadToDeg(), phi*TMath::RadToDeg());
-
-      // loop until reach the detector position covrage.    
-      do{
-         loop += 1;
-         //int n = 2*loop + sign;
-         int n = 2*loop -1;
-         
-         if( blocker != 0.0 && abs(firstPos/blocker) < loop ) return -6;
-         
-         //======= check Block By blocker using z0, speed thing up
-         if( firstPos > 0 ){
-             if( pos[0] - blocker < z0 * loop  && z0 * loop < pos[0] ) return -6; // blocked by blocker
-         }else{
-             if( pos[nDet-1] < z0 * loop && z0 * loop < pos[nDet-1] + blocker ) return -6;
-         }
-         
-         if( loop > 10 ) {
-            return -3;  // when loop > 10
-            break; // maximum 10 loops
-         }
-         
-         for( int j = startJ ; j < startJ + mDet; j++){
-         
-            double phiDet = TMath::TwoPi() / mDet * (j); // detector plane angle 
-            isReachArrayCoverage = false;
-            isHitFromOutside = false;
-            
-            //========== calculate zHit by solving the cycltron orbit and the detector planes. 
-            double aEff = perpDist - (xOff * TMath::Cos(phiDet) + yOff * TMath::Sin(phiDet)); 
-            double dphi = phi - phiDet;   
-            double z0 = TMath::TwoPi() * rho / TMath::Tan(theta);   // the cycle
-
-            //with sign is the correct formula, but somehow, probably the ASin? give incorrect result for sign = 1;
-            //zHit = z0 / TMath::TwoPi() * ( sign * dphi + TMath::Power(-1, n) * TMath::ASin(aEff/rho - sign * TMath::Sin(dphi)) + TMath::Pi() * n );
-            zHit = z0 / TMath::TwoPi() * ( -1 * dphi + TMath::Power(-1, n) * TMath::ASin(aEff/rho + TMath::Sin(dphi)) + TMath::Pi() * n );
-            e = Pb.E() - Pb.M();
-            z = zHit;
-            
-            //======= calculate the distance from middle of detector
-            double xHit = GetXPos(zHit) + xOff;  // resotre the beam to be at the center
-            double yHit = GetYPos(zHit) + yOff;
-            double sHit = TMath::Sqrt(xHit*xHit + yHit*yHit - perpDist*perpDist); // is it hit on the detector
-            
-            ///if( zHit > z0  ) continue;
-            ///printf("==== %7.2f, %7.2f | n : %d, row : %2d, phiD : %4.0f, rho : %9.4f, z0 : %9.4f, zHit : %9.4f, xHit : %9.4f, yHit : %9.4f \n",
-            /// theta*TMath::RadToDeg(), phi*TMath::RadToDeg(), n, j, phiDet*TMath::RadToDeg(), rho,  z0, zHit, xHit, yHit);
-            
-            
-            if( sHit > width /2.) continue; // if the sHit is large, it does not hit on detector, go to next mDet 
-            
-            //======== this is the particel direction (normalized) dot normal vector of the detector plane
-            //double dir = TMath::Cos(zHit/z0 * TMath::TwoPi() - sign * dphi);
-            double dir = TMath::Cos(zHit/z0 * TMath::TwoPi() + dphi);
-            if( dir < 0) {// when dir == 0, no solution
-              isHitFromOutside = true;
-            }else{
-              return -5 ; // hit from inside.
-            }
-            
-            //### after this, the particle is hit on detector, from outside. 
-            
-            //======= check Block By blocker  using z0 and zHit; z0 has to be inside the nearst array, but zHit is in the blocker.
-            if( firstPos > 0  && blocker > 0.0){
-                if( pos[0] < z0*loop  &&  pos[0] - blocker < zHit && zHit < pos[0] ) return -6;
-            }else{
-                if( z0*loop < pos[nDet-1] &&  pos[nDet-1] < zHit && zHit < pos[nDet-1] + blocker ) return -6;
-            }
-
-            //### after this, the particle is hit on detector, from outside, and not blocked by blocker             
-            
-            //======= check within the detector range
-            if( firstPos > 0 ){
-               if( zHit < pos[0] ) continue; // goto next mDet, after progress of all side, still not OK, then next loop 
-               if( zHit > pos[nDet-1] + length) return -4; // since the zHit is mono-increse, when zHit shoot over the detector
-            }else{
-               if( zHit < pos[0] - length ) return -4; 
-               if( zHit > pos[nDet-1]) continue; 
-            }
-            
-            //====== check hit
-            if( !isReachArrayCoverage && isHitFromOutside && sHit < width/2.){      
-               isHit = true;
-               isReachArrayCoverage = true;
-               detRowID = (j+mDet) % mDet;
-               break;     // if isHit, break, don't calculate for the rest of the detector
-            }else{
-               isReachArrayCoverage = false;
-            }
-         }      
-      }while(!isReachArrayCoverage); 
-      
-      if( !isHit ) return -7; // zHit in the gap of detector
-      
-      //===== final calculation for light particle
-      e = Pb.E() - Pb.M();
-      z = zHit;
-      t = zHit / vp0;
-      dphi = t * vt0 / rho;
-      
-      //sometimes, dphi = 2pi + something, i.e. loop a bit more than a single loop.
-      if( dphi / TMath::TwoPi() > loop ) return -8; 
-      double xHit = GetXPos(zHit) + xOff;  // resotre the beam to be at the center
-      double yHit = GetYPos(zHit) + yOff;
-      //======= Check inside the detector
-      double eta = TMath::Abs(TMath::ATan2(yHit,xHit));
-      double etaMod = TMath::Abs(fmod(eta + azimu,  2* azimu) - azimu);
-      if ( etaMod > azimuDet ) return -8;
-    
-      //=========== check hit on detector gap
-      for( int i = 0 ; i < nDet ; i++){
-         if( firstPos > 0 ){
-            if( pos[i] < z  && z < pos[i] + length ){
-               detID = i;
-               detX = ( z - (pos[i] + length/2 ))/ length*2 ;// range from -1 , 1 
-            }
-         }else{
-            if( pos[i] - length < z  && z < pos[i] ){
-               detID = i;
-               detX = ( z - (pos[i] - length/2 ))/ length*2 ;// range from -1 , 1 
-            }
-         }
-      }
-      
-      if( detID >=0  ){
-         hit = 1;      
-      }else{
-         hit = -9; // particle-b hit the gap
-      }
-   }else{
-      hit = -10; // hit helio wall or (detector upstream, particle go downstream, via versa)
-   }
-
-   return hit;
-}
-*/
 //=======================================================
 //#######################################################
 // Class for multi-scattering of the beam inside target

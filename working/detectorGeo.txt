@@ -26,7 +26,7 @@ Out      //detector_facing_Out_or_In
 235.8    //5th_det
 290.0
 #===============2nd_Array
-true     //is_2nd_detctor_exist_false=false_other=true
+false    //is_2nd_array_exist_is_use_for_Simulation
 11.5     //distance_from_axis_[mm]
 10.0     //width_of_detector_[mm]
 50       //length_of_detector_[mm]

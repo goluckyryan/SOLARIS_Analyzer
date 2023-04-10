@@ -183,7 +183,8 @@ void Monitor::Begin(TTree *tree){
   AnalysisLib::LoadXScaleCorr();
   AnalysisLib::LoadECorr();
   AnalysisLib::LoadRDTCorr();
-  AnalysisLib::LoadReactionParasForArray1(true);
+  AnalysisLib::LoadReactionParas(1, true);
+  if( AnalysisLib::detGeo.use2ndArray ) AnalysisLib::LoadReactionParas(2, true);
 
   if( (int) AnalysisLib::xnCorr.size()    < mapping::NARRAY ) { isXNCorrOK = false;     printf(" !!!!!!!! size of xnCorr < NARRAY .\n"); }
   if( (int) AnalysisLib::xfxneCorr.size() < mapping::NARRAY ) { isXFXNCorrOK = false;   printf(" !!!!!!!! size of xfxneCorr < NARRAY .\n"); }

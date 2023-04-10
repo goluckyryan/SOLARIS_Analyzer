@@ -17,6 +17,7 @@
 #include "../Cleopatra/ExtractXSec.h"
 #include "../Cleopatra/PlotTGraphTObjArray.h"
 #include "../armory/AutoFit.C"
+#include "../armory/AnalysisLib.h"
 #include "../Cleopatra/Check_Simulation.C"
 
 #include <iostream>
@@ -60,7 +61,8 @@ private:
    
    TGTextEntry * txtName ;    
    TGTextEntry * txtEx ; 
-   
+
+   bool isUse2ndArray;
    
 public:
    MyMainFrame(const TGWindow *p,UInt_t w,UInt_t h);
@@ -69,6 +71,8 @@ public:
    void OpenFile(int);
    void GetData();
    bool IsFileExist(TString filename);
+
+   void CheckIsUse2ndArray();
 };
 
 
@@ -85,7 +89,7 @@ MyMainFrame::MyMainFrame(const TGWindow *p,UInt_t w,UInt_t h) {
    TGVerticalFrame *hframe2 = new TGVerticalFrame(fMain,600,800 );
    hframe->AddFrame(hframe2,new TGLayoutHints( kLHintsExpandX | kLHintsExpandY, 2,2,2,2));
 
-   fileName = "../working/reactionConfig.txt";
+   fileName = "../working/detectorGeo.txt";
    
    TGHorizontalFrame *hframe00 = new TGHorizontalFrame(hframe2,600,600 );
    hframe2->AddFrame(hframe00, new TGLayoutHints(kLHintsCenterX | kLHintsExpandX , 2,2,2,2));
@@ -127,13 +131,6 @@ MyMainFrame::MyMainFrame(const TGWindow *p,UInt_t w,UInt_t h) {
    {//================= Simulation group
       TGGroupFrame * simFrame = new TGGroupFrame(hframe1, "Kinematics Simulation", kVerticalFrame);
       hframe1->AddFrame(simFrame, new  TGLayoutHints(kLHintsCenterX, 5,5,3,4));
-      
-      TGTextButton *openRec = new TGTextButton(simFrame, "reaction Config");
-      openRec->SetWidth(150);
-      openRec->SetHeight(20);
-      openRec->ChangeOptions( openRec->GetOptions() | kFixedSize );
-      openRec->Connect("Clicked()","MyMainFrame",this, "OpenFile(=1)");
-      simFrame->AddFrame(openRec,new  TGLayoutHints(kLHintsRight, 5,5,3,4));
 
       TGTextButton *openDet = new TGTextButton(simFrame, "detector Geo.");
       openDet->SetWidth(150);
@@ -141,6 +138,13 @@ MyMainFrame::MyMainFrame(const TGWindow *p,UInt_t w,UInt_t h) {
       openDet->ChangeOptions( openDet->GetOptions() | kFixedSize );
       openDet->Connect("Clicked()","MyMainFrame",this, "OpenFile(=0)");
       simFrame->AddFrame(openDet,new  TGLayoutHints(kLHintsRight, 5,5,3,4));
+      
+      TGTextButton *openRec = new TGTextButton(simFrame, "reaction Config");
+      openRec->SetWidth(150);
+      openRec->SetHeight(20);
+      openRec->ChangeOptions( openRec->GetOptions() | kFixedSize );
+      openRec->Connect("Clicked()","MyMainFrame",this, "OpenFile(=1)");
+      simFrame->AddFrame(openRec,new  TGLayoutHints(kLHintsRight, 5,5,3,4));
       
       TGTextButton *openEx = new TGTextButton(simFrame, "Ex List");
       openEx->SetWidth(150);
@@ -168,16 +172,16 @@ MyMainFrame::MyMainFrame(const TGWindow *p,UInt_t w,UInt_t h) {
       openSimChk->Connect("Clicked()","MyMainFrame",this, "OpenFile(=4)");
       simFrame->AddFrame(openSimChk,new  TGLayoutHints(kLHintsRight, 5,5,3,4));
 
-      TGTextButton *SimChk = new TGTextButton(simFrame,"Plot Simulation");
+      TGTextButton *SimChk = new TGTextButton(simFrame,"Re-Plot Simulation");
       SimChk->SetWidth(150);
-      SimChk->SetHeight(40);
+      //SimChk->SetHeight(40);
       SimChk->ChangeOptions( SimChk->GetOptions() | kFixedSize );
       SimChk->Connect("Clicked()","MyMainFrame",this,"Command(=2)");
       simFrame->AddFrame(SimChk, new TGLayoutHints(kLHintsRight,5,5,3,4));
 
       TGTextButton *autoFit = new TGTextButton(simFrame,"AutoFit ExCal");
       autoFit->SetWidth(150);
-      autoFit->SetHeight(40);
+      //autoFit->SetHeight(40);
       autoFit->ChangeOptions( autoFit->GetOptions() | kFixedSize );
       autoFit->Connect("Clicked()","MyMainFrame",this,"Command(=5)");
       simFrame->AddFrame(autoFit, new TGLayoutHints(kLHintsRight,5,5,3,4));
@@ -352,20 +356,40 @@ bool MyMainFrame::IsFileExist(TString filename){
   return file.is_open();
 }
 
+void MyMainFrame::CheckIsUse2ndArray(){
+
+  TMacro * haha = new TMacro("../working/detectorGeo.txt");
+  AnalysisLib::DetGeo detGeo =  AnalysisLib::LoadDetectorGeo(haha);
+  delete haha;
+  isUse2ndArray = detGeo.use2ndArray;
+
+}
+
 void MyMainFrame::OpenFile(int ID){
   
   editor->SaveFile(fileName);
   
   TString oldFileName = fileName;
-    
+
   if ( ID == 0 ) fileName = "../working/detectorGeo.txt";
-  if ( ID == 1 ) fileName = "../working/reactionConfig.txt";
-  if ( ID == 2 ) fileName = "../working/Ex.txt";
-  if ( ID == 3 ) fileName = "../working/DWBA";
+
+  CheckIsUse2ndArray();
+  if( isUse2ndArray){
+    if ( ID == 1 ) fileName = "../working/reactionConfig2.txt";
+    if ( ID == 2 ) fileName = "../working/Ex2.txt";
+    if ( ID == 3 ) fileName = "../working/DWBA2";
+    if ( ID == 5 ) fileName = "../working/DWBA2.in";
+    if ( ID == 6 ) fileName = "../working/DWBA2.out";
+    if ( ID == 7 ) fileName = "../working/DWBA2.Xsec.txt";    
+  }else{
+    if ( ID == 1 ) fileName = "../working/reactionConfig1.txt";
+    if ( ID == 2 ) fileName = "../working/Ex1.txt";
+    if ( ID == 3 ) fileName = "../working/DWBA1";
+    if ( ID == 5 ) fileName = "../working/DWBA1.in";
+    if ( ID == 6 ) fileName = "../working/DWBA1.out";
+    if ( ID == 7 ) fileName = "../working/DWBA1.Xsec.txt";
+  }
   if ( ID == 4 ) fileName = "../working/Check_Simulation_Config.txt";
-  if ( ID == 5 ) fileName = "../working/DWBA.in";
-  if ( ID == 6 ) fileName = "../working/DWBA.out";
-  if ( ID == 7 ) fileName = "../working/DWBA.Xsec.txt";
   if ( ID == 8 ) fileName = isoFileName;
   
   //test if file exist
@@ -417,6 +441,8 @@ void MyMainFrame::GetData(){
 void MyMainFrame::Command(int ID) {
 
   editor->SaveFile(fileName);
+
+  CheckIsUse2ndArray();
   
   if( ID == 0 ){
     
@@ -468,29 +494,54 @@ void MyMainFrame::Command(int ID) {
   }
   
   if( ID == 1 ){
-    string       basicConfig = "reactionConfig.txt";
+
+    string       basicConfig = "reactionConfig1.txt";
     string  heliosDetGeoFile = "detectorGeo.txt";
-    string    excitationFile = "Ex.txt"; //when no file, only ground state
+    string    excitationFile = "Ex1.txt"; //when no file, only ground state
     TString      ptolemyRoot = ""; // when no file, use isotropic distribution of thetaCM
-    TString     saveFileName = "transfer.root";
-    TString         filename = "reaction.dat"; //when no file, no output    
+    TString     saveFileName = "transfer1.root";
+    TString         filename = "reaction1.dat"; //when no file, no output    
     
     if( withDWBA->GetState() ) {
-       ptolemyRoot = "DWBA.root";
-       excitationFile = "DWBA.Ex.txt";
+       ptolemyRoot = "DWBA1.root";
+       excitationFile = "DWBA1.Ex.txt";
     }
+
+    if( isUse2ndArray ){
+           basicConfig = "reactionConfig2.txt";
+      heliosDetGeoFile = "detectorGeo.txt";
+        excitationFile = "Ex2.txt"; //when no file, only ground state
+           ptolemyRoot = ""; // when no file, use isotropic distribution of thetaCM
+          saveFileName = "transfer2.root";
+              filename = "reaction2.dat"; //when no file, no output    
+      
+      if( withDWBA->GetState() ) {
+        ptolemyRoot = "DWBA2.root";
+        excitationFile = "DWBA2.Ex.txt";
+      }
+    }
+
     statusLabel->SetText("Running simulation.......");
     
     Transfer( basicConfig, heliosDetGeoFile, excitationFile, ptolemyRoot, saveFileName,  filename);
     
     statusLabel->SetText("Plotting simulation.......");
-    Check_Simulation();
+
+    if( isUse2ndArray ){
+      Check_Simulation("transfer2.root");
+    }else{
+      Check_Simulation("transfer1.root");
+    }
     
     statusLabel->SetText("Plotted Simulation result");
   }
   if( ID == 2 ){
-     Check_Simulation();
-     statusLabel->SetText(" Run Simulation first.");
+    if( isUse2ndArray ){
+      Check_Simulation("transfer2.root");
+    }else{
+      Check_Simulation("transfer1.root");
+    }
+    statusLabel->SetText(" Run Simulation first.");
   }
   
   if( ID == 3 ){

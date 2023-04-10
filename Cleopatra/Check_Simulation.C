@@ -47,7 +47,7 @@ enum plotID { pEZ,               /// 0
               pElum1RThetaCM,    /// 16
               pEmpty };          /// 17
 plotID StringToPlotID(TString str);
-void Check_Simulation(TString filename = "transfer.root",
+void Check_Simulation(TString filename = "transfer1.root",
                       TString configFile = "../working/Check_Simulation_Config.txt",
                       Int_t padSize = 500,
                       bool outputCanvas = false){
@@ -139,25 +139,33 @@ void Check_Simulation(TString filename = "transfer.root",
 
   AnalysisLib::DetGeo detGeo = AnalysisLib::LoadDetectorGeo(detGeoTxt);
 
+  AnalysisLib::Array array;
+  if( detGeo.use2ndArray){
+   array = detGeo.array2;
+  }else{
+   array = detGeo.array1;
+  }
+
   double field = detGeo.Bfield;  
   TString fdmsg = field > 0 ? "out of plan" : "into plan";
   TString msg2;
   msg2.Form("field = %.2f T, %s", field, fdmsg.Data());
 
-  double prepDist = detGeo.array1.detPerpDist;
-  double length = detGeo.array1.detLength;
-  double posRecoil = detGeo.recoilPos;
+  double prepDist    = array.detPerpDist;
+  double length      = array.detLength;
+
+  double posRecoil   = detGeo.recoilPos;
   double rhoRecoilIn = detGeo.recoilInnerRadius;
   double rhoRecoilOut = detGeo.recoilOuterRadius;
 
   double posRecoil1 = detGeo.recoilPos1;
   double posRecoil2 = detGeo.recoilPos2;
 
-  vector<double> pos = detGeo.array1.detPos;
+  vector<double> pos = array.detPos;
 
-  float firstPos = detGeo.array1.firstPos;
-  int rDet = detGeo.array1.nDet;
-  int cDet = detGeo.array1.mDet;
+  float firstPos = array.firstPos;
+  int rDet = array.nDet;
+  int cDet = array.mDet;
 
   double elum1 = detGeo.elumPos1;
   
@@ -176,8 +184,8 @@ void Check_Simulation(TString filename = "transfer.root",
   
   int numDet = rDet * cDet;
 
-  zRange[1] = detGeo.zMin - 50;
-  zRange[2] = detGeo.zMax + 50;
+  zRange[1] = array.zMin - 50;
+  zRange[2] = array.zMax + 50;
 
   printf(" zRange : %f - %f \n", zRange[1], zRange[2]);
   printf("=================================\n");
