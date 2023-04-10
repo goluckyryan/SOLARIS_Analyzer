@@ -32,31 +32,34 @@ public :
   // Declaration of leaf types
   ULong64_t       evID;
 
-  Float_t  **  e;   //  all kind of energy
-  // ULong64_t ** e_t; //!  all kind of timestamp
+  Float_t  **  e;   //!  all kind of energy
+  ULong64_t ** e_t; //!  all kind of timestamp
   
-  // Float_t   ** we;   //!  wave energy
-  // Float_t   ** weT;  //!  wave time
-  // Float_t   ** weR;  //!  wave rise time
+  Float_t   ** we;   //!  wave energy
+  Float_t   ** weT;  //!  wave time
+  Float_t   ** weR;  //!  wave rise time
 
   // List of branches
   TBranch        *b_evID; //!
   TBranch       **b_e;    //!
-  // TBranch       **b_e_t;  //!
+  TBranch       **b_e_t;  //!
 
   DataHoSei(TTree * /*tree*/ =0) : fChain(0) {
     printf("--------- %s \n", __func__);
 
     e = new Float_t * [mapping::nDetType];
+    e_t = new ULong64_t * [mapping::nDetType];
     b_e = new TBranch * [mapping::nDetType];
-    for( int i = 0 ; i < mapping::nDetType; i++)  e[i] = new Float_t[mapping::detNum[i]];
+    b_e_t = new TBranch * [mapping::nDetType];
+    for( int i = 0 ; i < mapping::nDetType; i++)  {
+      e[i] = new Float_t[mapping::detNum[i]];
+      e_t[i] = new ULong64_t[mapping::detNum[i]];
+    }
 
   }
   virtual ~DataHoSei() {
 
     printf("--------- %s \n", __func__);
-
-  
     printf("----------- B \n");
   }
   virtual Int_t   Version() const { return 2; }
@@ -92,11 +95,10 @@ void DataHoSei::Init(TTree *tree){
 
   fChain->SetBranchAddress("evID",  &evID, &b_evID);
 
-  fChain->SetBranchAddress(mapping::detTypeName[0].c_str(),          e[0], &b_e[0]);
-  //for( int i = 0; i < mapping::nDetType; i++){
-  //   fChain->SetBranchAddress((mapping::detTypeName[i] + "_t").c_str(), e_t[i], &b_e_t[i]);
-
-  //}
+  for( int i = 0; i < mapping::nDetType; i++){
+     fChain->SetBranchAddress((mapping::detTypeName[i]).c_str(), e[i], &b_e[i]);
+     fChain->SetBranchAddress((mapping::detTypeName[i] + "_t").c_str(), e_t[i], &b_e_t[i]);
+  }
 
   // TObjArray * branchList = fChain->GetListOfBranches();
 
