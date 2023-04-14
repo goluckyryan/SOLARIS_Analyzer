@@ -172,7 +172,10 @@ if [ ${PCID} -eq 1 ]; then
   if [ ${isBranchExist} -eq 0 ]; then
     haha2="RunID,start=0 value=0,expName=\"${expName}\",comment=\"New_experiment_[${expName}]_was_created.\""
   else
-    haha2="RunID,start=0 value=0,expName=\"${expName}\",comment=\"New_experiment_[${expName}]_was_switched.\""
+
+    source working/expName.sh
+
+    haha2="RunID,start=0 value=${runID},expName=\"${expName}\",comment=\"New_experiment_[${expName}]_was_switched.\""
   fi
   #echo $haha1
   #echo $haha2
