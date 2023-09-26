@@ -16,6 +16,8 @@
 SolReader ** reader;
 Hit ** hit;
 
+std::vector<std::vector<int>> idList;
+
 unsigned long totFileSize = 0;
 unsigned long processedFileSize = 0;
 
@@ -23,20 +25,22 @@ std::vector<int> activeFileID;
 std::vector<int> groupIndex;
 std::vector<std::vector<int>> group; // group[i][j], i = group ID, j = group member)
 
-void findEarliestTime(int &fileID, int & digiID){
+void findEarliestTime(int &fileID, int &groupID){
 
-    unsigned long firstTime = 0;
+  unsigned long firstTime = 0;
   for( int i = 0; i < (int) activeFileID.size(); i++){
     int id = activeFileID[i];
     if( i == 0 ) {
       firstTime = hit[id]->timestamp;
       fileID = id;
+      groupID = i;
       //printf("%d | %d %lu %d | %d \n", id, reader[id]->GetBlockID(), hit[id]->timestamp, hit[id]->channel, (int) activeFileID.size());
       continue;
     }
     if( hit[id]->timestamp <= firstTime) {
       firstTime = hit[id]->timestamp;
       fileID = id;
+      groupID = i;
       //printf("%d | %d %lu %d | %d \n", id, reader[id]->GetBlockID(), hit[id]->timestamp, hit[id]->channel, (int) activeFileID.size());
     }
   }
@@ -56,9 +60,9 @@ unsigned short  highFlag[MAX_MULTI] = {0};
 int             traceLen[MAX_MULTI] = {0};
 int trace[MAX_MULTI][MAX_TRACE_LEN] = {0};
 
-void fillData(int &fileID, int &digiID, const bool &saveTrace){
-  bd[multi]       = digiID;
-  sn[multi]       = digiID;
+void fillData(int &fileID, const bool &saveTrace){
+  bd[multi]       = idList[fileID][1];
+  sn[multi]       = idList[fileID][3];
   ch[multi]       = hit[fileID]->channel;
   e[multi]        = hit[fileID]->energy;
   e2[multi]       = hit[fileID]->energy_short;
@@ -126,7 +130,7 @@ int main(int argc, char ** argv){
   }
 
   //*======================================== group files
-  std::vector<std::vector<int>> idList;
+  idList.clear();
   for( int i = 0; i < nFile; i++){
     TString fn = inFileName[i];
 
@@ -234,18 +238,16 @@ int main(int argc, char ** argv){
   //--- find earlist time among the files
   activeFileID.clear();
   groupIndex.clear();  //the index of each group
-  std::vector<bool> relay; // to tell next block loop to change file
 
   for(int i = 0; i < (int) group.size(); i++) {
     groupIndex.push_back(0);
     activeFileID.push_back(group[i][0]);
-    relay.push_back(false);
   }
 
   int fileID = 0;
-  int digiID = 0;
-  findEarliestTime(fileID, digiID);
-  fillData(fileID, digiID, saveTrace);
+  int groupID = 0;
+  findEarliestTime(fileID, groupID);
+  fillData(fileID, saveTrace);
 
   unsigned long firstTimeStamp = hit[fileID]->timestamp;
   unsigned long lastTimeStamp = 0;
@@ -253,30 +255,26 @@ int main(int argc, char ** argv){
   int last_precentage = 0;
   while((activeFileID.size() > 0)){
 
-    findEarliestTime(fileID, digiID);
-    if( reader[fileID]->IsEndOfFile() ) relay[digiID] = true;
+    findEarliestTime(fileID, groupID);
+    if( reader[fileID]->IsEndOfFile() ){
+      groupIndex[groupID] ++;
+      if( groupIndex[groupID] < (int) group[groupID].size() ){
+        activeFileID[groupID] = group[groupID][groupIndex[groupID]];
+        fileID = activeFileID[groupID];
+      }else{
+        activeFileID.erase(activeFileID.begin() + groupID);
+      }
+    }
 
     if( hit[fileID]->timestamp - e_t[0] < timeWindow ){
-      fillData(fileID, digiID, saveTrace);
+      fillData(fileID, saveTrace);
     }else{
       outRootFile->cd();
       tree->Fill();
       evID ++;
 
       multi = 0;
-      fillData(fileID, digiID, saveTrace);
-    }
-    
-    ///========= check is file finished.
-    if( relay[digiID]){
-      groupIndex[digiID] ++;
-      if( groupIndex[digiID] < (int) group[digiID].size() ){
-        activeFileID[digiID] = group[digiID][groupIndex[digiID]];
-        fileID = activeFileID[digiID];
-      }else{
-        activeFileID.erase(activeFileID.begin() + digiID);
-      }
-      relay[digiID] = false;
+      fillData(fileID, saveTrace);
     }
     
     ///========= calculate progress
