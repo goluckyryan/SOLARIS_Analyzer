@@ -119,7 +119,9 @@
     "locale": "cpp",
     "__verbose_abort": "cpp",
     "Monitors_Util.C": "cpp",
-    "Monitor_Util.C": "cpp"
+    "Monitor_Util.C": "cpp",
+    "script_single.C": "cpp",
+    "script_multi.C": "cpp"
   },
 
   "better-comments.multilineComments": true,

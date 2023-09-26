@@ -3,10 +3,10 @@
 #include "TH2.h"
 #include "TCanvas.h"
 
-void script(){ 
+void script_single(std::string fileName){ 
 
-  SolReader * reader = new SolReader("../data_raw/Master_003_00_21245_000.sol");
-  Event * evt = reader->evt;
+  SolReader * reader = new SolReader(fileName);
+  Hit * hit = reader->hit;
 
   reader->ScanNumBlock();
 
@@ -14,27 +14,12 @@ void script(){
 
   for( int i = 1; i < 10; i ++ ){
     reader->ReadBlock(numBlock-i);
-    evt->PrintEnergyTimeStamp();
+    hit->PrintEnergyTimeStamp();
   }
-
-
-  printf("======================== \n");
-  SolReader * reader1 = new SolReader("../data_raw/Master_003_01_21233_000.sol");
-  Event * evt1 = reader1->evt;
-
-  reader1->ScanNumBlock();
-
-  long numBlock1 = reader1->GetTotalNumBlock();
-
-  for( int i = 1; i < 10; i ++ ){
-    reader1->ReadBlock(numBlock1-i);
-    evt1->PrintEnergyTimeStamp();
-  }
-
 
   /*
   SolReader * reader = new SolReader("../data_raw/Master_003_00_21245_000.sol");
-  Event * evt = reader->evt;
+  Event * hit = reader->hit;
 
   printf("========== file size: %u Byte\n", reader->GetFileSize());
 
@@ -44,9 +29,9 @@ void script(){
   
   unsigned long startTime, endTime;
   reader->ReadBlock(0);
-  startTime = evt->timestamp;
+  startTime = hit->timestamp;
   reader->ReadBlock(reader->GetTotalNumBlock() - 1);
-  endTime = evt->timestamp;
+  endTime = hit->timestamp;
 
   double duration = double(endTime - startTime)*8./1e9;
   printf("============== %lu ns = %.4f sec.\n", (endTime - startTime)*8, duration);
@@ -70,16 +55,16 @@ void script(){
       printf("########################## nBlock : %u, %u/%u\n", reader->GetBlockID(), 
                                                                 reader->GetFilePos(), 
                                                                 reader->GetFileSize());
-      evt->PrintAll();
-      //evt->PrintAllTrace();
+      hit->PrintAll();
+      //hit->PrintAllTrace();
     }
 
-    h1->Fill(evt->timestamp);
-    h2->Fill(evt->timestamp, i);
+    h1->Fill(hit->timestamp);
+    h2->Fill(hit->timestamp, i);
     
     if( i > 0 ){
-      if( evt->timestamp < tOld) printf("-------- time not sorted.");
-      tOld = evt->timestamp;
+      if( hit->timestamp < tOld) printf("-------- time not sorted.");
+      tOld = hit->timestamp;
     }
     
   }
@@ -88,17 +73,17 @@ void script(){
   h2->Draw();
   */
 
-  //printf("reader traceLength : %lu \n", evt->traceLenght);
+  //printf("reader traceLength : %lu \n", hit->traceLenght);
 
   /*
-  for( int i = 0; i < evt->traceLenght; i++){
+  for( int i = 0; i < hit->traceLenght; i++){
 
-    printf("%4d| %d\n", i, evt->analog_probes[0][i]);
+    printf("%4d| %d\n", i, hit->analog_probes[0][i]);
 
   }
   */
 
-  evt = NULL;
+  hit = NULL;
   delete reader;
 
 }

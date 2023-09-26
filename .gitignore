@@ -6,6 +6,8 @@ EventBuilder
 *.d
 *.so
 
+.gdb_history
+
 data_raw
 root_data
 

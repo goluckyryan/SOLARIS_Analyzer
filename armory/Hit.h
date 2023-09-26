@@ -1,5 +1,5 @@
-#ifndef EVENT_H
-#define EVENT_H
+#ifndef HIT_H
+#define HIT_H
 
 #include <stdio.h> 
 #include <cstdlib>
@@ -8,27 +8,46 @@
 
 #define MaxTraceLenght 8100
 
-class Event {
+enum DataFormat{
+
+  ALL      = 0,
+  OneTrace = 1,
+  NoTrace  = 2,
+  Minimum  = 3,
+  RAW      = 0x0A,
+  
+};
+
+namespace DPPType{
+
+  const std::string PHA = "DPP_PHA";
+  const std::string PSD = "DPP_PSD";
+
+};
+
+class Hit {
   public:
 
     unsigned short dataType; 
+    std::string DPPType;
 
     ///============= for dpp-pha
-    uint8_t  channel;    //  6 bit
-    uint16_t energy;   // 16 bit
-    uint64_t timestamp;  // 48 bit
+    uint8_t  channel;        //  6 bit
+    uint16_t energy;         // 16 bit
+    uint16_t energy_short;   // 16 bit, only for PSD
+    uint64_t timestamp;      // 48 bit
     uint16_t fine_timestamp; // 16 bit
     uint16_t flags_low_priority; // 12 bit
     uint16_t flags_high_priority; // 8 bit
-    size_t   traceLenght; // 64 bit
-    uint8_t downSampling; // 8 bit
+    size_t   traceLenght;     // 64 bit
+    uint8_t downSampling;     // 8 bit
     bool board_fail;
     bool flush; 
-    uint8_t  analog_probes_type[2];  // 3 bit
-    uint8_t  digital_probes_type[4]; // 4 bit
-    int32_t * analog_probes[2];  // 18 bit
-    uint8_t * digital_probes[4]; // 1 bit
-    uint16_t trigger_threashold; // 16 bit
+    uint8_t  analog_probes_type[2];  // 3 bit for PHA, 4 bit for PSD
+    uint8_t  digital_probes_type[4]; // 4 bit for PHA, 5 bit for PSD
+    int32_t * analog_probes[2];      // 18 bit
+    uint8_t * digital_probes[4];     // 1 bit
+    uint16_t trigger_threashold;     // 16 bit
     size_t   event_size;  // 64 bit
     uint32_t aggCounter; // 32 bit
 
@@ -39,17 +58,21 @@ class Event {
 
     bool isTraceAllZero;
 
-    Event(){
+    Hit(){
       Init();
     }
 
-    ~Event(){
+    ~Hit(){
       ClearMemory();
     }
 
     void Init(){
+      DPPType =  DPPType::PHA;
+      dataType = DataFormat::ALL;
+
       channel = 0;
       energy = 0;
+      energy_short = 0;
       timestamp = 0;
       fine_timestamp = 0;
       downSampling = 0;
@@ -92,11 +115,12 @@ class Event {
       isTraceAllZero = true;
     }
 
-    void SetDataType(unsigned int type){
+    void SetDataType(unsigned int type, std::string dppType){
       dataType = type;
+      DPPType = dppType;
       ClearMemory();
 
-      if( dataType == 0xF){
+      if( dataType == DataFormat::RAW){
         data = new uint8_t[20*1024*1024];
       }else{
         analog_probes[0] = new int32_t[MaxTraceLenght];
@@ -128,34 +152,68 @@ class Event {
     }
 
     void PrintEnergyTimeStamp(){
-      printf("ch: %2d, energy: %u, timestamp: %llu ch, traceLenght: %lu\n", channel, energy, timestamp, traceLenght);
+      printf("ch: %2d, energy: %u, timestamp: %lu ch, traceLenght: %lu\n", channel, energy, timestamp, traceLenght);
     }
 
     std::string AnaProbeType(uint8_t probeType){
-      switch(probeType){
-        case 0: return "ADC";
-        case 1: return "Time filter";
-        case 2: return "Energy filter";
-        default : return "none";
+
+      if( DPPType == DPPType::PHA){
+        switch(probeType){
+          case 0: return "ADC";
+          case 1: return "Time filter";
+          case 2: return "Energy filter";
+          default : return "none";
+        }
+      }else if (DPPType == DPPType::PSD){
+        switch(probeType){
+          case 0: return "ADC";
+          case 9: return "Baseline";
+          case 10: return "CFD";
+          default : return "none";
+        }
+      }else{
+        return "none";
       }
     }
 
     std::string DigiProbeType(uint8_t probeType){
-      switch(probeType){
-        case  0: return "Trigger";
-        case  1: return "Time filter armed";
-        case  2: return "Re-trigger guard";
-        case  3: return "Energy filter baseline freeze";
-        case  4: return "Energy filter peaking";
-        case  5: return "Energy filter peaking ready";
-        case  6: return "Energy filter pile-up guard";
-        case  7: return "Event pile-up";
-        case  8: return "ADC saturation";
-        case  9: return "ADC saturation protection";
-        case 10: return "Post-saturation event";
-        case 11: return "Energy filter saturation";
-        case 12: return "Signal inhibit";
-        default : return "none";
+
+      if( DPPType == DPPType::PHA){
+        switch(probeType){
+          case  0: return "Trigger";
+          case  1: return "Time filter armed";
+          case  2: return "Re-trigger guard";
+          case  3: return "Energy filter baseline freeze";
+          case  4: return "Energy filter peaking";
+          case  5: return "Energy filter peaking ready";
+          case  6: return "Energy filter pile-up guard";
+          case  7: return "Event pile-up";
+          case  8: return "ADC saturation";
+          case  9: return "ADC saturation protection";
+          case 10: return "Post-saturation event";
+          case 11: return "Energy filter saturation";
+          case 12: return "Signal inhibit";
+          default : return "none";
+        }
+      }else if (DPPType == DPPType::PSD){
+        switch(probeType){
+          case  0: return "Trigger";
+          case  1: return "CFD Filter Armed";
+          case  2: return "Re-trigger guard";
+          case  3: return "ADC Input Baseline freeze";
+          case 20: return "ADC Input OverThreshold";
+          case 21: return "Charge Ready";
+          case 22: return "Long Gate";
+          case  7: return "Pile-Up Trig.";
+          case 24: return "Short Gate";
+          case 25: return "Energy Saturation";
+          case 26: return "Charge over-range";
+          case 27: return "ADC Input Neg. OverThreshold";
+          default : return "none";
+        }
+
+      }else{
+        return "none";
       }
     }
 
@@ -177,9 +235,19 @@ class Event {
     //TODO LowPriority
 
     void PrintAll(){
-      printf("============= Type : %u\n", dataType);
+      
+      switch(dataType){
+        case DataFormat::ALL :      printf("============= Type : ALL\n"); break;
+        case DataFormat::OneTrace : printf("============= Type : OneTrace\n"); break;
+        case DataFormat::NoTrace :  printf("============= Type : NoTrace\n"); break;
+        case DataFormat::Minimum :  printf("============= Type : Minimum\n"); break;
+        case DataFormat::RAW :      printf("============= Type : RAW\n"); return; break;
+        default : return;
+      }
+
       printf("ch : %2d (0x%02X), fail: %d, flush: %d\n", channel, channel, board_fail, flush);
-      printf("energy: %u, timestamp: %llu, fine_timestamp: %u \n", energy, timestamp, fine_timestamp);
+      if( DPPType == DPPType::PHA ) printf("energy: %u, timestamp: %lu, fine_timestamp: %u \n", energy, timestamp, fine_timestamp);
+      if( DPPType == DPPType::PSD ) printf("energy: %u, energy_S : %u, timestamp: %lu, fine_timestamp: %u \n", energy, energy_short, timestamp, fine_timestamp);
       printf("flag (high): 0x%02X, (low): 0x%03X, traceLength: %lu\n", flags_high_priority, flags_low_priority, traceLenght);
       printf("Agg counter : %u, trigger Thr.: %u, downSampling: %u \n", aggCounter, trigger_threashold, downSampling);
       printf("AnaProbe Type: %s(%u), %s(%u)\n", AnaProbeType(analog_probes_type[0]).c_str(), analog_probes_type[0],

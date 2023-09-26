@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include <time.h> // time in nano-sec
 
-#include "Event.h" // this is a symblic link to SOLARIS_QT6_DAQ/Event.h
+#include "Hit.h"
 
 #define tick2ns 8 // 1 tick = 8 ns
 
@@ -20,7 +20,7 @@ class SolReader {
     unsigned int totNumBlock;
 
     unsigned short blockStartIdentifier;
-    long blockID;
+    unsigned int numBlock;
     bool isScanned;
 
     void init();
@@ -29,7 +29,7 @@ class SolReader {
 
   public:
     SolReader();
-    SolReader(std::string fileName, unsigned short dataType = 0); // dataType can auto determine from the data, but remove it will crash....
+    SolReader(std::string fileName, unsigned short dataType);
     ~SolReader();
 
     void OpenFile(std::string fileName);
@@ -38,25 +38,25 @@ class SolReader {
 
     void ScanNumBlock();
 
-    long         GetBlockID()       const {return blockID;}
+    bool         IsEndOfFile()      const {return (filePos >= inFileSize ? true : false);}
+    unsigned int GetBlockID()       const {return numBlock - 1;}
+    unsigned int GetNumBlock()      const {return numBlock;}
     unsigned int GetTotalNumBlock() const {return totNumBlock;}
     unsigned int GetFilePos()       const {return filePos;}
     unsigned int GetFileSize()      const {return inFileSize;}
-
-    bool IsEndOfFile() {return (filePos >= inFileSize ? true : false);}
-
+    
     void RewindFile(); 
 
-    Event * evt;
+    Hit * hit;
 
 };
 
 void SolReader::init(){
   inFileSize = 0;
-  blockID = -1;
+  numBlock = 0;
   filePos = 0;
   totNumBlock = 0;
-  evt = new Event();
+  hit = new Hit();
 
   isScanned = false;
 
@@ -68,16 +68,15 @@ SolReader::SolReader(){
   init();
 }
 
-SolReader::SolReader(std::string fileName, unsigned short dataType){
+SolReader::SolReader(std::string fileName, unsigned short dataType = 0){
   init();
   OpenFile(fileName);
-  evt->SetDataType(dataType);
+  hit->SetDataType(dataType, DPPType::PHA);
 }
 
 SolReader::~SolReader(){
-  //printf("%s\n", __func__);
   if( !inFile ) fclose(inFile);
-  delete evt;
+  delete hit;
 }
 
 inline void SolReader::OpenFile(std::string fileName){
@@ -99,135 +98,139 @@ inline int SolReader::ReadBlock(unsigned int index, bool verbose){
   if( verbose ) printf("Block index: %u, File Pos: %u byte\n", index, blockPos[index]);
 
   fseek(inFile, blockPos[index], SEEK_CUR);
+
   filePos = blockPos[index];
 
-  blockID = index;
-  blockID --;
+  numBlock = index;
+
   return ReadNextBlock();
 }
 
 inline int SolReader::ReadNextBlock(int isSkip){
   if( inFile == NULL ) return -1;
-  if( feof(inFile) )  return -1; 
+  if( feof(inFile) ) return -1;
   if( filePos >= inFileSize) return -1;
   
   fread(&blockStartIdentifier, 2, 1, inFile);
 
-  if( (blockStartIdentifier & 0xAAA0) != 0xAAA0 ) {
+  if( (blockStartIdentifier & 0xAA00) != 0xAA00 ) {
     printf("header fail.\n");
     return -2 ;
   } 
 
-  if( ( blockStartIdentifier & 0xF ) == 15 ){
-    evt->SetDataType(15);  
+  if( ( blockStartIdentifier & 0xF ) == DataFormat::RAW ){
+    hit->SetDataType(DataFormat::RAW, ((blockStartIdentifier >> 1) & 0xF) == 0 ? DPPType::PHA : DPPType::PSD);  
   }
-  evt->dataType = blockStartIdentifier & 0xF;
+  hit->dataType = blockStartIdentifier & 0xF;
+  hit->DPPType = ((blockStartIdentifier >> 1) & 0xF) == 0 ? DPPType::PHA : DPPType::PSD;
 
-  if( evt->dataType == 0){ //======== same as the dataFormat in Digitizer
+  if( hit->dataType == DataFormat::ALL){
     if( isSkip == 0 ){
-      fread(&evt->channel, 1, 1, inFile);
-      fread(&evt->energy, 2, 1, inFile);
-      fread(&evt->timestamp, 6, 1, inFile);
-      fread(&evt->fine_timestamp, 2, 1, inFile);
-      fread(&evt->flags_high_priority, 1, 1, inFile);
-      fread(&evt->flags_low_priority, 2, 1, inFile);
-      fread(&evt->downSampling, 1, 1, inFile);
-      fread(&evt->board_fail, 1, 1, inFile);
-      fread(&evt->flush, 1, 1, inFile);
-      fread(&evt->trigger_threashold, 2, 1, inFile);
-      fread(&evt->event_size, 8, 1, inFile);
-      fread(&evt->aggCounter, 4, 1, inFile);
+      fread(&hit->channel,             1, 1, inFile);
+      fread(&hit->energy,              2, 1, inFile);
+      if( hit->DPPType == DPPType::PSD ) fread(&hit->energy_short, 2, 1, inFile);
+      fread(&hit->timestamp,           6, 1, inFile);
+      fread(&hit->fine_timestamp,      2, 1, inFile);
+      fread(&hit->flags_high_priority, 1, 1, inFile);
+      fread(&hit->flags_low_priority,  2, 1, inFile);
+      fread(&hit->downSampling,        1, 1, inFile);
+      fread(&hit->board_fail,          1, 1, inFile);
+      fread(&hit->flush,               1, 1, inFile);
+      fread(&hit->trigger_threashold,  2, 1, inFile);
+      fread(&hit->event_size,          8, 1, inFile);
+      fread(&hit->aggCounter,          4, 1, inFile);
     }else{
-      fseek(inFile, 31, SEEK_CUR);
+      fseek(inFile, hit->DPPType == DPPType::PHA ? 31 : 33, SEEK_CUR);
     }
-    fread(&evt->traceLenght, 8, 1, inFile);
+    fread(&hit->traceLenght, 8, 1, inFile);
     if( isSkip == 0){
-      fread(evt->analog_probes_type, 2, 1, inFile);
-      fread(evt->digital_probes_type, 4, 1, inFile);
-      fread(evt->analog_probes[0], evt->traceLenght*4, 1, inFile);
-      fread(evt->analog_probes[1], evt->traceLenght*4, 1, inFile);
-      fread(evt->digital_probes[0], evt->traceLenght, 1, inFile);
-      fread(evt->digital_probes[1], evt->traceLenght, 1, inFile);
-      fread(evt->digital_probes[2], evt->traceLenght, 1, inFile);
-      fread(evt->digital_probes[3], evt->traceLenght, 1, inFile);
+      fread(hit->analog_probes_type,     2, 1, inFile);
+      fread(hit->digital_probes_type,    4, 1, inFile);
+      fread(hit->analog_probes[0],  hit->traceLenght*4, 1, inFile);
+      fread(hit->analog_probes[1],  hit->traceLenght*4, 1, inFile);
+      fread(hit->digital_probes[0], hit->traceLenght, 1, inFile);
+      fread(hit->digital_probes[1], hit->traceLenght, 1, inFile);
+      fread(hit->digital_probes[2], hit->traceLenght, 1, inFile);
+      fread(hit->digital_probes[3], hit->traceLenght, 1, inFile);
     }else{
-      fseek(inFile, 6 + evt->traceLenght*(12), SEEK_CUR);
+      fseek(inFile, 6 + hit->traceLenght*(12), SEEK_CUR);
     } 
-  }else if( evt->dataType == 1){
+  }else if( hit->dataType == DataFormat::OneTrace){
     if( isSkip == 0 ){
-      fread(&evt->channel, 1, 1, inFile);
-      fread(&evt->energy, 2, 1, inFile);
-      fread(&evt->timestamp, 6, 1, inFile);
-      fread(&evt->fine_timestamp, 2, 1, inFile);
-      fread(&evt->flags_high_priority, 1, 1, inFile);
-      fread(&evt->flags_low_priority, 2, 1, inFile);
+      fread(&hit->channel,             1, 1, inFile);
+      fread(&hit->energy,              2, 1, inFile);
+      if( hit->DPPType == DPPType::PSD ) fread(&hit->energy_short, 2, 1, inFile);
+      fread(&hit->timestamp,           6, 1, inFile);
+      fread(&hit->fine_timestamp,      2, 1, inFile);
+      fread(&hit->flags_high_priority, 1, 1, inFile);
+      fread(&hit->flags_low_priority,  2, 1, inFile);
     }else{
-      fseek(inFile, 14, SEEK_CUR);
+      fseek(inFile, hit->DPPType == DPPType::PHA ? 14 : 16, SEEK_CUR);
     }
-    fread(&evt->traceLenght, 8, 1, inFile);
+    fread(&hit->traceLenght, 8, 1, inFile);
     if( isSkip == 0){
-      fread(&evt->analog_probes_type[0], 1, 1, inFile);
-      fread(evt->analog_probes[0], evt->traceLenght*4, 1, inFile);
+      fread(&hit->analog_probes_type[0], 1, 1, inFile);
+      fread(hit->analog_probes[0], hit->traceLenght*4, 1, inFile);
     }else{
-      fseek(inFile, 1 + evt->traceLenght*4, SEEK_CUR);
+      fseek(inFile, 1 + hit->traceLenght*4, SEEK_CUR);
     }
-  }else if( evt->dataType == 2){
+  }else if( hit->dataType == DataFormat::NoTrace){
     if( isSkip == 0 ){
-      fread(&evt->channel, 1, 1, inFile);
-      fread(&evt->energy, 2, 1, inFile);
-      fread(&evt->timestamp, 6, 1, inFile);
-      fread(&evt->fine_timestamp, 2, 1, inFile);
-      fread(&evt->flags_high_priority, 1, 1, inFile);
-      fread(&evt->flags_low_priority, 2, 1, inFile);
+      fread(&hit->channel,             1, 1, inFile);
+      fread(&hit->energy,              2, 1, inFile);
+      if( hit->DPPType == DPPType::PSD ) fread(&hit->energy_short, 2, 1, inFile);
+      fread(&hit->timestamp,           6, 1, inFile);
+      fread(&hit->fine_timestamp,      2, 1, inFile);
+      fread(&hit->flags_high_priority, 1, 1, inFile);
+      fread(&hit->flags_low_priority,  2, 1, inFile);
     }else{
-      fseek(inFile, 14, SEEK_CUR);
+      fseek(inFile, hit->DPPType == DPPType::PHA ? 14 : 16, SEEK_CUR);
     }
-  }else if( evt->dataType == 3){
+  }else if( hit->dataType == DataFormat::Minimum){
     if( isSkip == 0 ){
-      fread(&evt->channel, 1, 1, inFile);
-      fread(&evt->energy, 2, 1, inFile);
-      fread(&evt->timestamp, 6, 1, inFile);
+      fread(&hit->channel,   1, 1, inFile);
+      fread(&hit->energy,    2, 1, inFile);
+      if( hit->DPPType == DPPType::PSD ) fread(&hit->energy_short, 2, 1, inFile);
+      fread(&hit->timestamp, 6, 1, inFile);
     }else{
-      fseek(inFile, 9, SEEK_CUR);
+      fseek(inFile, hit->DPPType == DPPType::PHA ? 9 : 11, SEEK_CUR);
     }
-  }else if( evt->dataType == 15){
-      fread(&evt->dataSize, 8, 1, inFile);
+  }else if( hit->dataType == DataFormat::RAW){
+      fread(&hit->dataSize, 8, 1, inFile);
     if( isSkip == 0){
-      fread(evt->data, evt->dataSize, 1, inFile);
+      fread(hit->data, hit->dataSize, 1, inFile);
     }else{
-      fseek(inFile, evt->dataSize, SEEK_CUR);
+      fseek(inFile, hit->dataSize, SEEK_CUR);
     }
   }
 
-  blockID ++;
+  numBlock ++;
   filePos = ftell(inFile);
-
   return 0;
 }
 
 void SolReader::RewindFile(){
   rewind(inFile);
   filePos = 0;
-  blockID = 0;
+  numBlock = 0;
 }
 
 void SolReader::ScanNumBlock(){
   if( inFile == NULL ) return;
   if( feof(inFile) ) return;
   
-  blockID = -1;
+  numBlock = 0;
   blockPos.clear();
 
   blockPos.push_back(0);
-  totNumBlock = 0;
 
   while( ReadNextBlock(1) == 0){
     blockPos.push_back(filePos);
-    printf("%ld, %.2f%% %u/%u\n\033[A\r", blockID, filePos*100./inFileSize, filePos, inFileSize);
-    totNumBlock ++;
+    printf("%u, %.2f%% %u/%u\n\033[A\r", numBlock, filePos*100./inFileSize, filePos, inFileSize);
   }
 
-  blockID = -1;
+  totNumBlock = numBlock;
+  numBlock = 0;
   isScanned = true;
   printf("\nScan complete: number of data Block : %u\n", totNumBlock);
   rewind(inFile);

@@ -10,11 +10,11 @@
 //#include "TClonesArray.h" // plan to save trace as TVector with TClonesArray
 //#include "TVector.h"
 
-#define MAX_ID 64
+#define MAX_MULTI 64
 #define MAX_TRACE_LEN 2500
 
 SolReader ** reader;
-Event ** evt;
+Hit ** hit;
 
 unsigned long totFileSize = 0;
 unsigned long processedFileSize = 0;
@@ -25,48 +25,51 @@ std::vector<std::vector<int>> group; // group[i][j], i = group ID, j = group mem
 
 void findEarliestTime(int &fileID, int & digiID){
 
-  unsigned long firstTime = 0;
+    unsigned long firstTime = 0;
   for( int i = 0; i < (int) activeFileID.size(); i++){
     int id = activeFileID[i];
     if( i == 0 ) {
-      firstTime = evt[id]->timestamp;
+      firstTime = hit[id]->timestamp;
       fileID = id;
-      digiID = i;
-      //printf("%d | %ld %lu %d | %d \n", id, reader[id]->GetBlockID(), evt[id]->timestamp, evt[id]->channel, (int) activeFileID.size());
+      //printf("%d | %d %lu %d | %d \n", id, reader[id]->GetBlockID(), hit[id]->timestamp, hit[id]->channel, (int) activeFileID.size());
       continue;
     }
-    if( evt[id]->timestamp <= firstTime) {
-      firstTime = evt[id]->timestamp;
+    if( hit[id]->timestamp <= firstTime) {
+      firstTime = hit[id]->timestamp;
       fileID = id;
-      digiID = i;
-      //printf("%d | %ld %lu %d | %d \n", id, reader[id]->GetBlockID(), evt[id]->timestamp, evt[id]->channel, (int) activeFileID.size());
+      //printf("%d | %d %lu %d | %d \n", id, reader[id]->GetBlockID(), hit[id]->timestamp, hit[id]->channel, (int) activeFileID.size());
     }
   }
+
 }
 
-unsigned long long          evID = 0;
-int                        multi = 0;
-int                   bd[MAX_ID] = {0}; 
-int                   ch[MAX_ID] = {0};
-int                    e[MAX_ID] = {0};  
-unsigned long long   e_t[MAX_ID] = {0};
-unsigned short   lowFlag[MAX_ID] = {0};
-unsigned short  highFlag[MAX_ID] = {0};
-int             traceLen[MAX_ID] = {0};
-int trace[MAX_ID][MAX_TRACE_LEN] = {0};
+unsigned long long            evID  = 0;
+unsigned int                  multi = 0;
+unsigned short        bd[MAX_MULTI] = {0}; 
+unsigned short        sn[MAX_MULTI] = {0};
+unsigned short        ch[MAX_MULTI] = {0};
+unsigned short         e[MAX_MULTI] = {0};  
+unsigned short        e2[MAX_MULTI] = {0};  //for PSD energy short
+unsigned long long   e_t[MAX_MULTI] = {0};
+unsigned short   lowFlag[MAX_MULTI] = {0};
+unsigned short  highFlag[MAX_MULTI] = {0};
+int             traceLen[MAX_MULTI] = {0};
+int trace[MAX_MULTI][MAX_TRACE_LEN] = {0};
 
 void fillData(int &fileID, int &digiID, const bool &saveTrace){
-  bd[multi] = digiID;
-  ch[multi] = evt[fileID]->channel;
-  e[multi] = evt[fileID]->energy;
-  e_t[multi] = evt[fileID]->timestamp;
-  lowFlag[multi] = evt[fileID]->flags_low_priority;
-  highFlag[multi] = evt[fileID]->flags_high_priority;
+  bd[multi]       = digiID;
+  sn[multi]       = digiID;
+  ch[multi]       = hit[fileID]->channel;
+  e[multi]        = hit[fileID]->energy;
+  e2[multi]       = hit[fileID]->energy_short;
+  e_t[multi]      = hit[fileID]->timestamp;
+  lowFlag[multi]  = hit[fileID]->flags_low_priority;
+  highFlag[multi] = hit[fileID]->flags_high_priority;
   
   if( saveTrace ){
-    traceLen[multi] = evt[fileID]->traceLenght;
+    traceLen[multi] = hit[fileID]->traceLenght;
     for( int i = 0; i < TMath::Min(traceLen[multi], MAX_TRACE_LEN); i++){
-      trace[multi][i] = evt[fileID]->analog_probes[0][i];
+      trace[multi][i] = hit[fileID]->analog_probes[0][i];
     } 
   }
 
@@ -114,14 +117,11 @@ int main(int argc, char ** argv){
 
   //*======================================== setup reader
   reader = new SolReader*[nFile];
-  evt = new Event *[nFile];
+  hit = new Hit *[nFile];
 
   for( int i = 0 ; i < nFile ; i++){
     reader[i] = new SolReader(inFileName[i].Data());
-    evt[i] = reader[i]->evt;   //TODO check is file open propertly
-
-    //reader[i]->ScanNumBlock();
-
+    hit[i] = reader[i]->hit;   //TODO check is file open propertly
     reader[i]->ReadNextBlock(); // read the first block
   }
 
@@ -144,16 +144,20 @@ int main(int argc, char ** argv){
     int digiID = f1.Remove(pos).Atoi();
     fn.Remove(0, pos+1);
 
-    pos = fn.Last('_'); // remove digi serial num
+    pos = fn.Last('_'); // digi serial num
+    f1 = fn;
+    int digisn = f1.Remove(pos).Atoi();
     fn.Remove(0, pos+1);
 
     pos = fn.First('.'); // get the file id;
-    int fileID = fn.Remove(pos).Atoi();
+    int indexID = fn.Remove(pos).Atoi();
 
-    std::vector<int> haha = {i, digiID, fileID};
+    int fileID = i;
+    std::vector<int> haha = {fileID, digiID, indexID, digisn};
     idList.push_back(haha);
   }
 
+  // sort by digiID
   std::sort(idList.begin(), idList.end(), [](const std::vector<int>& a, const std::vector<int>& b){ 
     if (a[1] == b[1]) {
       return a[2] < b[2];
@@ -161,11 +165,11 @@ int main(int argc, char ** argv){
     return a[1] < b[1];
   });
 
-  group.clear();
+  group.clear(); // group[i][j], i is the group Index = digiID
   int last_id = 0;
   std::vector<int> kaka;
   for( int i = 0; i < (int) idList.size() ; i++){
-    if( i == 0 ) {
+        if( i == 0 ) {
       kaka.clear();
       last_id = idList[i][1]; 
       kaka.push_back(idList[i][0]);
@@ -208,10 +212,12 @@ int main(int argc, char ** argv){
   TTree * tree = new TTree("tree", outFileName);
 
   tree->Branch("evID",         &evID, "event_ID/l"); 
-  tree->Branch("multi",       &multi, "multi/I"); 
-  tree->Branch("bd",              bd, "board[multi]/I");
-  tree->Branch("ch",              ch, "channel[multi]/I");
-  tree->Branch("e",                e, "energy[multi]/I");
+  tree->Branch("multi",       &multi, "multi/i"); 
+  tree->Branch("bd",              bd, "board[multi]/s");
+  tree->Branch("sn",              sn, "sn[multi]/s");
+  tree->Branch("ch",              ch, "channel[multi]/s");
+  tree->Branch("e",                e, "energy[multi]/s");
+  tree->Branch("e2",              e2, "energy_short[multi]/s");
   tree->Branch("e_t",            e_t, "energy_timestamp[multi]/l");
   tree->Branch("lowFlag",    lowFlag, "lowFlag[multi]/s");
   tree->Branch("highFlag",  highFlag, "highFlag[multi]/s");
@@ -241,15 +247,16 @@ int main(int argc, char ** argv){
   findEarliestTime(fileID, digiID);
   fillData(fileID, digiID, saveTrace);
 
-  unsigned long firstTimeStamp = evt[fileID]->timestamp;
+  unsigned long firstTimeStamp = hit[fileID]->timestamp;
   unsigned long lastTimeStamp = 0;
-
 
   int last_precentage = 0;
   while((activeFileID.size() > 0)){
 
     findEarliestTime(fileID, digiID);
-    if( evt[fileID]->timestamp - e_t[0] < timeWindow ){
+    if( reader[fileID]->IsEndOfFile() ) relay[digiID] = true;
+
+    if( hit[fileID]->timestamp - e_t[0] < timeWindow ){
       fillData(fileID, digiID, saveTrace);
     }else{
       outRootFile->cd();
@@ -259,7 +266,7 @@ int main(int argc, char ** argv){
       multi = 0;
       fillData(fileID, digiID, saveTrace);
     }
-
+    
     ///========= check is file finished.
     if( relay[digiID]){
       groupIndex[digiID] ++;
@@ -271,8 +278,7 @@ int main(int argc, char ** argv){
       }
       relay[digiID] = false;
     }
-    if( reader[fileID]->IsEndOfFile() ) relay[digiID] = true;
-  
+    
     ///========= calculate progress
     processedFileSize = 0;
     for( int p = 0; p < (int) group.size(); p ++){
@@ -302,7 +308,7 @@ int main(int argc, char ** argv){
   double percentage = processedFileSize * 100/ totFileSize;
   printf("Processed : %llu, %.0f%% | %lu/%lu            \n", evID, percentage, processedFileSize, totFileSize);
 
-  lastTimeStamp = evt[fileID]->timestamp;
+  lastTimeStamp = hit[fileID]->timestamp;
   //*=========================================== save file
   outRootFile->cd();
   tree->Fill();
