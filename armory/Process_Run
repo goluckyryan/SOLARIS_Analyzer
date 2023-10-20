@@ -24,7 +24,6 @@ if [ $# -eq 0 ] || [ $1 == "-help"  ]; then
   exit 1
 fi;
 
-
 RUN=$1
 runNum=$1
 EventBld=2
@@ -41,7 +40,7 @@ if [ "$RUN" == "lastRun" ]; then
   RUN=$runID
 fi
 
-RUN=${RUN%0} #remove zero
+RUN=${RUN##*(0)} #remove zero
 RUN=$(printf '%03d' $RUN) ##add back the zero
 
 ################################### Setting display
