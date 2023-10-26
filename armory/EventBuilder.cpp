@@ -55,6 +55,7 @@ unsigned short        ch[MAX_MULTI] = {0};
 unsigned short         e[MAX_MULTI] = {0};  
 unsigned short        e2[MAX_MULTI] = {0};  //for PSD energy short
 unsigned long long   e_t[MAX_MULTI] = {0};
+unsigned short       e_f[MAX_MULTI] = {0};
 unsigned short   lowFlag[MAX_MULTI] = {0};
 unsigned short  highFlag[MAX_MULTI] = {0};
 int             traceLen[MAX_MULTI] = {0};
@@ -67,6 +68,7 @@ void fillData(int &fileID, const bool &saveTrace){
   e[multi]        = hit[fileID]->energy;
   e2[multi]       = hit[fileID]->energy_short;
   e_t[multi]      = hit[fileID]->timestamp;
+  e_f[multi]      = hit[fileID]->fine_timestamp;
   lowFlag[multi]  = hit[fileID]->flags_low_priority;
   highFlag[multi] = hit[fileID]->flags_high_priority;
   
@@ -222,7 +224,8 @@ int main(int argc, char ** argv){
   tree->Branch("ch",              ch, "channel[multi]/s");
   tree->Branch("e",                e, "energy[multi]/s");
   tree->Branch("e2",              e2, "energy_short[multi]/s");
-  tree->Branch("e_t",            e_t, "energy_timestamp[multi]/l");
+  tree->Branch("e_t",            e_t, "timestamp[multi]/l");
+  tree->Branch("e_f",            e_t, "fine_timestamp[multi]/s");
   tree->Branch("lowFlag",    lowFlag, "lowFlag[multi]/s");
   tree->Branch("highFlag",  highFlag, "highFlag[multi]/s");
 
