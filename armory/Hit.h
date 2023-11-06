@@ -14,6 +14,7 @@ enum DataFormat{
   OneTrace = 0x01,
   NoTrace  = 0x02,
   Minimum  = 0x03,
+  MiniWithFineTime = 0x04,
   Raw      = 0x0A,
   
 };
@@ -237,11 +238,12 @@ class Hit {
     void PrintAll(){
       
       switch(dataType){
-        case DataFormat::ALL :      printf("============= Type : ALL\n"); break;
-        case DataFormat::OneTrace : printf("============= Type : OneTrace\n"); break;
-        case DataFormat::NoTrace :  printf("============= Type : NoTrace\n"); break;
-        case DataFormat::Minimum :  printf("============= Type : Minimum\n"); break;
-        case DataFormat::Raw :      printf("============= Type : Raw\n"); return; break;
+        case DataFormat::ALL :               printf("============= Type : ALL\n"); break;
+        case DataFormat::OneTrace :          printf("============= Type : OneTrace\n"); break;
+        case DataFormat::NoTrace :           printf("============= Type : NoTrace\n"); break;
+        case DataFormat::MiniWithFineTime :  printf("============= Type : Min with FineTimestamp\n"); break;
+        case DataFormat::Minimum :           printf("============= Type : Minimum\n"); break;
+        case DataFormat::Raw :               printf("============= Type : Raw\n"); return; break;
         default : return;
       }
 

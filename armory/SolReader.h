@@ -10,8 +10,6 @@
 
 #include "Hit.h"
 
-#define tick2ns 8 // 1 tick = 8 ns
-
 class SolReader {
   private:
     FILE * inFile;
@@ -155,6 +153,7 @@ inline int SolReader::ReadNextBlock(int isSkip){
     }else{
       fseek(inFile, 6 + hit->traceLenght*(12), SEEK_CUR);
     } 
+
   }else if( hit->dataType == DataFormat::OneTrace){
     if( isSkip == 0 ){
       fread(&hit->channel,             1, 1, inFile);
@@ -174,6 +173,7 @@ inline int SolReader::ReadNextBlock(int isSkip){
     }else{
       fseek(inFile, 1 + hit->traceLenght*4, SEEK_CUR);
     }
+
   }else if( hit->dataType == DataFormat::NoTrace){
     if( isSkip == 0 ){
       fread(&hit->channel,             1, 1, inFile);
@@ -186,6 +186,18 @@ inline int SolReader::ReadNextBlock(int isSkip){
     }else{
       fseek(inFile, hit->DPPType == DPPType::PHA ? 14 : 16, SEEK_CUR);
     }
+
+  }else if( hit->dataType == DataFormat::MiniWithFineTime){
+    if( isSkip == 0 ){
+      fread(&hit->channel,             1, 1, inFile);
+      fread(&hit->energy,              2, 1, inFile);
+      if( hit->DPPType == DPPType::PSD ) fread(&hit->energy_short, 2, 1, inFile);
+      fread(&hit->timestamp,           6, 1, inFile);
+      fread(&hit->fine_timestamp,      2, 1, inFile);
+    }else{
+      fseek(inFile, hit->DPPType == DPPType::PHA ? 11 : 13, SEEK_CUR);
+    }
+
   }else if( hit->dataType == DataFormat::Minimum){
     if( isSkip == 0 ){
       fread(&hit->channel,   1, 1, inFile);
@@ -195,6 +207,7 @@ inline int SolReader::ReadNextBlock(int isSkip){
     }else{
       fseek(inFile, hit->DPPType == DPPType::PHA ? 9 : 11, SEEK_CUR);
     }
+
   }else if( hit->dataType == DataFormat::Raw){
       fread(&hit->dataSize, 8, 1, inFile);
     if( isSkip == 0){

@@ -13,6 +13,8 @@
 #define MAX_MULTI 64
 #define MAX_TRACE_LEN 2500
 
+#define tick2ns 8 // 1 tick = 8 ns
+
 SolReader ** reader;
 Hit ** hit;
 
