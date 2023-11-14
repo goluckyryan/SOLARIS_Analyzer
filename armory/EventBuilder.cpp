@@ -227,7 +227,7 @@ int main(int argc, char ** argv){
   tree->Branch("e",                e, "energy[multi]/s");
   tree->Branch("e2",              e2, "energy_short[multi]/s");
   tree->Branch("e_t",            e_t, "timestamp[multi]/l");
-  tree->Branch("e_f",            e_t, "fine_timestamp[multi]/s");
+  tree->Branch("e_f",            e_f, "fine_timestamp[multi]/s");
   tree->Branch("lowFlag",    lowFlag, "lowFlag[multi]/s");
   tree->Branch("highFlag",  highFlag, "highFlag[multi]/s");
 
