@@ -33,5 +33,3 @@ The Hit class stores a hit (or a data block)
 ## SolReader.h
 
 The SolReader class read the sol file. It can be loaded in CERN ROOT alone. 
-
-
