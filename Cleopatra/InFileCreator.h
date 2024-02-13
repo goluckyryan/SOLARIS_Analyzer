@@ -26,9 +26,9 @@
 
 #include <stdlib.h>     /* atof */
 #include <vector>
-#include "../Cleopatra/Isotope.h" // for geting Z
+#include "../Cleopatra/ClassIsotope.h" // for geting Z
 #include "potentials.h"
-#include "../armory/AnalysisLib.h"
+#include "../Armory/AnalysisLib.h"
 
 using namespace std;
 

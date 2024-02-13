@@ -14,7 +14,7 @@
 
 #include <fstream>
 #include <stdlib.h>
-#include "Isotope.h"
+#include "ClassIsotope.h"
 
 using namespace std;
 

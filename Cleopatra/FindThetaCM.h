@@ -16,11 +16,12 @@
 #include "TMacro.h"
 #include "TObjArray.h"
 #include "TGraph.h"
-#include "../Cleopatra/HELIOS_LIB.h"
+#include "../Cleopatra/ClassHelios.h"
+#include "../Cleopatra/ClassTransfer.h"
 
 void FindThetaCM(double Ex, int nDivision=1, double XRATION = 0.95, 
-            string basicConfig="reactionConfig.txt",  
-            string detGeoFileName = "detectorGeo.txt"){
+            std::string basicConfig="reactionConfig.txt",  
+            std::string detGeoFileName = "detectorGeo.txt"){
 
   //---- reaction
   int AA, zA; //beam
@@ -34,13 +35,9 @@ void FindThetaCM(double Ex, int nDivision=1, double XRATION = 0.95,
   double xBeam, yBeam; // mm
 
    /**///========================================================= load files
-  AnalysisLib::ReactionConfig reactionConfig;
-  AnalysisLib::DetGeo detGeo;
-  TMacro * haha = new TMacro();
-  if( haha->ReadFile(basicConfig.c_str()) > 0 ){
-    reactionConfig = AnalysisLib::LoadReactionConfig(haha);
-
-    AnalysisLib::PrintReactionConfig(reactionConfig);
+  ReactionConfig reactionConfig;
+  DetGeo detGeo;
+  if( reactionConfig.LoadReactionConfig(basicConfig) ){
 
     KEAmean = reactionConfig.beamEnergy;
     KEAsigma = reactionConfig.beamEnergySigma;
@@ -62,7 +59,7 @@ void FindThetaCM(double Ex, int nDivision=1, double XRATION = 0.95,
     return;
   }
   
-   vector<double> pos;
+   std::vector<double> pos;
    double a = 11.5;
    double length = 50.5;
    double firstPos = 0;
@@ -99,10 +96,7 @@ void FindThetaCM(double Ex, int nDivision=1, double XRATION = 0.95,
    
    
    printf("----- loading detector geometery : %s.", detGeoFileName.c_str());
-   TMacro * kaka = new TMacro();
-   if( kaka->ReadFile(detGeoFileName.c_str()) > 0 ){
-     detGeo = AnalysisLib::LoadDetectorGeo(kaka);
-     
+   if(detGeo.LoadDetectorGeo(detGeoFileName) ){
      pos = detGeo.array1.detPos;
      a = detGeo.array1.detPerpDist;
      length = detGeo.array1.detLength;
@@ -112,8 +106,6 @@ void FindThetaCM(double Ex, int nDivision=1, double XRATION = 0.95,
      BField = detGeo.Bfield;
      
      printf("... done.\n");
-
-     AnalysisLib::PrintDetGeo(detGeo);
      
    }else{
      printf("... fail\n");

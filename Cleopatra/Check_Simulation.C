@@ -18,8 +18,10 @@
 #include <TObjArray.h>
 #include <fstream>
 #include <TCutG.h>
-#include "../armory/AnalysisLib.h"
-#include "../Cleopatra/Isotope.h"
+#include "../Armory/AnalysisLib.h"
+#include "../Armory/ClassDetGeo.h"
+#include "../Armory/ClassReactionConfig.h"
+#include "../Cleopatra/ClassIsotope.h"
 
 double * FindRange(TString branch, TString gate, TTree * tree, double output[2]);
 double ExtractNumber(int index, TMacro * macro);
@@ -109,7 +111,8 @@ void Check_Simulation(TString filename = "transfer1.root",
   TMacro * reactionConfigTxt = (TMacro *) file->FindObjectAny("reactionConfig");
   TString Reaction=reactionConfigTxt->GetName(); 
 
-  AnalysisLib::ReactionConfig reactionConfig = AnalysisLib::LoadReactionConfig(reactionConfigTxt);
+  ReactionConfig reactionConfig;
+  reactionConfig.LoadReactionConfig(reactionConfigTxt);
 
   int nEvent = reactionConfig.numEvents;
    printf("number of events generated : %d \n", nEvent);
@@ -137,9 +140,10 @@ void Check_Simulation(TString filename = "transfer1.root",
   printf(" loading detector Geometry.\n");
   TMacro * detGeoTxt = (TMacro *) file->FindObjectAny("detGeo");  
 
-  AnalysisLib::DetGeo detGeo = AnalysisLib::LoadDetectorGeo(detGeoTxt);
+  DetGeo detGeo;
+  detGeo.LoadDetectorGeo(detGeoTxt);
 
-  AnalysisLib::Array array;
+  Array array;
   if( detGeo.use2ndArray){
    array = detGeo.array2;
   }else{

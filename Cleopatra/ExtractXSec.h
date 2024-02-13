@@ -25,7 +25,7 @@
 #include <TGraph.h>
 #include <TF1.h>
 #include <TObjArray.h>
-#include "../armory/AnalysisLib.h"
+#include "../Armory/AnalysisLib.h"
 
 using namespace std;
 

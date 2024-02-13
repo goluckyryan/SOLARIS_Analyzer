@@ -13,7 +13,11 @@
 #include <fstream>
 #include <TObjArray.h>
 
-#include "HELIOS_LIB.h"
+#include "../Armory/ClassDetGeo.h"
+#include "ClassTargetScattering.h"
+#include "ClassDecay.h"
+#include "ClassTransfer.h"
+#include "ClassHelios.h"
 
 double exDistFunc(Double_t *x, Double_t * par){
   return par[(int) x[0]];
@@ -37,9 +41,9 @@ void Transfer(
   printf("----- loading reaction setting from %s. \n", basicConfig.c_str());
   printf("\e[32m#################################### Beam \e[0m\n");
 
-  const AnalysisLib::ReactionConfig reactionConfig = reaction.GetRectionConfig();
+  const ReactionConfig reactionConfig = reaction.GetRectionConfig();
 
-  AnalysisLib::PrintReactionConfig(reactionConfig);
+  reactionConfig.PrintReactionConfig();
 
   vector<float> ExAList = reactionConfig.beamEx;
   int nExA = (int) ExAList.size();
@@ -49,7 +53,7 @@ void Transfer(
   HELIOS helios;
   helios.SetDetectorGeometry(heliosDetGeoFile);
 
-  const AnalysisLib::DetGeo detGeo = helios.GetDetectorGeometry();
+  const DetGeo detGeo = helios.GetDetectorGeometry();
   
   printf("==================================== E-Z plot slope\n");
   double  betaRect = reaction.GetReactionBeta() ;
@@ -537,9 +541,9 @@ void Transfer(
       double phiCM = TMath::TwoPi() * gRandom->Rndm(); 
 
       //==== Calculate reaction
-      TLorentzVector * output = reaction.Event(thetaCM, phiCM);
-      TLorentzVector Pb = output[2];
-      TLorentzVector PB = output[3];
+      reaction.Event(thetaCM, phiCM);
+      TLorentzVector Pb = reaction.GetPb();
+      TLorentzVector PB = reaction.GetPB();
 
     //==== Calculate energy loss of scattered and recoil in target
     if( isTargetScattering ){
@@ -646,9 +650,9 @@ void Transfer(
         rhoRecoil2 = helios.GetRecoilR(detGeo.recoilPos2);
       }
       
-      reaction.CalExThetaCM(e, z, helios.GetBField(), helios.GetDetRadius());
-      ExCal = reaction.GetEx();
-      thetaCMCal = reaction.GetThetaCM();
+      std::pair<double,double> ExThetaCM = reaction.CalExThetaCM(e, z, helios.GetBField(), helios.GetDetRadius());
+      ExCal = ExThetaCM.first;
+      thetaCMCal = ExThetaCM.second;
 
       //change thetaCM into deg
       thetaCM = thetaCM * TMath::RadToDeg();

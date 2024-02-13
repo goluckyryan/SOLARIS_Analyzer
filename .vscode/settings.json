@@ -121,7 +121,9 @@
     "Monitors_Util.C": "cpp",
     "Monitor_Util.C": "cpp",
     "script_single.C": "cpp",
-    "script_multi.C": "cpp"
+    "script_multi.C": "cpp",
+    "Isotope.C": "cpp",
+    "classisotope.h": "c"
   },
 
   "better-comments.multilineComments": true,
