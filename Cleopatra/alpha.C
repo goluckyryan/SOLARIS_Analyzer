@@ -1,4 +1,4 @@
-#include "HELIOS_LIB.h"
+#include "ClassHelios.h"
 #include "TROOT.h"
 #include "TBenchmark.h"
 #include "TLorentzVector.h"

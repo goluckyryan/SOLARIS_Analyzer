@@ -12,8 +12,46 @@
 #include <TMath.h>
 #include <TObjArray.h>
 #include <TCutG.h>
+#include <TGraph.h>
 
 namespace AnalysisLib {
+
+//*######################################### TRAPEZOID 
+TGraph * TrapezoidFilter(TGraph * trace, int baseLineEnd = 80, int riseTime = 10, int flatTop = 20, float decayTime = 2000){
+  ///Trapezoid filter https://doi.org/10.1016/0168-9002(94)91652-7
+  
+  TGraph *  trapezoid = new TGraph();
+  trapezoid->Clear();
+  
+  ///find baseline;
+  double baseline = 0;
+  for( int i = 0; i < baseLineEnd; i++){
+    baseline += trace->Eval(i);
+  }
+  baseline = baseline*1./baseLineEnd;
+  
+  int length = trace->GetN();
+  
+  double pn = 0.;
+  double sn = 0.;
+  for( int i = 0; i < length ; i++){
+  
+    double dlk = trace->Eval(i) - baseline;
+    if( i - riseTime >= 0            ) dlk -= trace->Eval(i - riseTime)             - baseline;
+    if( i - flatTop - riseTime >= 0  ) dlk -= trace->Eval(i - flatTop - riseTime)   - baseline;
+    if( i - flatTop - 2*riseTime >= 0) dlk += trace->Eval(i - flatTop - 2*riseTime) - baseline;
+    
+    if( i == 0 ){
+        pn = dlk;
+        sn = pn + dlk*decayTime;
+    }else{
+        pn = pn + dlk;
+        sn = sn + pn + dlk*decayTime;
+    }      
+    trapezoid->SetPoint(i, i, sn / decayTime / riseTime);
+  }
+  return trapezoid;
+}
 
 std::vector<std::string> SplitStr(std::string tempLine, std::string splitter, int shift = 0){
 
@@ -48,7 +86,6 @@ std::vector<std::string> SplitStr(std::string tempLine, std::string splitter, in
 
   return output;
 };
-
 
 //************************************** TCutG
 

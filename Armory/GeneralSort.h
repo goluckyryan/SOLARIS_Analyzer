@@ -50,49 +50,6 @@ double fitFunc(double * x, double * par){
   return par[3] + par[0] * (1 - TMath::Exp(- (x[0] - par[1]) / par[2]) ) * TMath::Exp(- (x[0] - par[1]) / par[4]);
 }
 
-//^######################################### TRAPEZOID 
-TGraph * TrapezoidFilter(TGraph * trace){
-  ///Trapezoid filter https://doi.org/10.1016/0168-9002(94)91652-7
-
-  //TODO how to not hard code?
-  int baseLineEnd = 80;     
-  int riseTime = 10; //ch
-  int flatTop = 20;
-  float decayTime = 2000;
-  
-  TGraph *  trapezoid = new TGraph();
-  trapezoid->Clear();
-  
-  ///find baseline;
-  double baseline = 0;
-  for( int i = 0; i < baseLineEnd; i++){
-    baseline += trace->Eval(i);
-  }
-  baseline = baseline*1./baseLineEnd;
-  
-  int length = trace->GetN();
-  
-  double pn = 0.;
-  double sn = 0.;
-  for( int i = 0; i < length ; i++){
-  
-    double dlk = trace->Eval(i) - baseline;
-    if( i - riseTime >= 0            ) dlk -= trace->Eval(i - riseTime)             - baseline;
-    if( i - flatTop - riseTime >= 0  ) dlk -= trace->Eval(i - flatTop - riseTime)   - baseline;
-    if( i - flatTop - 2*riseTime >= 0) dlk += trace->Eval(i - flatTop - 2*riseTime) - baseline;
-    
-    if( i == 0 ){
-        pn = dlk;
-        sn = pn + dlk*decayTime;
-    }else{
-        pn = pn + dlk;
-        sn = sn + pn + dlk*decayTime;
-    }      
-    trapezoid->SetPoint(i, i, sn / decayTime / riseTime);
-  }
-  return trapezoid;
-}
-
 TStopwatch stpWatch;
 
 //^######################################### Class definition

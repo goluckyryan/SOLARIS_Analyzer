@@ -91,8 +91,8 @@ public:
   double zMin, zMax;   /// range of detectors
   bool isCoincidentWithRecoil;
 
-  bool LoadDetectorGeo(TString fileName);
-  bool LoadDetectorGeo(TMacro * macro);
+  bool LoadDetectorGeo(TString fileName, bool verbose = true);
+  bool LoadDetectorGeo(TMacro * macro, bool verbose = true);
 
   void PrintDetGeo( bool printAll = true) const;
 
@@ -108,11 +108,11 @@ inline DetGeo::~DetGeo(){
 
 }
 
-inline bool DetGeo::LoadDetectorGeo(TString fileName){
+inline bool DetGeo::LoadDetectorGeo(TString fileName, bool verbose){
 
   TMacro * haha = new TMacro();
   if( haha->ReadFile(fileName) > 0 ) {
-    if( LoadDetectorGeo(haha) ){
+    if( LoadDetectorGeo(haha, verbose) ){
       return true;
     }else{
       return false;
@@ -124,7 +124,7 @@ inline bool DetGeo::LoadDetectorGeo(TString fileName){
 
 ///Using TMacro to load the detectorGeo frist,
 ///this indrect method is good for loading detectorGeo from TMacro in root file
-inline bool DetGeo::LoadDetectorGeo(TMacro * macro){
+inline bool DetGeo::LoadDetectorGeo(TMacro * macro, bool verbose){
 
   if( macro == NULL ) return false;
 
@@ -211,7 +211,7 @@ inline bool DetGeo::LoadDetectorGeo(TMacro * macro){
     zMin = TMath::Min(array1.zMin, array2.zMin);
   }
 
-  PrintDetGeo(false); 
+  if( verbose ) PrintDetGeo(false); 
 
   return true;
 

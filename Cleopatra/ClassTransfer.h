@@ -36,7 +36,7 @@ public:
 
   void SetExA(double Ex);
   void SetExB(double Ex);
-  void SetReactionFromFile(string settingFile);
+  void SetReactionFromFile(string reactionConfigFile);
   
   TString GetReactionName();
   TString GetReactionName_Latex();
@@ -198,9 +198,9 @@ void TransferReaction::SetExB(double Ex){
   isReady = false;
 }
 
-void TransferReaction::SetReactionFromFile(string settingFile){
+void TransferReaction::SetReactionFromFile(string reactionConfigFile){
 
-  if( reaction.LoadReactionConfig(settingFile) ){
+  if( reaction.LoadReactionConfig(reactionConfigFile) ){
 
     SetA(reaction.beamA, reaction.beamZ);
     Seta(reaction.targetA, reaction.targetZ);
@@ -211,7 +211,7 @@ void TransferReaction::SetReactionFromFile(string settingFile){
     CalReactionConstant();
 
   }else{     
-    printf("cannot read file %s.\n", settingFile.c_str());
+    printf("cannot read file %s.\n", reactionConfigFile.c_str());
     isReady = false;
   }
 

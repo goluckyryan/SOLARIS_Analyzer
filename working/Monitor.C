@@ -21,7 +21,7 @@
 #include <TObjArray.h>
 #include <fstream>
 #include <vector>
-#include "../Cleopatra/Isotope.h"
+#include "../Cleopatra/ClassIsotope.h"
 #include "Mapping.h"
 
 #define tick2ns 8. // 1clock tick = 8 ns
@@ -177,27 +177,25 @@ void Monitor::Begin(TTree *tree){
   printf("###########################################################\n");
   
   //===================================================== loading parameter
-  AnalysisLib::LoadDetGeoAndReactionConfigFile();
-  AnalysisLib::LoadXNCorr();
-  AnalysisLib::LoadXFXN2ECorr();
-  AnalysisLib::LoadXScaleCorr();
-  AnalysisLib::LoadECorr();
-  AnalysisLib::LoadRDTCorr();
-  AnalysisLib::LoadReactionParas(1, true);
-  if( AnalysisLib::detGeo.use2ndArray ) AnalysisLib::LoadReactionParas(2, true);
+  corr->LoadDetGeoAndReactionConfigFile();
+  corr->LoadXNCorr();
+  corr->LoadXFXN2ECorr();
+  corr->LoadXScaleCorr();
+  corr->LoadECorr();
+  corr->LoadRDTCorr();
 
-  if( (int) AnalysisLib::xnCorr.size()    < mapping::NARRAY ) { isXNCorrOK = false;     printf(" !!!!!!!! size of xnCorr < NARRAY .\n"); }
-  if( (int) AnalysisLib::xfxneCorr.size() < mapping::NARRAY ) { isXFXNCorrOK = false;   printf(" !!!!!!!! size of xfxneCorr < NARRAY .\n"); }
-  if( (int) AnalysisLib::eCorr.size()     < mapping::NARRAY ) { isXScaleCorrOK = false; printf(" !!!!!!!! size of eCorr < NARRAY .\n"); }
-  if( (int) AnalysisLib::xScale.size()    < mapping::NARRAY ) { isECorrOK = false;      printf(" !!!!!!!! size of xScale < NARRAY .\n"); }
-  if( (int) AnalysisLib::rdtCorr.size()   < mapping::NRDT   ) { isRDTCorrOK = false;    printf(" !!!!!!!! size of rdtCorr < NRDT .\n"); }
+  if( (int) corr->xnCorr.size()    < mapping::NARRAY ) { printf(" !!!!!!!! size of xnCorr < NARRAY .\n"); }
+  if( (int) corr->xfxneCorr.size() < mapping::NARRAY ) { printf(" !!!!!!!! size of xfxneCorr < NARRAY .\n"); }
+  if( (int) corr->eCorr.size()     < mapping::NARRAY ) { printf(" !!!!!!!! size of eCorr < NARRAY .\n"); }
+  if( (int) corr->xScale.size()    < mapping::NARRAY ) { printf(" !!!!!!!! size of xScale < NARRAY .\n"); }
+  if( (int) corr->rdtCorr.size()   < mapping::NRDT   ) { printf(" !!!!!!!! size of rdtCorr < NRDT .\n"); }
 
-  numRow = AnalysisLib::detGeo.array1.nDet;
+  numRow = detGeo->use2ndArray ? detGeo->array2.nDet : detGeo->array1.nDet;
   numCol = mapping::NARRAY/numRow;
   numDet = mapping::NARRAY;
 
-  zRange[0] = AnalysisLib::detGeo.zMax - 50;
-  zRange[1] = AnalysisLib::detGeo.zMax + 50;
+  zRange[0] = detGeo->zMax - 50;
+  zRange[1] = detGeo->zMax + 50;
 
   printf("=====================================================\n");
   printf("    z Range : %5.0f - %5.0f mm\n", zRange[0], zRange[1]);
@@ -212,7 +210,6 @@ void Monitor::Begin(TTree *tree){
   
   //================  Get EZ cuts;
   EZCut = AnalysisLib::LoadSingleTCut(ezCutFile);
-  
   
   //========================= Generate all of the histograms needed for drawing later on
   printf("============================================ Histograms declaration\n");
@@ -447,7 +444,8 @@ Bool_t Monitor::Process(Long64_t entry){
     if( isXScaleCorrOK ) xCal[detID] = (xCal[detID]-0.5)/AnalysisLib::xScale[detID] + 0.5; /// if include this scale, need to also inclused in Cali_littleTree
     
     if( abs(xCal[detID] - 0.5) > xGate/2. ) continue; 
-    
+
+    //TODO two arrays? 
     //@==================== calculate Z
     if( AnalysisLib::detGeo.array1.firstPos > 0 ) {
       z[detID] = AnalysisLib::detGeo.array1.detLength*(1.0-xCal[detID]) + AnalysisLib::detGeo.array1.detPos[detID%numCol];
@@ -569,18 +567,9 @@ Bool_t Monitor::Process(Long64_t entry){
     if( eCal[detID] <  eCalCut[0] ) continue ;
     if( eCal[detID] >  eCalCut[1] ) continue ;
 
-    double Ex, thetaCM;
-
-    if( AnalysisLib::hasReactionPara ){
-
-      std::vector<double> ExThetaCM = AnalysisLib::CalExTheta(eCal[detID], x[detID]);
-      Ex = ExThetaCM[0];
-      thetaCM = ExThetaCM[1];
-
-    }else{
-      Ex = TMath::QuietNaN();
-      thetaCM = TMath::QuietNaN();
-    }
+    std::pair<double, double> ExThetaCM = transfer->CalExThetaCM(eCal[detID], x[detID], detGeo->Bfield, detGeo->array1.detPerpDist);
+    double Ex = ExThetaCM.first;
+    double thetaCM = ExThetaCM.second;
      
     if( thetaCM > thetaCMGate ) {
 

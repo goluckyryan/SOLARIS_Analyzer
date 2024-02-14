@@ -12,7 +12,11 @@
 #include <TCutG.h>
 
 #include "Mapping.h"
-#include "../armory/AnalysisLib.h"
+#include "../Armory/AnalysisLib.h"
+#include "../Armory/ClassDetGeo.h"
+#include "../Armory/ClassReactionConfig.h"
+#include "../Armory/ClassCorrParas.h"
+#include "../Cleopatra/ClassTransfer.h"
 
 class Monitor : public TSelector {
 public :
@@ -58,11 +62,10 @@ public :
 
    bool isRDTExist;
 
-   bool isXNCorrOK;
-   bool isXFXNCorrOK;
-   bool isXScaleCorrOK;
-   bool isECorrOK;
-   bool isRDTCorrOK;
+   CorrParas * corr; //!
+   DetGeo * detGeo; //!
+   TransferReaction * transfer; //!
+
 
    //==== global variable
    float * x, * z;
@@ -95,12 +98,6 @@ public :
       xnCal = new float [mapping::NARRAY];
       eCal  = new float [mapping::NARRAY];
 
-      isXNCorrOK = true;
-      isXFXNCorrOK = true;
-      isXScaleCorrOK = true;
-      isECorrOK = true;
-      isRDTCorrOK = true;
-
       padID = 0;
 
       timeRangeInMin[0] = 0;
@@ -111,6 +108,12 @@ public :
 
       baseTimeStamp = 0;
       treeID = -1;
+
+      corr = new CorrParas();
+      detGeo = new DetGeo();
+      detGeo->LoadDetectorGeo("detectorGeo.txt");
+      transfer = new TransferReaction();
+      transfer->SetReactionFromFile("reactionConfig1.txt");
 
    }
    virtual ~Monitor() {
@@ -130,6 +133,8 @@ public :
       delete xfCal;
       delete xnCal;
       delete eCal;
+
+      delete corr;
 
    }
    virtual Int_t   Version() const { return 2; }

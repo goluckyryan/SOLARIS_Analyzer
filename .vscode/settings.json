@@ -123,7 +123,8 @@
     "script_single.C": "cpp",
     "script_multi.C": "cpp",
     "Isotope.C": "cpp",
-    "classisotope.h": "c"
+    "classisotope.h": "c",
+    "knockoutSim.C": "cpp"
   },
 
   "better-comments.multilineComments": true,

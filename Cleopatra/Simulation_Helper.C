@@ -16,8 +16,8 @@
 #include "../Cleopatra/InFileCreator.h"
 #include "../Cleopatra/ExtractXSec.h"
 #include "../Cleopatra/PlotTGraphTObjArray.h"
-#include "../armory/AutoFit.C"
-#include "../armory/AnalysisLib.h"
+#include "../Armory/AutoFit.C"
+#include "../Armory/AnalysisLib.h"
 #include "../Cleopatra/Check_Simulation.C"
 
 #include <iostream>
@@ -358,9 +358,8 @@ bool MyMainFrame::IsFileExist(TString filename){
 
 void MyMainFrame::CheckIsUse2ndArray(){
 
-  TMacro * haha = new TMacro("../working/detectorGeo.txt");
-  AnalysisLib::DetGeo detGeo =  AnalysisLib::LoadDetectorGeo(haha);
-  delete haha;
+  DetGeo detGeo;
+  detGeo.LoadDetectorGeo("../working/detectorGeo.txt", false);
   isUse2ndArray = detGeo.use2ndArray;
 
 }
