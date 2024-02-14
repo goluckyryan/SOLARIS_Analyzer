@@ -17,6 +17,8 @@ class ReactionConfig {
 
 public:
   ReactionConfig(){}
+  ReactionConfig(TString configTxt){ LoadReactionConfig(configTxt);}
+  ReactionConfig(TMacro * macro){ LoadReactionConfig(macro);}
   ~ReactionConfig(){}
 
   int beamA, beamZ;       
@@ -83,11 +85,14 @@ inline bool ReactionConfig::LoadReactionConfig(TString fileName){
   TMacro * haha = new TMacro();
   if( haha->ReadFile(fileName) > 0 ) {
     if( LoadReactionConfig(haha) ){
+      delete haha;
       return true;
     }else{
+      delete haha;
       return false;
     }
   }else{
+    delete haha;
     return false;
   }
 }

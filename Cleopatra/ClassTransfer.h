@@ -21,7 +21,20 @@
 //======================================================= 
 class TransferReaction {
 public:
-  TransferReaction();
+  TransferReaction(){Inititization();};
+  TransferReaction(int beamA, int beamZ,
+                         int targetA, int targetZ,
+                         int recoilA, int recoilZ, float beamEnergy_AMeV){ 
+    Inititization();
+    SetReactionSimple(beamA, beamZ,
+                      targetA, targetZ,
+                      recoilA, recoilZ, beamEnergy_AMeV);
+  }
+  TransferReaction(string reactionConfigFile){
+    Inititization();
+    SetReactionFromFile(reactionConfigFile);
+  }
+
   ~TransferReaction();
 
   void SetA(int A, int Z, double Ex);
@@ -41,15 +54,13 @@ public:
   TString GetReactionName();
   TString GetReactionName_Latex();
 
-  ReactionConfig GetRectionConfig() { return reaction;}
+  ReactionConfig GetRectionConfig() { return reactionConfig;}
 
   double GetMass_A() const {return mA + ExA;}
   double GetMass_a() const {return ma;}
   double GetMass_b() const {return mb;}
   double GetMass_B() const {return mB + ExB;}
 
-  int GetCharge_b() const {return reaction.recoilLightZ;}
-  
   double GetCMTotalKE() {return Etot - mA - ma;}
   double GetQValue()    {return mA + ExA + ma - mb - mB - ExB;}
   double GetMaxExB()    {return Etot - mb - mB;}
@@ -59,6 +70,8 @@ public:
   TLorentzVector GetPb(){return Pb;}
   TLorentzVector GetPB(){return PB;}
   
+  void PrintFourVectors();
+
   void CalReactionConstant();
 
   void Event(double thetaCM_rad, double phiCM_rad);
@@ -72,7 +85,7 @@ public:
   
 private:
 
-  ReactionConfig reaction;
+  ReactionConfig reactionConfig;
 
   string nameA, namea, nameb, nameB;
   double thetaIN, phiIN;
@@ -92,10 +105,12 @@ private:
   TLorentzVector PA, Pa, Pb, PB;
 
   TString format(TString name);
+
+  void Inititization();
    
 };
 
-TransferReaction::TransferReaction(){
+void TransferReaction::Inititization(){
   
   thetaIN = 0.;
   phiIN = 0.;
@@ -104,7 +119,7 @@ TransferReaction::TransferReaction(){
   Setb(1,1);
   SetB(13,6);
   TA = 6;
-  T = TA * reaction.beamA;
+  T = TA * reactionConfig.beamA;
   
   ExA = 0;
   ExB = 0;
@@ -126,8 +141,8 @@ TransferReaction::~TransferReaction(){
 void TransferReaction::SetA(int A, int Z, double Ex = 0){
   Isotope temp (A, Z);
   mA = temp.Mass;
-  reaction.beamA = A;
-  reaction.beamZ = Z;
+  reactionConfig.beamA = A;
+  reactionConfig.beamZ = Z;
   ExA = Ex;
   nameA = temp.Name;
   isReady = false;
@@ -137,8 +152,8 @@ void TransferReaction::SetA(int A, int Z, double Ex = 0){
 void TransferReaction::Seta(int A, int Z){
   Isotope temp (A, Z);
   ma = temp.Mass;
-  reaction.targetA = A;
-  reaction.targetZ = Z;
+  reactionConfig.targetA = A;
+  reactionConfig.targetZ = Z;
   namea = temp.Name;
   isReady = false;
   isBSet = false;
@@ -146,8 +161,8 @@ void TransferReaction::Seta(int A, int Z){
 void TransferReaction::Setb(int A, int Z){
   Isotope temp (A, Z);
   mb = temp.Mass;
-  reaction.recoilLightA = A;
-  reaction.recoilLightZ = Z;
+  reactionConfig.recoilLightA = A;
+  reactionConfig.recoilLightZ = Z;
   nameb = temp.Name;
   isReady = false;
   isBSet = false;
@@ -155,8 +170,8 @@ void TransferReaction::Setb(int A, int Z){
 void TransferReaction::SetB(int A, int Z){
   Isotope temp (A, Z);
   mB = temp.Mass;
-  reaction.recoilHeavyA = A;
-  reaction.recoilHeavyZ = Z;
+  reactionConfig.recoilHeavyA = A;
+  reactionConfig.recoilHeavyZ = Z;
   nameB = temp.Name;
   isReady = false;
   isBSet = true;
@@ -164,7 +179,7 @@ void TransferReaction::SetB(int A, int Z){
 
 void TransferReaction::SetIncidentEnergyAngle(double KEA, double theta, double phi){
   this->TA = KEA;
-  this->T = TA * reaction.beamA;
+  this->T = TA * reactionConfig.beamA;
   this->thetaIN = theta;
   this->phiIN = phi;
   isReady = false;
@@ -174,15 +189,15 @@ void TransferReaction::SetReactionSimple(int beamA, int beamZ,
                    int targetA, int targetZ,
                    int recoilA, int recoilZ, float beamEnergy_AMeV){
 
-  reaction.SetReactionSimple(beamA, beamZ,
+  reactionConfig.SetReactionSimple(beamA, beamZ,
                              targetA, targetZ,
                              recoilA, recoilZ, beamEnergy_AMeV);
 
-  SetA(reaction.beamA, reaction.beamZ);
-  Seta(reaction.targetA, reaction.targetZ);
-  Setb(reaction.recoilLightA, reaction.recoilLightZ);
-  SetB(reaction.recoilHeavyA, reaction.recoilHeavyZ);
-  SetIncidentEnergyAngle(reaction.beamEnergy, 0, 0);
+  SetA(reactionConfig.beamA, reactionConfig.beamZ);
+  Seta(reactionConfig.targetA, reactionConfig.targetZ);
+  Setb(reactionConfig.recoilLightA, reactionConfig.recoilLightZ);
+  SetB(reactionConfig.recoilHeavyA, reactionConfig.recoilHeavyZ);
+  SetIncidentEnergyAngle(reactionConfig.beamEnergy, 0, 0);
 
   CalReactionConstant();
 
@@ -200,13 +215,13 @@ void TransferReaction::SetExB(double Ex){
 
 void TransferReaction::SetReactionFromFile(string reactionConfigFile){
 
-  if( reaction.LoadReactionConfig(reactionConfigFile) ){
+  if( reactionConfig.LoadReactionConfig(reactionConfigFile) ){
 
-    SetA(reaction.beamA, reaction.beamZ);
-    Seta(reaction.targetA, reaction.targetZ);
-    Setb(reaction.recoilLightA, reaction.recoilLightZ);
-    SetB(reaction.recoilHeavyA, reaction.recoilHeavyZ);
-    SetIncidentEnergyAngle(reaction.beamEnergy, 0, 0);
+    SetA(reactionConfig.beamA, reactionConfig.beamZ);
+    Seta(reactionConfig.targetA, reactionConfig.targetZ);
+    Setb(reactionConfig.recoilLightA, reactionConfig.recoilLightZ);
+    SetB(reactionConfig.recoilHeavyA, reactionConfig.recoilHeavyZ);
+    SetIncidentEnergyAngle(reactionConfig.beamEnergy, 0, 0);
 
     CalReactionConstant();
 
@@ -245,9 +260,9 @@ TString TransferReaction::GetReactionName_Latex(){
 
 void TransferReaction::CalReactionConstant(){
   if( !isBSet){
-    reaction.recoilHeavyA = reaction.beamA + reaction.targetA - reaction.recoilLightA;
-    reaction.recoilHeavyZ = reaction.beamZ + reaction.targetZ - reaction.recoilLightZ;
-    Isotope temp (reaction.recoilHeavyA, reaction.recoilHeavyZ);
+    reactionConfig.recoilHeavyA = reactionConfig.beamA + reactionConfig.targetA - reactionConfig.recoilLightA;
+    reactionConfig.recoilHeavyZ = reactionConfig.beamZ + reactionConfig.targetZ - reactionConfig.recoilLightZ;
+    Isotope temp (reactionConfig.recoilHeavyA, reactionConfig.recoilHeavyZ);
     mB = temp.Mass;
     isBSet = true;
   }
@@ -265,6 +280,21 @@ void TransferReaction::CalReactionConstant(){
   Pa.SetXYZM(0,0,0,ma);
   
   isReady = true;
+}
+
+void TransferReaction::PrintFourVectors(){
+
+  printf("A : %10.2f  %10.2f  %10.2f  %10.2f\n", PA.E(), PA.Px(), PA.Py(), PA.Pz());
+  printf("a : %10.2f  %10.2f  %10.2f  %10.2f\n", Pa.E(), Pa.Px(), Pa.Py(), Pa.Pz());
+  printf("b : %10.2f  %10.2f  %10.2f  %10.2f\n", Pb.E(), Pb.Px(), Pb.Py(), Pb.Pz());
+  printf("B : %10.2f  %10.2f  %10.2f  %10.2f\n", PB.E(), PB.Px(), PB.Py(), PB.Pz());
+  printf("-------------------------------------------------------\n");
+  printf("B : %10.2f  %10.2f  %10.2f  %10.2f\n", 
+                 PA.E()  + Pa.E()  - Pb.E()  - PB.E(), 
+                 PA.Px() + Pa.Px() - Pb.Px() - PB.Px(), 
+                 PA.Py() + Pa.Py() - Pb.Py() - PB.Py(), 
+                 PA.Pz() + Pa.Pz() - Pb.Pz() - PB.Pz());
+
 }
 
 void TransferReaction::Event(double thetaCM_rad, double phiCM_rad){
@@ -325,7 +355,7 @@ std::pair<double, double> TransferReaction::CalExThetaCM(double e, double z, dou
   double mass = mb;
   double massB = mB;
   double y = e + mass;
-  double slope = 299.792458 * reaction.recoilLightZ * abs(Bfield) / TMath::TwoPi() * beta / 1000.; // MeV/mm;
+  double slope = 299.792458 * reactionConfig.recoilLightZ * abs(Bfield) / TMath::TwoPi() * beta / 1000.; // MeV/mm;
   double alpha = slope/beta;
   double G =  alpha * gamma * beta * perpDist ;
   double Z = alpha * gamma * beta * z;

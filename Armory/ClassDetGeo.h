@@ -30,13 +30,14 @@ struct Array{
   double zMin, zMax;
   
   void DeduceAbsolutePos(){
+ 
     nDet = pos.size();
     detPos.clear();
     
     for(int id = 0; id < nDet; id++){
       if( firstPos > 0 ) detPos.push_back(firstPos + pos[id]);
       if( firstPos < 0 ) detPos.push_back(firstPos - pos[nDet - 1 - id]);
-      ///printf("%d | %f, %f \n", id, pos[id], detPos[id]);
+      // printf("%d | %f, %f \n", id, pos[id], detPos[id]);
     }
 
     zMin = TMath::Min(detPos.front(), detPos.back()) - (firstPos < 0 ? detLength : 0);
@@ -65,8 +66,10 @@ struct Array{
 class DetGeo {
 
 public:
-  DetGeo();
-  ~DetGeo();
+  DetGeo(){};
+  DetGeo(TString detGeoTxt){ LoadDetectorGeo(detGeoTxt, false);}
+  DetGeo(TMacro * macro){ LoadDetectorGeo(macro, false);}
+  ~DetGeo(){};
 
   double Bfield;      /// T
   int BfieldSign ;    /// sign of B-field
@@ -100,24 +103,19 @@ private:
 
 };
 
-inline DetGeo::DetGeo(){
-
-}
-
-inline DetGeo::~DetGeo(){
-
-}
-
 inline bool DetGeo::LoadDetectorGeo(TString fileName, bool verbose){
 
   TMacro * haha = new TMacro();
   if( haha->ReadFile(fileName) > 0 ) {
     if( LoadDetectorGeo(haha, verbose) ){
+      delete haha;
       return true;
     }else{
+      delete haha; 
       return false;
     }
   }else{
+    delete haha;
     return false;
   }
 }
@@ -142,7 +140,7 @@ inline bool DetGeo::LoadDetectorGeo(TMacro * macro, bool verbose){
 
     std::vector<std::string> str = AnalysisLib::SplitStr(macro->GetListOfLines()->At(i)->GetName(), " ");
 
-    //printf("%3d | %s\n", i,  str[0].c_str());
+    // printf("%3d | %s\n", i,  str[0].c_str());
 
     if( str[0].find("####") != std::string::npos ) break;
     if( str[0].find("#===") != std::string::npos ) {

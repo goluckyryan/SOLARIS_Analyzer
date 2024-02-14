@@ -35,26 +35,27 @@ struct trajectory{
    int detID, detRowID; 
    int loop;
    double effLoop;
+
+   void PrintTrajectory(){
+      printf("=====================\n");
+      printf("    theta : %f deg\n", theta*TMath::RadToDeg());
+      printf("      phi : %f deg\n", phi*TMath::RadToDeg());
+      printf("       vt : %f mm/ns\n", vt);
+      printf("       vp : %f mm/ns\n", vp);
+      printf("      rho : %f mm\n", rho);
+      printf("       z0 : %f mm\n", z0);
+      printf("       t0 : %f ns\n", t0);
+      printf("(x, y, z) : (%f, %f. %f) mm\n", x, y, z);
+      printf("        R : %f mm\n", R);
+      printf("        t : %f ns\n", t);
+      printf("  effLoop : %f cycle\n", effLoop);
+      printf("     Loop : %d cycle\n", loop);
+      printf(" detRowID : %d \n", detRowID);
+      printf("    detID : %d \n", detID);
+      
+   }
 };
 
-void PrintTrajectory(trajectory a){
-   printf("=====================\n");
-   printf("    theta : %f deg\n", a.theta*TMath::RadToDeg());
-   printf("      phi : %f deg\n", a.phi*TMath::RadToDeg());
-   printf("       vt : %f mm/ns\n", a.vt);
-   printf("       vp : %f mm/ns\n", a.vp);
-   printf("      rho : %f mm\n", a.rho);
-   printf("       z0 : %f mm\n", a.z0);
-   printf("       t0 : %f ns\n", a.t0);
-   printf("(x, y, z) : (%f, %f. %f) mm\n", a.x, a.y, a.z);
-   printf("        R : %f mm\n", a.R);
-   printf("        t : %f ns\n", a.t);
-   printf("  effLoop : %f cycle\n", a.effLoop);
-   printf("     Loop : %d cycle\n", a.loop);
-   printf(" detRowID : %d \n", a.detRowID);
-   printf("    detID : %d \n", a.detID);
-   
-}
 
 class HELIOS{
 public:
@@ -86,11 +87,11 @@ public:
    }
    
    int DetAcceptance();
-   int CalArrayHit(TLorentzVector Pb, int Zb);
+   int CalArrayHit(TLorentzVector Pb, int Zb, bool debug = false);
    int CalRecoilHit(TLorentzVector PB, int ZB);
    //int CalHit(TLorentzVector Pb, int Zb, TLorentzVector PB, int ZB, double xOff = 0, double yOff = 0 ); // return 0 for no hit, 1 for hit
    
-   void CalTrajectoryPara(TLorentzVector P, int Z, int id); // id = 0 for Pb, id = 1 for PB.
+   void CalTrajectoryPara(TLorentzVector P, int Z, bool isLightRecoil);
    
    int GetNumberOfDetectorsInSamePos(){return array.mDet;}
    double GetEnergy(){return e;}
@@ -98,25 +99,28 @@ public:
    
    /// clockwise rotation for B-field along the z-axis, sign = 1.
    double XPos(double Zpos, double theta, double phi, double rho, int sign){
+     if( TMath::IsNaN(Zpos) ) return TMath::QuietNaN();
      return rho * ( TMath::Sin( TMath::Tan(theta) * Zpos / rho - sign * phi ) + sign * TMath::Sin(phi) ) + xOff;
    }
    double YPos(double Zpos, double theta, double phi, double rho, int sign){
+     if( TMath::IsNaN(Zpos) ) return TMath::QuietNaN();
      return rho * sign * (TMath::Cos( TMath::Tan(theta) * Zpos / rho - sign * phi ) - TMath::Cos(phi)) + yOff;
    }
    double RPos(double Zpos, double theta, double phi, double rho, int sign){
-      double x =  XPos(Zpos, theta, phi, rho, sign) ;
-      double y =  YPos(Zpos, theta, phi, rho, sign) ;
-      return sqrt(x*x+y*y);
+    if( TMath::IsNaN(Zpos) ) return TMath::QuietNaN();
+    double x =  XPos(Zpos, theta, phi, rho, sign) ;
+    double y =  YPos(Zpos, theta, phi, rho, sign) ;
+    return sqrt(x*x+y*y);
    }
    
-   double GetXPos(double ZPos){ return XPos( ZPos, orbitb.theta, orbitb.phi, orbitb.rho, detGeo.BfieldSign); }
-   double GetYPos(double ZPos){ return YPos( ZPos, orbitb.theta, orbitb.phi, orbitb.rho, detGeo.BfieldSign); }
-   double GetR(double ZPos)   { return RPos( ZPos, orbitb.theta, orbitb.phi, orbitb.rho, detGeo.BfieldSign); }
+   double GetXPos(double ZPos){ return TMath::IsNaN(ZPos) ? TMath::QuietNaN() : XPos( ZPos, orbitb.theta, orbitb.phi, orbitb.rho, detGeo.BfieldSign); }
+   double GetYPos(double ZPos){ return TMath::IsNaN(ZPos) ? TMath::QuietNaN() : YPos( ZPos, orbitb.theta, orbitb.phi, orbitb.rho, detGeo.BfieldSign); }
+   double GetR(double ZPos)   { return TMath::IsNaN(ZPos) ? TMath::QuietNaN() : RPos( ZPos, orbitb.theta, orbitb.phi, orbitb.rho, detGeo.BfieldSign); }
    
    double GetRecoilEnergy(){return eB;}
-   double GetRecoilXPos(double ZPos){ return XPos( ZPos, orbitB.theta, orbitB.phi, orbitB.rho, detGeo.BfieldSign); }   
-   double GetRecoilYPos(double ZPos){ return YPos( ZPos, orbitB.theta, orbitB.phi, orbitB.rho, detGeo.BfieldSign); }
-   double GetRecoilR(double ZPos)   { return RPos( ZPos, orbitB.theta, orbitB.phi, orbitB.rho, detGeo.BfieldSign); }
+   double GetRecoilXPos(double ZPos){ return TMath::IsNaN(ZPos) ? TMath::QuietNaN() : XPos( ZPos, orbitB.theta, orbitB.phi, orbitB.rho, detGeo.BfieldSign); }   
+   double GetRecoilYPos(double ZPos){ return TMath::IsNaN(ZPos) ? TMath::QuietNaN() : YPos( ZPos, orbitB.theta, orbitB.phi, orbitB.rho, detGeo.BfieldSign); }
+   double GetRecoilR(double ZPos)   { return TMath::IsNaN(ZPos) ? TMath::QuietNaN() : RPos( ZPos, orbitB.theta, orbitB.phi, orbitB.rho, detGeo.BfieldSign); }
    
    double GetBField() {return detGeo.Bfield;}
    double GetDetRadius() {return array.detPerpDist;}
@@ -125,6 +129,9 @@ public:
    trajectory GetTrajectory_B() {return orbitB;}
 
    DetGeo GetDetectorGeometry() {return detGeo;}
+
+   TString GetHitMessage() const {return hitMessage;}
+   TString GetAcceptanceMessage() const {return accMessage;}
    
 private:   
       
@@ -156,9 +163,11 @@ private:
    double eB;  ///energy of heavy recoil
    
    bool isDetReady;
+
+   TString hitMessage;
+   TString accMessage; //acceptance check
    
    double xOff, yOff; // beam position
-
 
    bool overrideDetDistance;
    bool overrideFirstPos;
@@ -181,6 +190,9 @@ HELIOS::HELIOS(){
    yOff = 0.0;
    
    isDetReady = false;
+
+   hitMessage = "";
+   accMessage = "";
 
    overrideDetDistance = false;
    overrideFirstPos = false;
@@ -220,40 +232,43 @@ int HELIOS::DetAcceptance(){
    if( isDetReady == false ) return 0;
 
    // -1 ========= when recoil direction is not same side of array
-   if( array.firstPos < 0 && orbitb.z > 0 ) return -1;
-   if( array.firstPos > 0 && orbitb.z < 0 ) return -1;
+   if( array.firstPos < 0 && orbitb.z > 0 ) {accMessage = "array at upstream, z is downstream."; return -1;}
+   if( array.firstPos > 0 && orbitb.z < 0 ) {accMessage = "array at downstream, z is upstream."; return -1;}
 
    // -11 ======== rho is too small
-   if(  2 * orbitb.rho < array.detPerpDist ) return -11; 
+   if(  2 * orbitb.rho < array.detPerpDist ) { accMessage = "rho is too small"; return -11;} 
    
    // -15 ========= if detRowID == -1, should be (2 * orbitb.rho < perpDist)
-   if( orbitb.detRowID == -1 ) return -15;
+   if( orbitb.detRowID == -1 ) {accMessage = "det Row ID == -1"; return -15;}
    
    // -10 =========== when rho is too big . 
-   if( detGeo.bore < 2 * orbitb.rho) return -10; 
+   if( detGeo.bore < 2 * orbitb.rho) { accMessage = "rho is too big"; return -10;} 
    
    // -14 ========== check particle-B hit radius on recoil dectector
-   if( isCoincidentWithRecoil && orbitB.R > detGeo.recoilOuterRadius  ) return -14;
+   if( isCoincidentWithRecoil && orbitB.R > detGeo.recoilOuterRadius  ) {
+    accMessage = "heavy recoil does not hit recoil detector";
+    return -14;
+   }
    //if( isCoincidentWithRecoil && (orbitB.R > rhoRecoilout || orbitB.R < rhoRecoilin) ) return -14;
    
    // -12 ========= check is particle-b was blocked by recoil detector
    rhoHit = GetR(detGeo.recoilPos);
-   if( orbitb.z > 0 && detGeo.recoilPos > 0 && orbitb.z > detGeo.recoilPos && rhoHit < detGeo.recoilOuterRadius ) return -12;
-   if( orbitb.z < 0 && detGeo.recoilPos < 0 && orbitb.z < detGeo.recoilPos && rhoHit < detGeo.recoilOuterRadius ) return -12;
+   if( orbitb.z > 0 && detGeo.recoilPos > 0 && orbitb.z > detGeo.recoilPos && rhoHit < detGeo.recoilOuterRadius ) { accMessage = "light recoil blocked by recoil detector"; return -12;}
+   if( orbitb.z < 0 && detGeo.recoilPos < 0 && orbitb.z < detGeo.recoilPos && rhoHit < detGeo.recoilOuterRadius ) { accMessage = "light recoil blocked by recoil detector"; return -12;}
    
    // -13 ========= not more than 3 loops
-   if( orbitb.loop > 3 ) return -13;
+   if( orbitb.loop > 3 ) {accMessage = "more than 3 loops."; return -13;}
    
    // -2 ========= calculate the "y"-distance from detector center
-   if( sqrt(orbitb.R*orbitb.R - array.detPerpDist * array.detPerpDist)> array.detWidth/2 ) return -2; 
+   if( sqrt(orbitb.R*orbitb.R - array.detPerpDist * array.detPerpDist)> array.detWidth/2 ) { accMessage = "hit at the XY gap."; return -2;} 
    
    // -3 ==== when zPos further the range of whole array, more loop would not save
-   if( array.firstPos < 0 && orbitb.z < array.detPos[0] - array.detLength ) return -3; 
-   if( array.firstPos > 0 && orbitb.z > array.detPos[array.nDet-1] + array.detLength ) return -3; 
+   if( array.firstPos < 0 && orbitb.z < array.detPos[0] - array.detLength ) { accMessage = "hit more upstream than the array length"; return -3; }
+   if( array.firstPos > 0 && orbitb.z > array.detPos[array.nDet-1] + array.detLength ) { accMessage = "hit more downstream than the array length"; return -3;} 
 
    // -4 ======== Hit on blacker
-   if( array.blocker != 0 && array.firstPos > 0 && array.detPos[0] - array.blocker  < orbitb.z && orbitb.z < array.detPos[0] ) return -4; 
-   if( array.blocker != 0 && array.firstPos < 0 && array.detPos[array.nDet-1]  < orbitb.z && orbitb.z < array.detPos[array.nDet-1] + array.blocker ) return -4; 
+   if( array.blocker != 0 && array.firstPos > 0 && array.detPos[0] - array.blocker  < orbitb.z && orbitb.z < array.detPos[0] ) { accMessage = "hit blocker"; return -4;} 
+   if( array.blocker != 0 && array.firstPos < 0 && array.detPos[array.nDet-1]  < orbitb.z && orbitb.z < array.detPos[array.nDet-1] + array.blocker ) { accMessage = "hit blocker"; return -4;} 
 
    // 2 ======  when zPos less then the nearest position, more loop may hit
    int increaseLoopFlag = 0;
@@ -264,6 +279,7 @@ int HELIOS::DetAcceptance(){
       orbitb.effLoop += 1.0;
       orbitb.loop += 1;
       orbitb.t = orbitb.t0 * orbitb.effLoop;
+      accMessage = " hit less than the nearest array. increase loop ";
       return 2;
    }
    
@@ -273,6 +289,7 @@ int HELIOS::DetAcceptance(){
          if( array.detPos[i] - array.detLength <= orbitb.z && orbitb.z <= array.detPos[i]) {
             orbitb.detID = i;
             detX = ( orbitb.z - (array.detPos[i] + array.detLength/2 ))/ array.detLength * 2 ;// range from -1 , 1 
+            accMessage = "hit array";
             return 1;
          }
       }      
@@ -282,6 +299,7 @@ int HELIOS::DetAcceptance(){
             ///printf(" %d | %f < z = %f < %f \n", i,  array.detPos[i], orbitb.z, array.detPos[i]+length); 
             orbitb.detID = i;
             detX = ( orbitb.z - (array.detPos[i] - array.detLength/2 ))/ array.detLength*2 ;// range from -1 , 1 
+            accMessage = "hit array";
             return 1;
          }
       }
@@ -291,11 +309,11 @@ int HELIOS::DetAcceptance(){
    // -5 ======== check hit array gap
    if( array.firstPos < 0 ){
       for( int i = 0; i < array.nDet-1 ; i++){
-         if( array.detPos[i] < orbitb.z && orbitb.z < array.detPos[i+1] - array.detLength ) return -5; //increaseLoopFlag = 3; 
+         if( array.detPos[i] < orbitb.z && orbitb.z < array.detPos[i+1] - array.detLength ) { accMessage = "hit array Z-gap"; return -5; }//increaseLoopFlag = 3; 
       }      
    }else{
       for( int i = 0; i < array.nDet-1 ; i++){
-         if( array.detPos[i] + array.detLength < orbitb.z && orbitb.z < array.detPos[i+1]  ) return -5; //increaseLoopFlag = 3;
+         if( array.detPos[i] + array.detLength < orbitb.z && orbitb.z < array.detPos[i+1]  ) { accMessage = "hit array Z-gap"; return -5; }//increaseLoopFlag = 3;
       }
    }
    if (increaseLoopFlag == 3 ) {
@@ -303,16 +321,17 @@ int HELIOS::DetAcceptance(){
       orbitb.effLoop += 1.0;
       orbitb.loop += 1;
       orbitb.t = orbitb.t0 * orbitb.effLoop;
+      accMessage = " try one more loop. ";
       return 3;
    }
    
-   
+   accMessage = " unknown reason ";
    return -20; // for unknown reason
 }
 
-void HELIOS::CalTrajectoryPara(TLorentzVector P, int Z, int id){
+void HELIOS::CalTrajectoryPara(TLorentzVector P, int Z, bool isLightRecoil){
    
-   if( id == 0 ){
+   if( isLightRecoil ){
       orbitb.theta = P.Theta();
       orbitb.phi = P.Phi();
       orbitb.rho = P.Pt() / abs(detGeo.Bfield) / Z / c * 1000; //mm
@@ -323,10 +342,8 @@ void HELIOS::CalTrajectoryPara(TLorentzVector P, int Z, int id){
       
       orbitb.detID = -1;
       orbitb.detRowID = -1;
-   
-   }
-   
-   if( id == 1 ){
+
+   }else{
       orbitB.theta = P.Theta();
       orbitB.phi = P.Phi();
       orbitB.rho = P.Pt() / abs(detGeo.Bfield) / Z / c * 1000; //mm
@@ -337,22 +354,19 @@ void HELIOS::CalTrajectoryPara(TLorentzVector P, int Z, int id){
       
       orbitB.detID = -1;
       orbitB.detRowID = -1;
-   
    }
 }
 
-int HELIOS::CalArrayHit(TLorentzVector Pb, int Zb){
+int HELIOS::CalArrayHit(TLorentzVector Pb, int Zb, bool debug){
    
    e = Pb.E() - Pb.M();
    detX = TMath::QuietNaN();
    rhoHit = TMath::QuietNaN();
    
-   CalTrajectoryPara(Pb, Zb, 0);
+   CalTrajectoryPara(Pb, Zb, true);
    
    int targetLoop = 1;
    int inOut = array.detFaceOut == true ? 1: 0; //1 = from Outside, 0 = from inside
-   
-   bool debug = false;
    
    if( debug ) {
       printf("===================================\n");
@@ -360,6 +374,7 @@ int HELIOS::CalArrayHit(TLorentzVector Pb, int Zb){
       printf("z0: %f mm, rho : %f mm \n", orbitb.z0, orbitb.rho);
       printf("      inOut : %d = %s \n", inOut, inOut == 1 ? "Out" : "in");
       printf(" z range : %.2f - %.2f \n", detGeo.zMin, detGeo.zMax);
+      printf(" B-field sign : %d\n", detGeo.BfieldSign);
       printf("-----------------------------------\n");
    }
 
@@ -373,7 +388,7 @@ int HELIOS::CalArrayHit(TLorentzVector Pb, int Zb){
       double phiD = TMath::TwoPi()/array.mDet * i ;
       double dphi = orbitb.phi - phiD;
       double aEff = array.detPerpDist - (xOff * TMath::Cos(phiD) + yOff * TMath::Sin(phiD)); 
-      double hahaha = asin( aEff/ orbitb.rho - detGeo.BfieldTheta * sin(dphi));
+      double hahaha = asin( aEff/ orbitb.rho - detGeo.BfieldSign * sin(dphi));
       
       int n = 2*targetLoop + inOut; 
       
@@ -390,22 +405,12 @@ int HELIOS::CalArrayHit(TLorentzVector Pb, int Zb){
       }
       
       ///Selection
-      if( !TMath::IsNaN(zP) && 0< zP/orbitb.z0 && TMath::Max(0, targetLoop-1) < zP/orbitb.z0 && zP/orbitb.z0 < targetLoop ) {
+      if( !TMath::IsNaN(zP) && 0 < zP/orbitb.z0 && TMath::Max(0, targetLoop-1) < zP/orbitb.z0 && zP/orbitb.z0 < targetLoop ) {
          zPossible.push_back(zP);
          dID.push_back(i);
       }
    }
-   /*
-   if( zPossible.size() == 0 ){ // will not happen
-      zHit = TMath::QuietNaN();
-      xPos = TMath::QuietNaN();
-      yPos = TMath::QuietNaN();
-      loop = -1;
-      detID = -1;
-      detRowID = -1;
-      return -1 ;
-   }*/
-   
+
    if( debug ) printf("-----------------------------------\n");
    double dMin = 1;   
    for( int i = 0; i < (int) zPossible.size(); i++){
@@ -434,6 +439,7 @@ int HELIOS::CalArrayHit(TLorentzVector Pb, int Zb){
                 orbitb.z = TMath::QuietNaN();
                 orbitb.loop = -1;
                 orbitb.detRowID = -1;
+                hitMessage = "wrong direction.";
                 return - 2;
             }
          
@@ -447,6 +453,7 @@ int HELIOS::CalArrayHit(TLorentzVector Pb, int Zb){
                 orbitb.z = TMath::QuietNaN();
                 orbitb.loop = -1;
                 orbitb.detRowID = -1;
+                hitMessage = "not on the detector plan.";
                 return -3;
             }
          }
@@ -459,12 +466,13 @@ int HELIOS::CalArrayHit(TLorentzVector Pb, int Zb){
    orbitb.y = GetYPos(orbitb.z) ;
    orbitb.R = GetR(orbitb.z);
    
+   hitMessage = "successful hit.";
    return 1; // return 1 when OK
 }
 
 int HELIOS::CalRecoilHit(TLorentzVector PB, int ZB){
    
-   CalTrajectoryPara(PB, ZB, 1);
+   CalTrajectoryPara(PB, ZB, false);
    
    orbitB.z = detGeo.recoilPos;
    orbitB.x = GetRecoilXPos(detGeo.recoilPos)  ;

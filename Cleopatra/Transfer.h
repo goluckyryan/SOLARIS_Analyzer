@@ -32,16 +32,16 @@ void Transfer(
          TString        filename = "reaction.dat"){ /// when no file, no output.
 
   //############################################# Set Reaction
-  TransferReaction reaction;
-  reaction.SetReactionFromFile(basicConfig);
+  TransferReaction transfer;
+  transfer.SetReactionFromFile(basicConfig);
 
   printf("*****************************************************************\n");
-  printf("*\e[1m\e[33m        %27s                            \e[0m*\n", reaction.GetReactionName().Data());
+  printf("*\e[1m\e[33m        %27s                            \e[0m*\n", transfer.GetReactionName().Data());
   printf("*****************************************************************\n");
   printf("----- loading reaction setting from %s. \n", basicConfig.c_str());
   printf("\e[32m#################################### Beam \e[0m\n");
 
-  const ReactionConfig reactionConfig = reaction.GetRectionConfig();
+  const ReactionConfig reactionConfig = transfer.GetRectionConfig();
 
   reactionConfig.PrintReactionConfig();
 
@@ -56,12 +56,12 @@ void Transfer(
   const DetGeo detGeo = helios.GetDetectorGeometry();
   
   printf("==================================== E-Z plot slope\n");
-  double  betaRect = reaction.GetReactionBeta() ;
-  double gamma = reaction.GetReactionGamma();
-  double    mb = reaction.GetMass_b();
-  double   pCM = reaction.GetMomentumbCM();
+  double  betaRect = transfer.GetReactionBeta() ;
+  double gamma = transfer.GetReactionGamma();
+  double    mb = transfer.GetMass_b();
+  double   pCM = transfer.GetMomentumbCM();
   double     q = TMath::Sqrt(mb*mb + pCM*pCM); ///energy of light recoil in center of mass
-  double slope = 299.792458 * reaction.GetCharge_b() * abs(helios.GetBField()) / TMath::TwoPi() * betaRect / 1000.; /// MeV/mm
+  double slope = 299.792458 * reactionConfig.recoilLightZ * abs(helios.GetBField()) / TMath::TwoPi() * betaRect / 1000.; /// MeV/mm
   printf("                       e-z slope : %f MeV/mm\n", slope);   
   double intercept = q/gamma - mb; // MeV
   printf("    e-z intercept (ground state) : %f MeV\n", intercept); 
@@ -72,11 +72,11 @@ void Transfer(
     keyParaOut = fopen (filename.Data(), "w+");
 
     printf("=========== save key reaction constants to %s \n", filename.Data());
-    fprintf(keyParaOut, "%-15.4f  //%s\n", reaction.GetMass_b(), "mass_b");
-    fprintf(keyParaOut, "%-15d  //%s\n",   reaction.GetCharge_b(), "charge_b");
-    fprintf(keyParaOut, "%-15.8f  //%s\n", reaction.GetReactionBeta(), "betaCM");
-    fprintf(keyParaOut, "%-15.4f  //%s\n", reaction.GetCMTotalEnergy(), "Ecm");
-    fprintf(keyParaOut, "%-15.4f  //%s\n", reaction.GetMass_B(), "mass_B");
+    fprintf(keyParaOut, "%-15.4f  //%s\n", transfer.GetMass_b(), "mass_b");
+    fprintf(keyParaOut, "%-15d  //%s\n",   reactionConfig.recoilLightZ, "charge_b");
+    fprintf(keyParaOut, "%-15.8f  //%s\n", transfer.GetReactionBeta(), "betaCM");
+    fprintf(keyParaOut, "%-15.4f  //%s\n", transfer.GetCMTotalEnergy(), "Ecm");
+    fprintf(keyParaOut, "%-15.4f  //%s\n", transfer.GetMass_B(), "mass_B");
     fprintf(keyParaOut, "%-15.4f  //%s\n", slope/betaRect, "alpha=slope/betaRect");
 
     fflush(keyParaOut);
@@ -147,9 +147,9 @@ void Transfer(
     printf("%3s | %7s | %5s | %3s | %10s | %5s \n", "", "Ex[MeV]", "Xsec", "SF", "sigma[MeV]", "y0[MeV]");
     printf("----+---------+------+-----+------------+--------\n");
     for(int i = 0; i < n ; i++){
-      reaction.SetExB(ExKnown[i]);
-      reaction.CalReactionConstant();
-      kCM.push_back(reaction.GetMomentumbCM());
+      transfer.SetExB(ExKnown[i]);
+      transfer.CalReactionConstant();
+      kCM.push_back(transfer.GetMomentumbCM());
       y0.push_back(TMath::Sqrt(mb*mb + kCM[i]*kCM[i])/gamma - mb);
       if( reactionConfig.isDecay ) {
         TLorentzVector temp(0,0,0,0);
@@ -169,9 +169,9 @@ void Transfer(
     ExKnown.push_back(0.0);
     ExStrength.push_back(1.0);
     ExWidth.push_back(0.0);
-    reaction.SetExB(ExKnown[0]);
-    reaction.CalReactionConstant();
-    kCM.push_back(reaction.GetMomentumbCM());
+    transfer.SetExB(ExKnown[0]);
+    transfer.CalReactionConstant();
+    kCM.push_back(transfer.GetMomentumbCM());
     y0.push_back(TMath::Sqrt(mb*mb + kCM[0]*kCM[0])/gamma - mb);
   }
   
@@ -215,7 +215,7 @@ void Transfer(
   TMacro reactionData(filename.Data());
   double KEAmean = reactionConfig.beamEnergy;
   TString str;
-  str.Form("%s @ %.2f MeV/u", reaction.GetReactionName_Latex().Data(), KEAmean);
+  str.Form("%s @ %.2f MeV/u", transfer.GetReactionName_Latex().Data(), KEAmean);
   config.SetName(str.Data());
   config.Write("reactionConfig");
   detGeoTxt.Write("detGeo");
@@ -486,7 +486,7 @@ void Transfer(
       //==== Set Ex of A
       ExAID = gRandom->Integer(nExA);
       ExA = ExAList[ExAID];
-      reaction.SetExA(ExA);
+      transfer.SetExA(ExA);
 
       //==== Set Ex of B
       if( ExKnown.size() == 1 ) {
@@ -496,7 +496,7 @@ void Transfer(
         ExID = exDist->GetRandom();
         Ex = ExKnown[ExID]+ (ExWidth[ExID] == 0 ? 0 : gRandom->Gaus(0, ExWidth[ExID]));
       }
-      reaction.SetExB(Ex);
+      transfer.SetExB(Ex);
   
       //==== Set incident beam
       KEA = reactionConfig.beamEnergy;
@@ -514,9 +514,9 @@ void Transfer(
       phi = 0.0;
       
       //==== for taregt scattering
-      reaction.SetIncidentEnergyAngle(KEA, theta, 0.);
-      reaction.CalReactionConstant();
-      TLorentzVector PA = reaction.GetPA();            
+      transfer.SetIncidentEnergyAngle(KEA, theta, 0.);
+      transfer.CalReactionConstant();
+      TLorentzVector PA = transfer.GetPA();            
 
       //depth = 0;
       if( isTargetScattering ){
@@ -525,9 +525,9 @@ void Transfer(
         msA.SetTarget(density, depth); 
         TLorentzVector PAnew = msA.Scattering(PA);
         KEAnew = msA.GetKE()/reactionConfig.beamA;
-        reaction.SetIncidentEnergyAngle(KEAnew, theta, phi);
-        reaction.CalReactionConstant();
-        Ecm = reaction.GetCMTotalKE();
+        transfer.SetIncidentEnergyAngle(KEAnew, theta, phi);
+        transfer.CalReactionConstant();
+        Ecm = transfer.GetCMTotalKE();
       }
 
       //==== Calculate thetaCM, phiCM
@@ -541,9 +541,9 @@ void Transfer(
       double phiCM = TMath::TwoPi() * gRandom->Rndm(); 
 
       //==== Calculate reaction
-      reaction.Event(thetaCM, phiCM);
-      TLorentzVector Pb = reaction.GetPb();
-      TLorentzVector PB = reaction.GetPB();
+      transfer.Event(thetaCM, phiCM);
+      TLorentzVector Pb = transfer.GetPb();
+      TLorentzVector PB = transfer.GetPB();
 
     //==== Calculate energy loss of scattered and recoil in target
     if( isTargetScattering ){
@@ -593,7 +593,7 @@ void Transfer(
     ///printf(" thetaCM : %f \n", thetaCM * TMath::RadToDeg());
     
     if( Tb > 0  || TB > 0 ){
-      helios.CalArrayHit(Pb, reaction.GetCharge_b());
+      helios.CalArrayHit(Pb, reactionConfig.recoilLightZ);
       helios.CalRecoilHit(PB, new_zB);
       hit = 2;
       while( hit > 1 ){   hit = helios.DetAcceptance(); } /// while hit > 1, goto next loop;
@@ -640,17 +640,17 @@ void Transfer(
 
       //other recoil detectors
       if ( detGeo.recoilPos1 != 0 ){
-        xRecoil1 = helios.GetRecoilXPos(detGeo.recoilPos1);
-        yRecoil1 = helios.GetRecoilYPos(detGeo.recoilPos1);
+        xRecoil1   = helios.GetRecoilXPos(detGeo.recoilPos1);
+        yRecoil1   = helios.GetRecoilYPos(detGeo.recoilPos1);
         rhoRecoil1 = helios.GetRecoilR(detGeo.recoilPos1);
       }
       if ( detGeo.recoilPos2 != 0 ){
-        xRecoil2 = helios.GetRecoilXPos(detGeo.recoilPos2);
-        yRecoil2 = helios.GetRecoilYPos(detGeo.recoilPos2);
+        xRecoil2   = helios.GetRecoilXPos(detGeo.recoilPos2);
+        yRecoil2   = helios.GetRecoilYPos(detGeo.recoilPos2);
         rhoRecoil2 = helios.GetRecoilR(detGeo.recoilPos2);
       }
       
-      std::pair<double,double> ExThetaCM = reaction.CalExThetaCM(e, z, helios.GetBField(), helios.GetDetRadius());
+      std::pair<double,double> ExThetaCM = transfer.CalExThetaCM(e, z, helios.GetBField(), helios.GetDetRadius());
       ExCal = ExThetaCM.first;
       thetaCMCal = ExThetaCM.second;
 

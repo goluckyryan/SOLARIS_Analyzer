@@ -12,9 +12,9 @@ Analysis
 
 ├── SOLARIS.sh // bash script to define some env variable and functions
 
-├── armory // analysis codes, independent from experiment.
+├── Armory // analysis codes, independent from experiment.
 
-├── Cleopatra // Swaper for DWBA code Ptolomey
+├── Cleopatra // Swaper for DWBA code Ptolomey and simulation
 
 ├── data_raw // should be the symbolic link to the raw data, created by SetUpNewExp
 
