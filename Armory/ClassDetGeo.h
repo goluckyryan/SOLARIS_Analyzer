@@ -97,7 +97,7 @@ public:
   bool LoadDetectorGeo(TString fileName, bool verbose = true);
   bool LoadDetectorGeo(TMacro * macro, bool verbose = true);
 
-  void PrintDetGeo( bool printAll = true) const;
+  void Print( bool printAll = true) const;
 
 private:
 
@@ -138,7 +138,11 @@ inline bool DetGeo::LoadDetectorGeo(TMacro * macro, bool verbose){
 
   for( int i = 0 ; i < numLine; i++){
 
-    std::vector<std::string> str = AnalysisLib::SplitStr(macro->GetListOfLines()->At(i)->GetName(), " ");
+    std::string line = macro->GetListOfLines()->At(i)->GetName();
+
+    if( AnalysisLib::isEmptyOrSpaces(line) ) continue;
+
+    std::vector<std::string> str = AnalysisLib::SplitStr(line, " ");
 
     // printf("%3d | %s\n", i,  str[0].c_str());
 
@@ -150,20 +154,20 @@ inline bool DetGeo::LoadDetectorGeo(TMacro * macro, bool verbose){
     }
 
     if( detFlag == 0 ){
-      if ( i == 0 ) {
+      if ( detLine == 0 ) {
         Bfield = atof(str[0].c_str());
         BfieldSign = Bfield > 0 ? 1: -1;
       }
-      if ( i ==  1 ) BfieldTheta       = atof(str[0].c_str());
-      if ( i ==  2 ) bore              = atof(str[0].c_str());
-      if ( i ==  3 ) recoilPos         = atof(str[0].c_str());
-      if ( i ==  4 ) recoilInnerRadius = atof(str[0].c_str());
-      if ( i ==  5 ) recoilOuterRadius = atof(str[0].c_str());
-      if ( i ==  6 ) isCoincidentWithRecoil = str[0] == "false" ? false: true;
-      if ( i ==  7 ) recoilPos1        = atof(str[0].c_str());
-      if ( i ==  8 ) recoilPos2        = atof(str[0].c_str());
-      if ( i ==  9 ) elumPos1          = atof(str[0].c_str());
-      if ( i == 10 ) elumPos2          = atof(str[0].c_str());
+      if ( detLine ==  1 ) BfieldTheta       = atof(str[0].c_str());
+      if ( detLine ==  2 ) bore              = atof(str[0].c_str());
+      if ( detLine ==  3 ) recoilPos         = atof(str[0].c_str());
+      if ( detLine ==  4 ) recoilInnerRadius = atof(str[0].c_str());
+      if ( detLine ==  5 ) recoilOuterRadius = atof(str[0].c_str());
+      if ( detLine ==  6 ) isCoincidentWithRecoil = str[0] == "false" ? false: true;
+      if ( detLine ==  7 ) recoilPos1        = atof(str[0].c_str());
+      if ( detLine ==  8 ) recoilPos2        = atof(str[0].c_str());
+      if ( detLine ==  9 ) elumPos1          = atof(str[0].c_str());
+      if ( detLine == 10 ) elumPos2          = atof(str[0].c_str());
     }
 
     if( detFlag == 1){
@@ -177,7 +181,6 @@ inline bool DetGeo::LoadDetectorGeo(TMacro * macro, bool verbose){
       if ( detLine == 7 ) array1.detFaceOut        = str[0] == "Out" ? true : false;
       if ( detLine == 8 ) array1.mDet              = atoi(str[0].c_str());
       if ( detLine >= 9 ) array1.pos.push_back(atof(str[0].c_str()));
-      detLine ++;
     }
 
     if( detFlag == 2){
@@ -192,30 +195,29 @@ inline bool DetGeo::LoadDetectorGeo(TMacro * macro, bool verbose){
       if ( detLine ==  8 ) array2.detFaceOut        = str[0] == "Out" ? true : false;
       if ( detLine ==  9 ) array2.mDet              = atoi(str[0].c_str());
       if ( detLine >= 10 ) array2.pos.push_back(atof(str[0].c_str()));
-      detLine ++;
     }
 
+    detLine ++;
   }
 
   array1.DeduceAbsolutePos();
+  array2.DeduceAbsolutePos();
 
   zMin = array1.zMin;
   zMax = array1.zMax;
 
   if( use2ndArray) {
-    array2.DeduceAbsolutePos();
-
     zMax = TMath::Min(array1.zMax, array2.zMax);
     zMin = TMath::Min(array1.zMin, array2.zMin);
   }
 
-  if( verbose ) PrintDetGeo(false); 
+  if( verbose ) Print(false); 
 
   return true;
 
 }
 
-inline void DetGeo::PrintDetGeo(bool printAll) const{
+inline void DetGeo::Print(bool printAll) const{
 
   printf("=====================================================\n");
   printf("                 B-field: %8.2f  T, Theta : %6.2f deg \n", Bfield, BfieldTheta);
@@ -223,22 +225,13 @@ inline void DetGeo::PrintDetGeo(bool printAll) const{
     printf("                                      +---- field angle != 0 is not supported!!! \n");
   }
   printf("     Recoil detector pos: %8.2f mm, radius: %6.2f - %6.2f mm \n", recoilPos, recoilInnerRadius, recoilOuterRadius);
-  if( printAll ){
-    printf("------------------------------------- Detector Position \n");
-    array1.PrintArray();
 
-    if( use2ndArray){
-      printf("--------------------------------- 2nd Detector Position \n");
-      array2.PrintArray();
-    }
-  }else{
-    if( use2ndArray){
-      printf("--------------------------------- 2nd Detector Position \n");
-      array2.PrintArray();
-    }else{
-      printf("------------------------------------- Detector Position \n");
-      array1.PrintArray();
-    }
+  printf("------------------------------------- Detector Position \n");
+  array1.PrintArray();
+
+  if( printAll || use2ndArray){
+    printf("--------------------------------- 2nd Detector Position \n");
+    array2.PrintArray();
   }
 
   if( elumPos1 != 0 || elumPos2 != 0 || recoilPos1 != 0 || recoilPos2 != 0){

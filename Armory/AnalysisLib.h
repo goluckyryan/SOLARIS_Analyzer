@@ -53,6 +53,18 @@ TGraph * TrapezoidFilter(TGraph * trace, int baseLineEnd = 80, int riseTime = 10
   return trapezoid;
 }
 
+bool isEmptyOrSpaces(const std::string& str) {
+  if (str.empty()) {
+    return true;
+  }
+  for (char c : str) {
+    if (!std::isspace(c)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 std::vector<std::string> SplitStr(std::string tempLine, std::string splitter, int shift = 0){
 
   std::vector<std::string> output;

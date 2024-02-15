@@ -381,12 +381,12 @@ void MyMainFrame::OpenFile(int ID){
     if ( ID == 6 ) fileName = "../working/DWBA2.out";
     if ( ID == 7 ) fileName = "../working/DWBA2.Xsec.txt";    
   }else{
-    if ( ID == 1 ) fileName = "../working/reactionConfig1.txt";
-    if ( ID == 2 ) fileName = "../working/Ex1.txt";
-    if ( ID == 3 ) fileName = "../working/DWBA1";
-    if ( ID == 5 ) fileName = "../working/DWBA1.in";
-    if ( ID == 6 ) fileName = "../working/DWBA1.out";
-    if ( ID == 7 ) fileName = "../working/DWBA1.Xsec.txt";
+    if ( ID == 1 ) fileName = "../working/reactionConfig.txt";
+    if ( ID == 2 ) fileName = "../working/Ex.txt";
+    if ( ID == 3 ) fileName = "../working/DWBA";
+    if ( ID == 5 ) fileName = "../working/DWBA.in";
+    if ( ID == 6 ) fileName = "../working/DWBA.out";
+    if ( ID == 7 ) fileName = "../working/DWBA.Xsec.txt";
   }
   if ( ID == 4 ) fileName = "../working/Check_Simulation_Config.txt";
   if ( ID == 8 ) fileName = isoFileName;
@@ -494,12 +494,12 @@ void MyMainFrame::Command(int ID) {
   
   if( ID == 1 ){
 
-    string       basicConfig = "reactionConfig1.txt";
+    string       basicConfig = "reactionConfig.txt";
     string  heliosDetGeoFile = "detectorGeo.txt";
-    string    excitationFile = "Ex1.txt"; //when no file, only ground state
+    string    excitationFile = "Ex.txt"; //when no file, only ground state
     TString      ptolemyRoot = ""; // when no file, use isotropic distribution of thetaCM
-    TString     saveFileName = "transfer1.root";
-    TString         filename = "reaction1.dat"; //when no file, no output    
+    TString     saveFileName = "transfer.root";
+    TString         filename = "reaction.dat"; //when no file, no output    
     
     if( withDWBA->GetState() ) {
        ptolemyRoot = "DWBA1.root";
@@ -538,7 +538,7 @@ void MyMainFrame::Command(int ID) {
     if( isUse2ndArray ){
       Check_Simulation("transfer2.root");
     }else{
-      Check_Simulation("transfer1.root");
+      Check_Simulation("transfer.root");
     }
     statusLabel->SetText(" Run Simulation first.");
   }

@@ -30,9 +30,9 @@ public:
                       targetA, targetZ,
                       recoilA, recoilZ, beamEnergy_AMeV);
   }
-  TransferReaction(string reactionConfigFile){
+  TransferReaction(string configFile){
     Inititization();
-    SetReactionFromFile(reactionConfigFile);
+    SetReactionFromFile(configFile);
   }
 
   ~TransferReaction();
@@ -49,12 +49,12 @@ public:
 
   void SetExA(double Ex);
   void SetExB(double Ex);
-  void SetReactionFromFile(string reactionConfigFile);
+  void SetReactionFromFile(string configFile);
   
   TString GetReactionName();
   TString GetReactionName_Latex();
 
-  ReactionConfig GetRectionConfig() { return reactionConfig;}
+  ReactionConfig GetRectionConfig() { return config;}
 
   double GetMass_A() const {return mA + ExA;}
   double GetMass_a() const {return ma;}
@@ -85,7 +85,7 @@ public:
   
 private:
 
-  ReactionConfig reactionConfig;
+  ReactionConfig config;
 
   string nameA, namea, nameb, nameB;
   double thetaIN, phiIN;
@@ -119,7 +119,7 @@ void TransferReaction::Inititization(){
   Setb(1,1);
   SetB(13,6);
   TA = 6;
-  T = TA * reactionConfig.beamA;
+  T = TA * config.beamA;
   
   ExA = 0;
   ExB = 0;
@@ -141,8 +141,8 @@ TransferReaction::~TransferReaction(){
 void TransferReaction::SetA(int A, int Z, double Ex = 0){
   Isotope temp (A, Z);
   mA = temp.Mass;
-  reactionConfig.beamA = A;
-  reactionConfig.beamZ = Z;
+  config.beamA = A;
+  config.beamZ = Z;
   ExA = Ex;
   nameA = temp.Name;
   isReady = false;
@@ -152,8 +152,8 @@ void TransferReaction::SetA(int A, int Z, double Ex = 0){
 void TransferReaction::Seta(int A, int Z){
   Isotope temp (A, Z);
   ma = temp.Mass;
-  reactionConfig.targetA = A;
-  reactionConfig.targetZ = Z;
+  config.targetA = A;
+  config.targetZ = Z;
   namea = temp.Name;
   isReady = false;
   isBSet = false;
@@ -161,8 +161,8 @@ void TransferReaction::Seta(int A, int Z){
 void TransferReaction::Setb(int A, int Z){
   Isotope temp (A, Z);
   mb = temp.Mass;
-  reactionConfig.recoilLightA = A;
-  reactionConfig.recoilLightZ = Z;
+  config.recoil1.lightA = A;
+  config.recoil1.lightZ = Z;
   nameb = temp.Name;
   isReady = false;
   isBSet = false;
@@ -170,8 +170,8 @@ void TransferReaction::Setb(int A, int Z){
 void TransferReaction::SetB(int A, int Z){
   Isotope temp (A, Z);
   mB = temp.Mass;
-  reactionConfig.recoilHeavyA = A;
-  reactionConfig.recoilHeavyZ = Z;
+  config.recoil1.heavyA = A;
+  config.recoil1.heavyZ = Z;
   nameB = temp.Name;
   isReady = false;
   isBSet = true;
@@ -179,7 +179,7 @@ void TransferReaction::SetB(int A, int Z){
 
 void TransferReaction::SetIncidentEnergyAngle(double KEA, double theta, double phi){
   this->TA = KEA;
-  this->T = TA * reactionConfig.beamA;
+  this->T = TA * config.beamA;
   this->thetaIN = theta;
   this->phiIN = phi;
   isReady = false;
@@ -189,15 +189,15 @@ void TransferReaction::SetReactionSimple(int beamA, int beamZ,
                    int targetA, int targetZ,
                    int recoilA, int recoilZ, float beamEnergy_AMeV){
 
-  reactionConfig.SetReactionSimple(beamA, beamZ,
+  config.SetReactionSimple(beamA, beamZ,
                              targetA, targetZ,
                              recoilA, recoilZ, beamEnergy_AMeV);
 
-  SetA(reactionConfig.beamA, reactionConfig.beamZ);
-  Seta(reactionConfig.targetA, reactionConfig.targetZ);
-  Setb(reactionConfig.recoilLightA, reactionConfig.recoilLightZ);
-  SetB(reactionConfig.recoilHeavyA, reactionConfig.recoilHeavyZ);
-  SetIncidentEnergyAngle(reactionConfig.beamEnergy, 0, 0);
+  SetA(config.beamA, config.beamZ);
+  Seta(config.targetA, config.targetZ);
+  Setb(config.recoil1.lightA, config.recoil1.lightZ);
+  SetB(config.recoil1.heavyA, config.recoil1.heavyZ);
+  SetIncidentEnergyAngle(config.beamEnergy, 0, 0);
 
   CalReactionConstant();
 
@@ -213,20 +213,20 @@ void TransferReaction::SetExB(double Ex){
   isReady = false;
 }
 
-void TransferReaction::SetReactionFromFile(string reactionConfigFile){
+void TransferReaction::SetReactionFromFile(string configFile){
 
-  if( reactionConfig.LoadReactionConfig(reactionConfigFile) ){
+  if( config.LoadReactionConfig(configFile) ){
 
-    SetA(reactionConfig.beamA, reactionConfig.beamZ);
-    Seta(reactionConfig.targetA, reactionConfig.targetZ);
-    Setb(reactionConfig.recoilLightA, reactionConfig.recoilLightZ);
-    SetB(reactionConfig.recoilHeavyA, reactionConfig.recoilHeavyZ);
-    SetIncidentEnergyAngle(reactionConfig.beamEnergy, 0, 0);
+    SetA(config.beamA, config.beamZ);
+    Seta(config.targetA, config.targetZ);
+    Setb(config.recoil1.lightA, config.recoil1.lightZ);
+    SetB(config.recoil1.heavyA, config.recoil1.heavyZ);
+    SetIncidentEnergyAngle(config.beamEnergy, 0, 0);
 
     CalReactionConstant();
 
   }else{     
-    printf("cannot read file %s.\n", reactionConfigFile.c_str());
+    printf("cannot read file %s.\n", configFile.c_str());
     isReady = false;
   }
 
@@ -260,9 +260,9 @@ TString TransferReaction::GetReactionName_Latex(){
 
 void TransferReaction::CalReactionConstant(){
   if( !isBSet){
-    reactionConfig.recoilHeavyA = reactionConfig.beamA + reactionConfig.targetA - reactionConfig.recoilLightA;
-    reactionConfig.recoilHeavyZ = reactionConfig.beamZ + reactionConfig.targetZ - reactionConfig.recoilLightZ;
-    Isotope temp (reactionConfig.recoilHeavyA, reactionConfig.recoilHeavyZ);
+    config.recoil1.heavyA = config.beamA + config.targetA - config.recoil1.lightA;
+    config.recoil1.heavyZ = config.beamZ + config.targetZ - config.recoil1.lightZ;
+    Isotope temp (config.recoil1.heavyA, config.recoil1.heavyZ);
     mB = temp.Mass;
     isBSet = true;
   }
@@ -355,7 +355,7 @@ std::pair<double, double> TransferReaction::CalExThetaCM(double e, double z, dou
   double mass = mb;
   double massB = mB;
   double y = e + mass;
-  double slope = 299.792458 * reactionConfig.recoilLightZ * abs(Bfield) / TMath::TwoPi() * beta / 1000.; // MeV/mm;
+  double slope = 299.792458 * config.recoil1.lightZ * abs(Bfield) / TMath::TwoPi() * beta / 1000.; // MeV/mm;
   double alpha = slope/beta;
   double G =  alpha * gamma * beta * perpDist ;
   double Z = alpha * gamma * beta * z;

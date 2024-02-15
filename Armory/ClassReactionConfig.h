@@ -13,6 +13,33 @@
 
 #include "AnalysisLib.h"
 
+struct Recoil {
+
+  unsigned short lightA, lightZ; 
+  unsigned short heavyA, heavyZ; 
+
+  std::string lightStoppingPowerFile = "";  ///stopping_power_for_light_recoil
+  std::string heavyStoppingPowerFile = "";  ///stopping_power_for_heavy_recoil
+
+  bool isDecay = false;        ///isDacay
+  unsigned short decayA = 0;     ///decayNucleus_A
+  unsigned short decayZ = 0;     ///decayNucleus_Z
+
+  void Print() const {
+    printf("  light : A = %3d, Z = %2d \n", lightA, lightZ);
+    printf("  heavy : A = %3d, Z = %2d \n", heavyA, heavyZ);
+
+    printf(" light stopping file : %s \n", lightStoppingPowerFile.c_str());
+    printf(" heavy stopping file : %s \n", heavyStoppingPowerFile.c_str());
+    printf("   is simulate decay : %s \n", isDecay ? "Yes" : "No");
+    if( isDecay ){
+      printf("         heavy decay : A = %d, Z = %d \n", decayA, decayZ);
+    }
+  }
+
+};
+
+
 class ReactionConfig {
 
 public:
@@ -21,11 +48,8 @@ public:
   ReactionConfig(TMacro * macro){ LoadReactionConfig(macro);}
   ~ReactionConfig(){}
 
-  int beamA, beamZ;       
-  int targetA, targetZ;     
-  int recoilLightA, recoilLightZ;
-  int recoilHeavyA, recoilHeavyZ;
-
+  unsigned short beamA, beamZ;       
+  float beamEx;             ///excitation_energy_of_A[MeV]
   float beamEnergy;         ///MeV/u
   float beamEnergySigma;    ///beam-energy_sigma_in_MeV/u
   float beamAngle;          ///beam-angle_in_mrad
@@ -33,18 +57,16 @@ public:
   float beamX;              ///x_offset_of_Beam_in_mm
   float beamY;              ///y_offset_of_Beam_in_mm
 
-  int numEvents;            ///number_of_Event_being_generated
+  unsigned short targetA, targetZ;     
   bool isTargetScattering;  ///isTargetScattering
   float targetDensity;      ///target_density_in_g/cm3
   float targetThickness;    ///targetThickness_in_cm
   std::string beamStoppingPowerFile;         ///stopping_power_for_beam
-  std::string recoilLightStoppingPowerFile;  ///stopping_power_for_light_recoil
-  std::string recoilHeavyStoppingPowerFile;  ///stopping_power_for_heavy_recoil
-  bool isDecay;        ///isDacay
-  int heavyDecayA;     ///decayNucleus_A
-  int heavyDecayZ;     ///decayNucleus_Z
+
+  Recoil recoil1, recoil2;
+
+  int numEvents;            ///number_of_Event_being_generated
   bool isRedo;         ///isReDo
-  std::vector<float> beamEx;        ///excitation_energy_of_A[MeV]
 
   void SetReactionSimple(int beamA, int beamZ,
                    int targetA, int targetZ,
@@ -53,7 +75,7 @@ public:
   bool LoadReactionConfig(TString fileName);
   bool LoadReactionConfig(TMacro * macro);
 
-  void PrintReactionConfig() const;
+  void Print() const;
   
 private:
 
@@ -67,10 +89,11 @@ inline void ReactionConfig::SetReactionSimple(int beamA, int beamZ,
   this->beamZ = beamZ;
   this->targetA = targetA;
   this->targetZ = targetZ;
-  this->recoilLightA = recoilA;
-  this->recoilLightZ = recoilZ;
-  recoilHeavyA = this->beamA + this->targetA - recoilLightA;
-  recoilHeavyZ = this->beamZ + this->targetZ - recoilLightZ;
+
+  this->recoil1.lightA = recoilA;
+  this->recoil1.lightZ = recoilZ;
+  recoil1.heavyA = this->beamA + this->targetA - recoil1.lightA;
+  recoil1.heavyZ = this->beamZ + this->targetZ - recoil1.lightZ;
 
   beamEnergy = beamEnergy_AMeV;
   beamEnergySigma = 0;
@@ -101,93 +124,113 @@ inline bool ReactionConfig::LoadReactionConfig(TMacro * macro){
 
   if( macro == NULL ) return false;
 
+  int recoilFlag = 0;
+  int recoilLine = 0;
+
   int numLine = macro->GetListOfLines()->GetSize();
 
   for( int i = 0; i < numLine; i ++){
 
-    std::vector<std::string> str =AnalysisLib::SplitStr(macro->GetListOfLines()->At(i)->GetName(), " ");
+    std::string line = macro->GetListOfLines()->At(i)->GetName();
+    if( AnalysisLib::isEmptyOrSpaces(line) ) continue;
 
-    ///printf("%d | %s\n", i,  str[0].c_str());
+    std::vector<std::string> str =AnalysisLib::SplitStr(line, " ");
+    // printf("%d |%s|%d|%d\n", i,  str[0].c_str(), recoilFlag, recoilLine);
 
-    if( str[0].find_first_of("#") == 0 ) break;
+    if( str[0].find("####") != std::string::npos ) break;
+    if( str[0].find("#===") != std::string::npos ) {
+      recoilFlag ++;
+      recoilLine = 0;
+      continue;
+    }
 
-    if( i == 0 ) beamA           = atoi(str[0].c_str());
-    if( i == 1 ) beamZ           = atoi(str[0].c_str());
-    if( i == 2 ) targetA         = atoi(str[0].c_str());
-    if( i == 3 ) targetZ         = atoi(str[0].c_str());
-    if( i == 4 ) recoilLightA    = atoi(str[0].c_str());
-    if( i == 5 ) recoilLightZ    = atoi(str[0].c_str());
-    if( i == 6 ) beamEnergy      = atof(str[0].c_str());
-    if( i == 7 ) beamEnergySigma = atof(str[0].c_str());
-    if( i == 8 ) beamAngle       = atof(str[0].c_str());
-    if( i == 9 ) beamAngleSigma  = atof(str[0].c_str());
-    if( i == 10 ) beamX = atof(str[0].c_str());
-    if( i == 11 ) beamY = atof(str[0].c_str());
-    if( i == 12 ) numEvents = atoi(str[0].c_str());
-    if( i == 13 ) {
-      if( str[0].compare("false") == 0 ) isTargetScattering = false;
-      if( str[0].compare("true")  == 0 ) isTargetScattering = true;
+    if( recoilFlag == 0 ){
+      if( recoilLine == 0 ) beamA           = atoi(str[0].c_str());
+      if( recoilLine == 1 ) beamZ           = atoi(str[0].c_str());
+      if( recoilLine == 2 ) beamEx          = atoi(str[0].c_str());
+
+      if( recoilLine == 3 ) beamEnergy      = atof(str[0].c_str());
+      if( recoilLine == 4 ) beamEnergySigma = atof(str[0].c_str());
+      if( recoilLine == 5 ) beamAngle       = atof(str[0].c_str());
+      if( recoilLine == 6 ) beamAngleSigma  = atof(str[0].c_str());
+      if( recoilLine == 7 ) beamX = atof(str[0].c_str());
+      if( recoilLine == 8 ) beamY = atof(str[0].c_str());
+
+      if( recoilLine ==  9 ) targetA         = atoi(str[0].c_str());
+      if( recoilLine == 10 ) targetZ         = atoi(str[0].c_str());
+
+      if( recoilLine == 11 ) isTargetScattering    = str[0].compare("true")  == 0 ? true: false;
+      if( recoilLine == 12 ) targetDensity         = atof(str[0].c_str());
+      if( recoilLine == 13 ) targetThickness       = atof(str[0].c_str());
+      if( recoilLine == 14 ) beamStoppingPowerFile = str[0];
+
+      if( recoilLine == 15 ) numEvents = atoi(str[0].c_str());
+      if( recoilLine == 16 ) isRedo    = str[0].compare("true" ) == 0 ? true : false;
     }
-    if( i == 14 ) targetDensity   = atof(str[0].c_str());
-    if( i == 15 ) targetThickness = atof(str[0].c_str());
-    if( i == 16 ) beamStoppingPowerFile = str[0];
-    if( i == 17 ) recoilLightStoppingPowerFile = str[0];
-    if( i == 18 ) recoilHeavyStoppingPowerFile = str[0];
-    if( i == 19 ) {
-      if( str[0].compare("false") == 0 ) isDecay = false;
-      if( str[0].compare("true")  == 0 ) isDecay = true;
+
+    if( recoilFlag == 1 ){
+
+      if( recoilLine == 0 ) recoil1.lightA  = atoi(str[0].c_str());
+      if( recoilLine == 1 ) recoil1.lightZ  = atoi(str[0].c_str());
+      if( recoilLine == 2 ) recoil1.lightStoppingPowerFile = str[0];
+      if( recoilLine == 3 ) recoil1.heavyStoppingPowerFile = str[0];
+      if( recoilLine == 4 ) recoil1.isDecay = str[0].compare("true")  == 0 ? true : false;
+      if( recoilLine == 5 ) recoil1.decayA  = atoi(str[0].c_str());
+      if( recoilLine == 6 ) recoil1.decayZ  = atoi(str[0].c_str());
+
     }
-    if( i == 20 ) heavyDecayA = atoi(str[0].c_str());
-    if( i == 21 ) heavyDecayZ = atoi(str[0].c_str());
-    if( i == 22 ) {
-      if( str[0].compare("false") == 0 ) isRedo = false;
-      if( str[0].compare("true" ) == 0 ) isRedo = true;
+
+    if( recoilFlag == 2 ){
+
+      if( recoilLine == 0 ) recoil2.lightA  = atoi(str[0].c_str());
+      if( recoilLine == 1 ) recoil2.lightZ  = atoi(str[0].c_str());
+      if( recoilLine == 2 ) recoil2.lightStoppingPowerFile = str[0];
+      if( recoilLine == 3 ) recoil2.heavyStoppingPowerFile = str[0];
+      if( recoilLine == 4 ) recoil2.isDecay = str[0].compare("true")  == 0 ? true : false;
+      if( recoilLine == 5 ) recoil2.decayA  = atoi(str[0].c_str());
+      if( recoilLine == 6 ) recoil2.decayZ  = atoi(str[0].c_str());
+
     }
+
+    recoilLine ++;
     
-    if( i >= 23) {
-      beamEx.push_back( atof(str[0].c_str()) );
-    }
   }
 
-  recoilHeavyA = beamA + targetA - recoilLightA;
-  recoilHeavyZ = beamZ + targetZ - recoilLightZ;
+  recoil1.heavyA = beamA + targetA - recoil1.lightA;
+  recoil1.heavyZ = beamZ + targetZ - recoil1.lightZ;
+
+  recoil2.heavyA = beamA + targetA - recoil2.lightA;
+  recoil2.heavyZ = beamZ + targetZ - recoil2.lightZ;
 
   return true;
 }
 
-inline void ReactionConfig::PrintReactionConfig() const{
+inline void ReactionConfig::Print() const{
 
   printf("=====================================================\n");
-  printf("   beam : A = %3d, Z = %2d \n", beamA, beamZ);
-  printf(" target : A = %3d, Z = %2d \n", targetA, targetZ);
-  printf("  light : A = %3d, Z = %2d \n", recoilLightA, recoilLightZ);
 
+  printf("number of Simulation Events : %d \n", numEvents);
+  printf("    is Redo until hit array : %s \n", isRedo ? "Yes" : "No");
+  
+  printf("------------------------------ Beam\n");
+  printf("   beam : A = %3d, Z = %2d, Ex = %.2f MeV\n", beamA, beamZ, beamEx);
   printf(" beam Energy : %.2f +- %.2f MeV/u, dE/E = %5.2f %%\n", beamEnergy, beamEnergySigma, beamEnergySigma/beamEnergy);
   printf("       Angle : %.2f +- %.2f mrad\n", beamAngle, beamAngleSigma);
   printf("      offset : (x,y) = (%.2f, %.2f) mmm \n", beamX, beamY);
 
-  printf("##### number of Simulation Events : %d \n", numEvents);
-  
+  printf("------------------------------ Target\n");
+  printf(" target : A = %3d, Z = %2d \n", targetA, targetZ);
   printf("    is target scattering : %s \n", isTargetScattering ? "Yes" : "No");
-
   if(isTargetScattering){
     printf(" target density : %.f g/cm3\n", targetDensity);
     printf("      thickness : %.f cm\n", targetThickness);
     printf("         beam stopping file : %s \n", beamStoppingPowerFile.c_str());
-    printf(" recoil light stopping file : %s \n", recoilLightStoppingPowerFile.c_str());
-    printf(" recoil heavy stopping file : %s \n", recoilHeavyStoppingPowerFile.c_str());
   }
   
-  printf("       is simulate decay : %s \n", isDecay ? "Yes" : "No");
-  if( isDecay ){
-    printf(" heavy decay : A = %d, Z = %d \n", heavyDecayA, heavyDecayZ);
-  }
-  printf(" is Redo until hit array : %s \n", isRedo ? "Yes" : "No");
+  printf("------------------------------ Recoil-1\n"); recoil1.Print();
 
-  printf(" beam Ex : %.2f MeV \n", beamEx[0]);
-  for( int i = 1; i < (int) beamEx.size(); i++){
-    printf("         %.2f MeV \n", beamEx[i]);
-  }
+  printf("------------------------------ Recoil-2\n"); recoil2.Print();
+  
   
   printf("=====================================================\n");
 }
