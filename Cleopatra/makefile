@@ -1,6 +1,6 @@
 CC=g++
 
-ALL = Isotope InFileCreator ExtractXSec ExtractXSecFromText PlotTGraphTObjArray FindThetaCM Transfer PlotSimulation IsotopeShort
+ALL = Isotope InFileCreator ExtractXSec ExtractXSecFromText PlotTGraphTObjArray FindThetaCM Transfer PlotSimulation
 
 all: $(ALL)
 
@@ -27,9 +27,6 @@ PlotSimulation: PlotSimulation.C Check_Simulation.C
 
 Isotope: ../Cleopatra/ClassIsotope.h ../Cleopatra/Isotope.C
 	$(CC) Isotope.C -o Isotope
-	
-IsotopeShort: ../Cleopatra/ClassIsotope.h ../Cleopatra/IsotopeShort.C
-	$(CC) IsotopeShort.C -o IsotopeShort
 
 clean:
 	/bin/rm -f $(ALL)

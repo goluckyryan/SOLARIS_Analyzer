@@ -60,15 +60,15 @@ int main (int argc, char *argv[]) {
   //run Armory/Check_Simulation
   if( isPlot ){
     ifstream file_in;
-    file_in.open("../Armory/Check_Simulation.C", ios::in);
+    file_in.open("../Cleopatra/Check_Simulation.C", ios::in);
     if( file_in){
-      printf("---- running ../Armory/Check_Simulation.C on %s \n", saveFileName.Data());
+      printf("---- running ../Cleopatra/Check_Simulation.C on %s \n", saveFileName.Data());
       TString cmd;
-      cmd.Form("root -l '../Armory/Check_Simulation.C(\"%s\", 500)'", saveFileName.Data());
+      cmd.Form("root -l '../Cleopatra/Check_Simulation.C(\"%s\")'", saveFileName.Data());
       
       system(cmd.Data());
     }else{
-      printf("cannot find ../Armory/Check_Simulation.C \n");
+      printf("cannot find ../Cleopatra/Check_Simulation.C \n");
     }
   }
   
