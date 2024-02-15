@@ -30,9 +30,9 @@ public:
                       targetA, targetZ,
                       recoilA, recoilZ, beamEnergy_AMeV);
   }
-  TransferReaction(string configFile){
+  TransferReaction(string configFile, unsigned short ID = 0){
     Inititization();
-    SetReactionFromFile(configFile);
+    SetReactionFromFile(configFile, ID);
   }
 
   ~TransferReaction();
@@ -49,7 +49,7 @@ public:
 
   void SetExA(double Ex);
   void SetExB(double Ex);
-  void SetReactionFromFile(string configFile);
+  void SetReactionFromFile(string configFile, unsigned short ID = 0);
   
   TString GetReactionName();
   TString GetReactionName_Latex();
@@ -70,7 +70,8 @@ public:
   TLorentzVector GetPb(){return Pb;}
   TLorentzVector GetPB(){return PB;}
   
-  void PrintFourVectors();
+  void PrintFourVectors() const;
+  void PrintReaction() const;
 
   void CalReactionConstant();
 
@@ -85,6 +86,7 @@ public:
   
 private:
 
+  Recoil recoil;
   ReactionConfig config;
 
   string nameA, namea, nameb, nameB;
@@ -161,8 +163,8 @@ void TransferReaction::Seta(int A, int Z){
 void TransferReaction::Setb(int A, int Z){
   Isotope temp (A, Z);
   mb = temp.Mass;
-  config.recoil1.lightA = A;
-  config.recoil1.lightZ = Z;
+  recoil.lightA = A;
+  recoil.lightZ = Z;
   nameb = temp.Name;
   isReady = false;
   isBSet = false;
@@ -170,8 +172,8 @@ void TransferReaction::Setb(int A, int Z){
 void TransferReaction::SetB(int A, int Z){
   Isotope temp (A, Z);
   mB = temp.Mass;
-  config.recoil1.heavyA = A;
-  config.recoil1.heavyZ = Z;
+  recoil.heavyA = A;
+  recoil.heavyZ = Z;
   nameB = temp.Name;
   isReady = false;
   isBSet = true;
@@ -191,12 +193,14 @@ void TransferReaction::SetReactionSimple(int beamA, int beamZ,
 
   config.SetReactionSimple(beamA, beamZ,
                              targetA, targetZ,
-                             recoilA, recoilZ, beamEnergy_AMeV);
+                             recoilA, recoilZ, beamEnergy_AMeV, 0);
+
+  recoil = config.recoil[0];
 
   SetA(config.beamA, config.beamZ);
   Seta(config.targetA, config.targetZ);
-  Setb(config.recoil1.lightA, config.recoil1.lightZ);
-  SetB(config.recoil1.heavyA, config.recoil1.heavyZ);
+  Setb(recoil.lightA, recoil.lightZ);
+  SetB(recoil.heavyA, recoil.heavyZ);
   SetIncidentEnergyAngle(config.beamEnergy, 0, 0);
 
   CalReactionConstant();
@@ -213,14 +217,17 @@ void TransferReaction::SetExB(double Ex){
   isReady = false;
 }
 
-void TransferReaction::SetReactionFromFile(string configFile){
+void TransferReaction::SetReactionFromFile(string configFile, unsigned short ID){
 
   if( config.LoadReactionConfig(configFile) ){
 
     SetA(config.beamA, config.beamZ);
     Seta(config.targetA, config.targetZ);
-    Setb(config.recoil1.lightA, config.recoil1.lightZ);
-    SetB(config.recoil1.heavyA, config.recoil1.heavyZ);
+
+    recoil = config.recoil[ID];
+
+    Setb(recoil.lightA, recoil.lightZ);
+    SetB(recoil.heavyA, recoil.heavyZ);
     SetIncidentEnergyAngle(config.beamEnergy, 0, 0);
 
     CalReactionConstant();
@@ -260,9 +267,9 @@ TString TransferReaction::GetReactionName_Latex(){
 
 void TransferReaction::CalReactionConstant(){
   if( !isBSet){
-    config.recoil1.heavyA = config.beamA + config.targetA - config.recoil1.lightA;
-    config.recoil1.heavyZ = config.beamZ + config.targetZ - config.recoil1.lightZ;
-    Isotope temp (config.recoil1.heavyA, config.recoil1.heavyZ);
+    recoil.heavyA = config.beamA + config.targetA - recoil.lightA;
+    recoil.heavyZ = config.beamZ + config.targetZ - recoil.lightZ;
+    Isotope temp (recoil.heavyA, recoil.heavyZ);
     mB = temp.Mass;
     isBSet = true;
   }
@@ -278,11 +285,16 @@ void TransferReaction::CalReactionConstant(){
   PA.RotateZ(phiIN);
   
   Pa.SetXYZM(0,0,0,ma);
+
+  PA.SetUniqueID(config.beamZ);
+  Pa.SetUniqueID(config.targetZ);
+  Pb.SetUniqueID(recoil.lightZ);
+  PB.SetUniqueID(recoil.heavyZ);
   
   isReady = true;
 }
 
-void TransferReaction::PrintFourVectors(){
+void TransferReaction::PrintFourVectors() const {
 
   printf("A : %10.2f  %10.2f  %10.2f  %10.2f\n", PA.E(), PA.Px(), PA.Py(), PA.Pz());
   printf("a : %10.2f  %10.2f  %10.2f  %10.2f\n", Pa.E(), Pa.Px(), Pa.Py(), Pa.Pz());
@@ -294,6 +306,25 @@ void TransferReaction::PrintFourVectors(){
                  PA.Px() + Pa.Px() - Pb.Px() - PB.Px(), 
                  PA.Py() + Pa.Py() - Pb.Py() - PB.Py(), 
                  PA.Pz() + Pa.Pz() - Pb.Pz() - PB.Pz());
+
+}
+
+void TransferReaction::PrintReaction() const {
+
+  printf("=====================================================\n");  
+  printf("------------------------------ Beam\n");
+  printf("   beam : A = %3d, Z = %2d, Ex = %.2f MeV\n", config.beamA, config.beamZ, config.beamEx);
+  printf(" beam Energy : %.2f +- %.2f MeV/u, dE/E = %5.2f %%\n", config.beamEnergy, config.beamEnergySigma, config.beamEnergySigma/config.beamEnergy);
+  printf("       Angle : %.2f +- %.2f mrad\n", config.beamAngle, config.beamAngleSigma);
+  printf("      offset : (x,y) = (%.2f, %.2f) mmm \n", config.beamX, config.beamY);
+
+  printf("------------------------------ Target\n");
+  printf(" target : A = %3d, Z = %2d \n", config.targetA, config.targetZ);
+  
+  printf("------------------------------ Recoil\n"); 
+  printf("  light : A = %3d, Z = %2d \n", recoil.lightA, recoil.lightZ);
+  printf("  heavy : A = %3d, Z = %2d \n", recoil.heavyA, recoil.heavyZ);
+  printf("=====================================================\n");  
 
 }
 
@@ -355,7 +386,7 @@ std::pair<double, double> TransferReaction::CalExThetaCM(double e, double z, dou
   double mass = mb;
   double massB = mB;
   double y = e + mass;
-  double slope = 299.792458 * config.recoil1.lightZ * abs(Bfield) / TMath::TwoPi() * beta / 1000.; // MeV/mm;
+  double slope = 299.792458 * recoil.lightZ * abs(Bfield) / TMath::TwoPi() * beta / 1000.; // MeV/mm;
   double alpha = slope/beta;
   double G =  alpha * gamma * beta * perpDist ;
   double Z = alpha * gamma * beta * z;

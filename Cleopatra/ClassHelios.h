@@ -25,133 +25,120 @@
 //======================================================= 
 
 struct trajectory{
-   double theta, phi;
-   double vt, vp; // tranvser and perpendicular velocity
-   double rho;    // orbit radius
-   double z0, t0; // position cycle
-   double x, y, z; // hit position
-   double t; //actual orbit time;
-   double R; //hit radius = sqrt(x^2+y^2);
-   int detID, detRowID; 
-   int loop;
-   double effLoop;
+  double theta, phi;
+  double vt, vp; // tranvser and perpendicular velocity
+  double rho;    // orbit radius
+  double z0, t0; // position cycle
+  double x, y, z; // hit position
+  double t; //actual orbit time;
+  double R; //hit radius = sqrt(x^2+y^2);
+  int detID, detRowID; 
+  int loop;
+  double effLoop;
 
-   void PrintTrajectory(){
-      printf("=====================\n");
-      printf("    theta : %f deg\n", theta*TMath::RadToDeg());
-      printf("      phi : %f deg\n", phi*TMath::RadToDeg());
-      printf("       vt : %f mm/ns\n", vt);
-      printf("       vp : %f mm/ns\n", vp);
-      printf("      rho : %f mm\n", rho);
-      printf("       z0 : %f mm\n", z0);
-      printf("       t0 : %f ns\n", t0);
-      printf("(x, y, z) : (%f, %f. %f) mm\n", x, y, z);
-      printf("        R : %f mm\n", R);
-      printf("        t : %f ns\n", t);
-      printf("  effLoop : %f cycle\n", effLoop);
-      printf("     Loop : %d cycle\n", loop);
-      printf(" detRowID : %d \n", detRowID);
-      printf("    detID : %d \n", detID);
-      
-   }
+  void PrintTrajectory(){
+    printf("=====================\n");
+    printf("    theta : %f deg\n", theta*TMath::RadToDeg());
+    printf("      phi : %f deg\n", phi*TMath::RadToDeg());
+    printf("       vt : %f mm/ns\n", vt);
+    printf("       vp : %f mm/ns\n", vp);
+    printf("      rho : %f mm\n", rho);
+    printf("       z0 : %f mm\n", z0);
+    printf("       t0 : %f ns\n", t0);
+    printf("(x, y, z) : (%f, %f. %f) mm\n", x, y, z);
+    printf("        R : %f mm\n", R);
+    printf("        t : %f ns\n", t);
+    printf("  effLoop : %f cycle\n", effLoop);
+    printf("     Loop : %d cycle\n", loop);
+    printf(" detRowID : %d \n", detRowID);
+    printf("    detID : %d \n", detID);
+    
+  }
+
+  void Clear(){
+    theta = TMath::QuietNaN();
+    phi = TMath::QuietNaN();
+    vt = TMath::QuietNaN();
+    vp = TMath::QuietNaN();
+    rho = TMath::QuietNaN();
+    z0 = TMath::QuietNaN();
+    t0 = TMath::QuietNaN();
+    x = TMath::QuietNaN();
+    y = TMath::QuietNaN();
+    z = TMath::QuietNaN();
+    effLoop = TMath::QuietNaN();
+    detID = -1;
+    detRowID = -1;
+    loop = -1;
+  }
 };
-
 
 class HELIOS{
 public:
 
-   HELIOS();
-   ~HELIOS();
-   
-   void SetCoincidentWithRecoil(bool TorF){ this->isCoincidentWithRecoil = TorF;}
-   bool GetCoincidentWithRecoil(){return this->isCoincidentWithRecoil;}
-   bool SetDetectorGeometry(std::string filename);
-   void SetBeamPosition(double x, double y) { xOff = x; yOff = y;}
-   
-   void OverrideMagneticField(double BField){ this->detGeo.Bfield = BField; this->detGeo.BfieldSign = BField > 0 ? 1: -1;}
-   void OverrideMagneticFieldDirection(double BfieldThetaInDeg){ this->detGeo.BfieldTheta = BfieldThetaInDeg;}
-   void OverrideFirstPos(double firstPos){
-      overrideFirstPos = true;
-      printf("------ Overriding FirstPosition to : %8.2f mm \n", firstPos);
-      this->array.firstPos = firstPos;
-   }
-   void OverrideDetectorDistance(double perpDist){
-      overrideDetDistance = true;
-      printf("------ Overriding Detector Distance to : %8.2f mm \n", perpDist);
-      this->array.detPerpDist = perpDist;
-   }
-   
-   void SetDetectorOutside(bool isOutside){
-      this->array.detFaceOut = isOutside;
-      printf(" Detectors are facing %s\n", array.detFaceOut ? "outside": "inside" );
-   }
-   
-   int DetAcceptance();
-   int CalArrayHit(TLorentzVector Pb, int Zb, bool debug = false);
-   int CalRecoilHit(TLorentzVector PB, int ZB);
-   //int CalHit(TLorentzVector Pb, int Zb, TLorentzVector PB, int ZB, double xOff = 0, double yOff = 0 ); // return 0 for no hit, 1 for hit
-   
-   void CalTrajectoryPara(TLorentzVector P, int Z, bool isLightRecoil);
-   
-   int GetNumberOfDetectorsInSamePos(){return array.mDet;}
-   double GetEnergy(){return e;}
-   double GetDetX(){return detX;} // position in each detector, range from -1, 1
-   
-   /// clockwise rotation for B-field along the z-axis, sign = 1.
-   double XPos(double Zpos, double theta, double phi, double rho, int sign){
-     if( TMath::IsNaN(Zpos) ) return TMath::QuietNaN();
-     return rho * ( TMath::Sin( TMath::Tan(theta) * Zpos / rho - sign * phi ) + sign * TMath::Sin(phi) ) + xOff;
-   }
-   double YPos(double Zpos, double theta, double phi, double rho, int sign){
-     if( TMath::IsNaN(Zpos) ) return TMath::QuietNaN();
-     return rho * sign * (TMath::Cos( TMath::Tan(theta) * Zpos / rho - sign * phi ) - TMath::Cos(phi)) + yOff;
-   }
-   double RPos(double Zpos, double theta, double phi, double rho, int sign){
+  HELIOS();
+  ~HELIOS();
+  
+  void SetCoincidentWithRecoil(bool TorF){ this->isCoincidentWithRecoil = TorF;}
+  bool GetCoincidentWithRecoil(){return this->isCoincidentWithRecoil;}
+  bool SetDetectorGeometry(std::string filename, unsigned short ID);
+  void SetBeamPosition(double x, double y) { xOff = x; yOff = y;}
+  
+  void OverrideMagneticField(double BField);
+  void OverrideMagneticFieldDirection(double BfieldThetaInDeg);
+  void OverrideFirstPos(double firstPos);
+  void OverrideDetectorDistance(double perpDist);
+  void OverrideDetectorFacing(bool isOutside);
+  
+  int CheckDetAcceptance();
+  int CalArrayHit(TLorentzVector Pb, bool debug = false);
+  int CalRecoilHit(TLorentzVector PB);  
+  void CalTrajectoryPara(TLorentzVector P, bool isLightRecoil);
+  
+  int GetNumberOfDetectorsInSamePos(){return array.mDet;}
+  double GetEnergy()const {return e;}
+  double GetDetX()  const {return detX;} // position in each detector, range from -1, 1
+  
+  /// clockwise rotation for B-field along the z-axis, sign = 1.
+  double XPos(double Zpos, double theta, double phi, double rho, int sign){
+    if( TMath::IsNaN(Zpos) ) return TMath::QuietNaN();
+    return rho * ( TMath::Sin( TMath::Tan(theta) * Zpos / rho - sign * phi ) + sign * TMath::Sin(phi) ) + xOff;
+  }
+  double YPos(double Zpos, double theta, double phi, double rho, int sign){
+    if( TMath::IsNaN(Zpos) ) return TMath::QuietNaN();
+    return rho * sign * (TMath::Cos( TMath::Tan(theta) * Zpos / rho - sign * phi ) - TMath::Cos(phi)) + yOff;
+  }
+  double RPos(double Zpos, double theta, double phi, double rho, int sign){
     if( TMath::IsNaN(Zpos) ) return TMath::QuietNaN();
     double x =  XPos(Zpos, theta, phi, rho, sign) ;
     double y =  YPos(Zpos, theta, phi, rho, sign) ;
     return sqrt(x*x+y*y);
-   }
-   
-   double GetXPos(double ZPos){ return TMath::IsNaN(ZPos) ? TMath::QuietNaN() : XPos( ZPos, orbitb.theta, orbitb.phi, orbitb.rho, detGeo.BfieldSign); }
-   double GetYPos(double ZPos){ return TMath::IsNaN(ZPos) ? TMath::QuietNaN() : YPos( ZPos, orbitb.theta, orbitb.phi, orbitb.rho, detGeo.BfieldSign); }
-   double GetR(double ZPos)   { return TMath::IsNaN(ZPos) ? TMath::QuietNaN() : RPos( ZPos, orbitb.theta, orbitb.phi, orbitb.rho, detGeo.BfieldSign); }
-   
-   double GetRecoilEnergy(){return eB;}
-   double GetRecoilXPos(double ZPos){ return TMath::IsNaN(ZPos) ? TMath::QuietNaN() : XPos( ZPos, orbitB.theta, orbitB.phi, orbitB.rho, detGeo.BfieldSign); }   
-   double GetRecoilYPos(double ZPos){ return TMath::IsNaN(ZPos) ? TMath::QuietNaN() : YPos( ZPos, orbitB.theta, orbitB.phi, orbitB.rho, detGeo.BfieldSign); }
-   double GetRecoilR(double ZPos)   { return TMath::IsNaN(ZPos) ? TMath::QuietNaN() : RPos( ZPos, orbitB.theta, orbitB.phi, orbitB.rho, detGeo.BfieldSign); }
-   
-   double GetBField() {return detGeo.Bfield;}
-   double GetDetRadius() {return array.detPerpDist;}
+  }
+  
+  double GetXPos(double ZPos){ return TMath::IsNaN(ZPos) ? TMath::QuietNaN() : XPos( ZPos, orbitb.theta, orbitb.phi, orbitb.rho, detGeo.BfieldSign); }
+  double GetYPos(double ZPos){ return TMath::IsNaN(ZPos) ? TMath::QuietNaN() : YPos( ZPos, orbitb.theta, orbitb.phi, orbitb.rho, detGeo.BfieldSign); }
+  double GetR(double ZPos)   { return TMath::IsNaN(ZPos) ? TMath::QuietNaN() : RPos( ZPos, orbitb.theta, orbitb.phi, orbitb.rho, detGeo.BfieldSign); }
+  
+  double GetRecoilEnergy(){return eB;}
+  double GetRecoilXPos(double ZPos){ return TMath::IsNaN(ZPos) ? TMath::QuietNaN() : XPos( ZPos, orbitB.theta, orbitB.phi, orbitB.rho, detGeo.BfieldSign); }   
+  double GetRecoilYPos(double ZPos){ return TMath::IsNaN(ZPos) ? TMath::QuietNaN() : YPos( ZPos, orbitB.theta, orbitB.phi, orbitB.rho, detGeo.BfieldSign); }
+  double GetRecoilR(double ZPos)   { return TMath::IsNaN(ZPos) ? TMath::QuietNaN() : RPos( ZPos, orbitB.theta, orbitB.phi, orbitB.rho, detGeo.BfieldSign); }
+  
+  void PrintGeometry() const;
 
-   trajectory GetTrajectory_b() {return orbitb;}
-   trajectory GetTrajectory_B() {return orbitB;}
+  double GetBField()    const {return detGeo.Bfield;}
+  double GetDetRadius() const {return array.detPerpDist;}
 
-   DetGeo GetDetectorGeometry() {return detGeo;}
-
-   TString GetHitMessage() const {return hitMessage;}
-   TString GetAcceptanceMessage() const {return accMessage;}
-   
+  trajectory GetTrajectory_b() const {return orbitb;}
+  trajectory GetTrajectory_B() const {return orbitB;}
+  
+  DetGeo GetDetectorGeometry() const {return detGeo;}
+  
+  TString GetHitMessage()        const {return hitMessage;}
+  TString GetAcceptanceMessage() const {return accMessage;}
+  
 private:   
       
-   void ClearTrajectory(trajectory t){
-      t.theta = TMath::QuietNaN();
-      t.phi = TMath::QuietNaN();
-      t.vt = TMath::QuietNaN();
-      t.vp = TMath::QuietNaN();
-      t.rho = TMath::QuietNaN();
-      t.z0 = TMath::QuietNaN();
-      t.t0 = TMath::QuietNaN();
-      t.x = TMath::QuietNaN();
-      t.y = TMath::QuietNaN();
-      t.z = TMath::QuietNaN();
-      t.effLoop = TMath::QuietNaN();
-      t.detID = -1;
-      t.detRowID = -1;
-      t.loop = -1;
-   }
-
    DetGeo detGeo;
    Array array;
    
@@ -178,25 +165,25 @@ private:
 
 HELIOS::HELIOS(){
    
-   ClearTrajectory(orbitb);
-   ClearTrajectory(orbitB);
+  orbitb.Clear();
+  orbitB.Clear();
    
-   e = TMath::QuietNaN();
-   eB = TMath::QuietNaN();
-   detX = TMath::QuietNaN();
-   rhoHit = TMath::QuietNaN();
-   
-   xOff = 0.0;
-   yOff = 0.0;
-   
-   isDetReady = false;
+  e = TMath::QuietNaN();
+  eB = TMath::QuietNaN();
+  detX = TMath::QuietNaN();
+  rhoHit = TMath::QuietNaN();
+  
+  xOff = 0.0;
+  yOff = 0.0;
+  
+  isDetReady = false;
 
-   hitMessage = "";
-   accMessage = "";
+  hitMessage = "";
+  accMessage = "";
 
-   overrideDetDistance = false;
-   overrideFirstPos = false;
-   isCoincidentWithRecoil = false;
+  overrideDetDistance = false;
+  overrideFirstPos = false;
+  isCoincidentWithRecoil = false;
    
 }
 
@@ -204,28 +191,73 @@ HELIOS::~HELIOS(){
   
 }
 
-bool HELIOS::SetDetectorGeometry(std::string filename){
-
-   if( detGeo.LoadDetectorGeo(filename)) {
-
-    if( detGeo.use2ndArray ){
-      array = detGeo.array2;
-    }else{
-      array = detGeo.array1;
-    }
-
-    isCoincidentWithRecoil = detGeo.isCoincidentWithRecoil;
-
-    isDetReady = true;
-   }else{
-    printf("cannot read file %s.\n", filename.c_str());
-    isDetReady = false;
-   }
-   
-   return isDetReady;  
+void HELIOS::OverrideMagneticField(double BField){ 
+  this->detGeo.Bfield = BField; 
+  this->detGeo.BfieldSign = BField > 0 ? 1: -1;
 }
 
-int HELIOS::DetAcceptance(){
+void HELIOS::OverrideMagneticFieldDirection(double BfieldThetaInDeg){ 
+   this->detGeo.BfieldTheta = BfieldThetaInDeg;
+}
+
+void HELIOS::OverrideFirstPos(double firstPos){
+   overrideFirstPos = true;
+   printf("------ Overriding FirstPosition to : %8.2f mm \n", firstPos);
+   this->array.firstPos = firstPos;
+}
+
+void HELIOS::OverrideDetectorDistance(double perpDist){
+   overrideDetDistance = true;
+   printf("------ Overriding Detector Distance to : %8.2f mm \n", perpDist);
+   this->array.detPerpDist = perpDist;
+}
+
+void HELIOS::OverrideDetectorFacing(bool isOutside){
+   this->array.detFaceOut = isOutside;
+   printf(" Detectors are facing %s\n", array.detFaceOut ? "outside": "inside" );
+}
+
+bool HELIOS::SetDetectorGeometry(std::string filename, unsigned short ID){
+
+  if( detGeo.LoadDetectorGeo(filename, false)) {
+
+    array = detGeo.array[ID];
+    isCoincidentWithRecoil = detGeo.isCoincidentWithRecoil;
+    isDetReady = true;
+
+  }else{
+    printf("cannot read file %s.\n", filename.c_str());
+    isDetReady = false;
+  }
+  
+  return isDetReady;  
+}
+
+void HELIOS::PrintGeometry() const{
+
+  printf("=====================================================\n");
+  printf("                 B-field: %8.2f  T, Theta : %6.2f deg \n", detGeo.Bfield, detGeo.BfieldTheta);
+  if( detGeo.BfieldTheta != 0.0 ) {
+    printf("                                      +---- field angle != 0 is not supported!!! \n");
+  }
+  printf("     Recoil detector pos: %8.2f mm, radius: %6.2f - %6.2f mm \n", detGeo.recoilPos, detGeo.recoilInnerRadius, detGeo.recoilOuterRadius);
+
+  printf("----------------------------------- Detector Position \n");
+  array.PrintArray();
+
+  if( detGeo.elumPos1 != 0 || detGeo.elumPos2 != 0 || detGeo.recoilPos1 != 0 || detGeo.recoilPos2 != 0){
+    printf("=================================== Auxillary/Imaginary Detectors\n");
+  }
+  if( detGeo.elumPos1 != 0 )   printf("   Elum 1 pos.: %f mm \n", detGeo.elumPos1);
+  if( detGeo.elumPos2 != 0 )   printf("   Elum 2 pos.: %f mm \n", detGeo.elumPos2);
+  if( detGeo.recoilPos1 != 0 ) printf(" Recoil 1 pos.: %f mm \n", detGeo.recoilPos1);
+  if( detGeo.recoilPos2 != 0 ) printf(" Recoil 2 pos.: %f mm \n", detGeo.recoilPos2);
+  printf("=====================================================\n");
+
+
+}
+
+int HELIOS::CheckDetAcceptance(){
    
    //CalArrayHit and CalRecoilHit must be done before.
    
@@ -329,12 +361,12 @@ int HELIOS::DetAcceptance(){
    return -20; // for unknown reason
 }
 
-void HELIOS::CalTrajectoryPara(TLorentzVector P, int Z, bool isLightRecoil){
+void HELIOS::CalTrajectoryPara(TLorentzVector P, bool isLightRecoil){
    
    if( isLightRecoil ){
       orbitb.theta = P.Theta();
       orbitb.phi = P.Phi();
-      orbitb.rho = P.Pt() / abs(detGeo.Bfield) / Z / c * 1000; //mm
+      orbitb.rho = P.Pt() / abs(detGeo.Bfield) / P.GetUniqueID() / c * 1000; //mm
       orbitb.vt = P.Beta() * TMath::Sin(P.Theta()) * c ; // mm / nano-second  
       orbitb.vp = P.Beta() * TMath::Cos(P.Theta()) * c ; // mm / nano-second  
       orbitb.t0 = TMath::TwoPi() * orbitb.rho / orbitb.vt; // nano-second  
@@ -346,7 +378,7 @@ void HELIOS::CalTrajectoryPara(TLorentzVector P, int Z, bool isLightRecoil){
    }else{
       orbitB.theta = P.Theta();
       orbitB.phi = P.Phi();
-      orbitB.rho = P.Pt() / abs(detGeo.Bfield) / Z / c * 1000; //mm
+      orbitB.rho = P.Pt() / abs(detGeo.Bfield) / P.GetUniqueID() / c * 1000; //mm
       orbitB.vt = P.Beta() * TMath::Sin(P.Theta()) * c ; // mm / nano-second  
       orbitB.vp = P.Beta() * TMath::Cos(P.Theta()) * c ; // mm / nano-second  
       orbitB.t0 = TMath::TwoPi() * orbitB.rho / orbitB.vt; // nano-second  
@@ -357,13 +389,13 @@ void HELIOS::CalTrajectoryPara(TLorentzVector P, int Z, bool isLightRecoil){
    }
 }
 
-int HELIOS::CalArrayHit(TLorentzVector Pb, int Zb, bool debug){
+int HELIOS::CalArrayHit(TLorentzVector Pb, bool debug){
    
    e = Pb.E() - Pb.M();
    detX = TMath::QuietNaN();
    rhoHit = TMath::QuietNaN();
    
-   CalTrajectoryPara(Pb, Zb, true);
+   CalTrajectoryPara(Pb, true);
    
    int targetLoop = 1;
    int inOut = array.detFaceOut == true ? 1: 0; //1 = from Outside, 0 = from inside
@@ -470,9 +502,9 @@ int HELIOS::CalArrayHit(TLorentzVector Pb, int Zb, bool debug){
    return 1; // return 1 when OK
 }
 
-int HELIOS::CalRecoilHit(TLorentzVector PB, int ZB){
+int HELIOS::CalRecoilHit(TLorentzVector PB){
    
-   CalTrajectoryPara(PB, ZB, false);
+   CalTrajectoryPara(PB, false);
    
    orbitB.z = detGeo.recoilPos;
    orbitB.x = GetRecoilXPos(detGeo.recoilPos)  ;

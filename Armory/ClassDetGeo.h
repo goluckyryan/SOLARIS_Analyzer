@@ -15,6 +15,8 @@
 
 struct Array{
 
+  bool enable;
+
   double detPerpDist;    /// distance from axis
   double detWidth;       /// width   
   double detLength;      /// length
@@ -85,11 +87,7 @@ public:
   double elumPos1, elumPos2; /// imaginary elum, only sensitive to light recoil
 
   //===================1st array
-  Array array1;
-
-  //==================2nd array
-  bool   use2ndArray;
-  Array array2;
+  Array array[2];
 
   double zMin, zMax;   /// range of detectors
   bool isCoincidentWithRecoil;
@@ -129,9 +127,7 @@ inline bool DetGeo::LoadDetectorGeo(TMacro * macro, bool verbose){
   TList * haha = macro->GetListOfLines();
   int numLine = (haha)->GetSize();
 
-  array1.pos.clear();
-  array2.pos.clear();
-  use2ndArray = false;
+  for( int i = 0; i < 2 ; i++) array[i].pos.clear();
 
   int detFlag = 0;
   int detLine = 0;
@@ -170,45 +166,35 @@ inline bool DetGeo::LoadDetectorGeo(TMacro * macro, bool verbose){
       if ( detLine == 10 ) elumPos2          = atof(str[0].c_str());
     }
 
-    if( detFlag == 1){
-      if ( detLine == 0 ) array1.detPerpDist       = atof(str[0].c_str());
-      if ( detLine == 1 ) array1.detWidth          = atof(str[0].c_str());
-      if ( detLine == 2 ) array1.detLength         = atof(str[0].c_str());
-      if ( detLine == 3 ) array1.blocker           = atof(str[0].c_str());
-      if ( detLine == 4 ) array1.firstPos          = atof(str[0].c_str());
-      if ( detLine == 5 ) array1.eSigma            = atof(str[0].c_str());
-      if ( detLine == 6 ) array1.zSigma            = atof(str[0].c_str());
-      if ( detLine == 7 ) array1.detFaceOut        = str[0] == "Out" ? true : false;
-      if ( detLine == 8 ) array1.mDet              = atoi(str[0].c_str());
-      if ( detLine >= 9 ) array1.pos.push_back(atof(str[0].c_str()));
-    }
-
-    if( detFlag == 2){
-      if ( detLine ==  0 ) use2ndArray    = str[0] == "true" ? true : false;
-      if ( detLine ==  1 ) array2.detPerpDist       = atof(str[0].c_str());
-      if ( detLine ==  2 ) array2.detWidth          = atof(str[0].c_str());
-      if ( detLine ==  3 ) array2.detLength         = atof(str[0].c_str());
-      if ( detLine ==  4 ) array2.blocker           = atof(str[0].c_str());
-      if ( detLine ==  5 ) array2.firstPos          = atof(str[0].c_str());
-      if ( detLine ==  6 ) array2.eSigma            = atof(str[0].c_str());
-      if ( detLine ==  7 ) array2.zSigma            = atof(str[0].c_str());
-      if ( detLine ==  8 ) array2.detFaceOut        = str[0] == "Out" ? true : false;
-      if ( detLine ==  9 ) array2.mDet              = atoi(str[0].c_str());
-      if ( detLine >= 10 ) array2.pos.push_back(atof(str[0].c_str()));
+    if( detFlag >  0){
+      unsigned short ID = detFlag - 1;
+      if ( detLine ==  0 ) array[ID].enable       = str[0] == "true" ? true : false;
+      if ( detLine ==  1 ) array[ID].detPerpDist  = atof(str[0].c_str());
+      if ( detLine ==  2 ) array[ID].detWidth     = atof(str[0].c_str());
+      if ( detLine ==  3 ) array[ID].detLength    = atof(str[0].c_str());
+      if ( detLine ==  4 ) array[ID].blocker      = atof(str[0].c_str());
+      if ( detLine ==  5 ) array[ID].firstPos     = atof(str[0].c_str());
+      if ( detLine ==  6 ) array[ID].eSigma       = atof(str[0].c_str());
+      if ( detLine ==  7 ) array[ID].zSigma       = atof(str[0].c_str());
+      if ( detLine ==  8 ) array[ID].detFaceOut   = str[0] == "Out" ? true : false;
+      if ( detLine ==  9 ) array[ID].mDet         = atoi(str[0].c_str());
+      if ( detLine >= 10 ) array[ID].pos.push_back(atof(str[0].c_str()));
     }
 
     detLine ++;
   }
 
-  array1.DeduceAbsolutePos();
-  array2.DeduceAbsolutePos();
+  zMin =  99999;
+  zMax = -99999;
 
-  zMin = array1.zMin;
-  zMax = array1.zMax;
-
-  if( use2ndArray) {
-    zMax = TMath::Min(array1.zMax, array2.zMax);
-    zMin = TMath::Min(array1.zMin, array2.zMin);
+  for( int i = 0; i < 2; i ++ ){
+    array[i].DeduceAbsolutePos();
+    if (array[i].enable ) {
+      double zmax = TMath::Max(array[i].zMin, array[i].zMax);
+      double zmin = TMath::Min(array[i].zMin, array[i].zMax);
+      if( zmax > zMax ) zMax = zmax;
+      if( zmin < zMin ) zMin = zmin;
+    }
   }
 
   if( verbose ) Print(false); 
@@ -226,12 +212,13 @@ inline void DetGeo::Print(bool printAll) const{
   }
   printf("     Recoil detector pos: %8.2f mm, radius: %6.2f - %6.2f mm \n", recoilPos, recoilInnerRadius, recoilOuterRadius);
 
-  printf("------------------------------------- Detector Position \n");
-  array1.PrintArray();
+  for( int i = 0; i < 2 ; i++){
 
-  if( printAll || use2ndArray){
-    printf("--------------------------------- 2nd Detector Position \n");
-    array2.PrintArray();
+    if( printAll || array[i].enable ) {
+      printf("-----------------------------------%d-th Detector Position \n", i);
+      array[i].PrintArray();
+    }
+
   }
 
   if( elumPos1 != 0 || elumPos2 != 0 || recoilPos1 != 0 || recoilPos2 != 0){

@@ -63,14 +63,14 @@ public:
   float targetThickness;    ///targetThickness_in_cm
   std::string beamStoppingPowerFile;         ///stopping_power_for_beam
 
-  Recoil recoil1, recoil2;
+  Recoil recoil[2];
 
   int numEvents;            ///number_of_Event_being_generated
   bool isRedo;         ///isReDo
 
   void SetReactionSimple(int beamA, int beamZ,
                    int targetA, int targetZ,
-                   int recoilA, int recoilZ, float beamEnergy_AMeV);
+                   int recoilA, int recoilZ, float beamEnergy_AMeV, unsigned short ID);
 
   bool LoadReactionConfig(TString fileName);
   bool LoadReactionConfig(TMacro * macro);
@@ -83,17 +83,17 @@ private:
 
 inline void ReactionConfig::SetReactionSimple(int beamA, int beamZ,
                    int targetA, int targetZ,
-                   int recoilA, int recoilZ, float beamEnergy_AMeV){
+                   int recoilA, int recoilZ, float beamEnergy_AMeV, unsigned short ID){
 
   this->beamA = beamA;
   this->beamZ = beamZ;
   this->targetA = targetA;
   this->targetZ = targetZ;
 
-  this->recoil1.lightA = recoilA;
-  this->recoil1.lightZ = recoilZ;
-  recoil1.heavyA = this->beamA + this->targetA - recoil1.lightA;
-  recoil1.heavyZ = this->beamZ + this->targetZ - recoil1.lightZ;
+  this->recoil[ID].lightA = recoilA;
+  this->recoil[ID].lightZ = recoilZ;
+  recoil[ID].heavyA = this->beamA + this->targetA - recoil[ID].lightA;
+  recoil[ID].heavyZ = this->beamZ + this->targetZ - recoil[ID].lightZ;
 
   beamEnergy = beamEnergy_AMeV;
   beamEnergySigma = 0;
@@ -168,27 +168,16 @@ inline bool ReactionConfig::LoadReactionConfig(TMacro * macro){
       if( recoilLine == 16 ) isRedo    = str[0].compare("true" ) == 0 ? true : false;
     }
 
-    if( recoilFlag == 1 ){
+    if( recoilFlag > 0 ){
 
-      if( recoilLine == 0 ) recoil1.lightA  = atoi(str[0].c_str());
-      if( recoilLine == 1 ) recoil1.lightZ  = atoi(str[0].c_str());
-      if( recoilLine == 2 ) recoil1.lightStoppingPowerFile = str[0];
-      if( recoilLine == 3 ) recoil1.heavyStoppingPowerFile = str[0];
-      if( recoilLine == 4 ) recoil1.isDecay = str[0].compare("true")  == 0 ? true : false;
-      if( recoilLine == 5 ) recoil1.decayA  = atoi(str[0].c_str());
-      if( recoilLine == 6 ) recoil1.decayZ  = atoi(str[0].c_str());
-
-    }
-
-    if( recoilFlag == 2 ){
-
-      if( recoilLine == 0 ) recoil2.lightA  = atoi(str[0].c_str());
-      if( recoilLine == 1 ) recoil2.lightZ  = atoi(str[0].c_str());
-      if( recoilLine == 2 ) recoil2.lightStoppingPowerFile = str[0];
-      if( recoilLine == 3 ) recoil2.heavyStoppingPowerFile = str[0];
-      if( recoilLine == 4 ) recoil2.isDecay = str[0].compare("true")  == 0 ? true : false;
-      if( recoilLine == 5 ) recoil2.decayA  = atoi(str[0].c_str());
-      if( recoilLine == 6 ) recoil2.decayZ  = atoi(str[0].c_str());
+      unsigned ID = recoilFlag - 1;
+      if( recoilLine == 0 ) recoil[ID].lightA  = atoi(str[0].c_str());
+      if( recoilLine == 1 ) recoil[ID].lightZ  = atoi(str[0].c_str());
+      if( recoilLine == 2 ) recoil[ID].lightStoppingPowerFile = str[0];
+      if( recoilLine == 3 ) recoil[ID].heavyStoppingPowerFile = str[0];
+      if( recoilLine == 4 ) recoil[ID].isDecay = str[0].compare("true")  == 0 ? true : false;
+      if( recoilLine == 5 ) recoil[ID].decayA  = atoi(str[0].c_str());
+      if( recoilLine == 6 ) recoil[ID].decayZ  = atoi(str[0].c_str());
 
     }
 
@@ -196,12 +185,10 @@ inline bool ReactionConfig::LoadReactionConfig(TMacro * macro){
     
   }
 
-  recoil1.heavyA = beamA + targetA - recoil1.lightA;
-  recoil1.heavyZ = beamZ + targetZ - recoil1.lightZ;
-
-  recoil2.heavyA = beamA + targetA - recoil2.lightA;
-  recoil2.heavyZ = beamZ + targetZ - recoil2.lightZ;
-
+  for( int i = 0; i < 2; i++){
+    recoil[i].heavyA = beamA + targetA - recoil[i].lightA;
+    recoil[i].heavyZ = beamZ + targetZ - recoil[i].lightZ;
+  }
   return true;
 }
 
@@ -227,9 +214,9 @@ inline void ReactionConfig::Print() const{
     printf("         beam stopping file : %s \n", beamStoppingPowerFile.c_str());
   }
   
-  printf("------------------------------ Recoil-1\n"); recoil1.Print();
-
-  printf("------------------------------ Recoil-2\n"); recoil2.Print();
+  for( int i = 0; i < 2; i ++ ){
+    printf("------------------------------ Recoil-%d\n", i); recoil[i].Print();
+  }
   
   
   printf("=====================================================\n");
