@@ -39,6 +39,44 @@ struct Recoil {
 
 };
 
+struct EnergyLevel{
+
+  float Ex, xsec, SF, sigma;
+
+  EnergyLevel(float Ex, float xsec, float SF, float sigma) {
+    this->Ex = Ex;
+    this->xsec = xsec;
+    this->SF = SF;
+    this->sigma = sigma;
+  }
+
+  void Print(std::string str) const {
+    printf("%11.3f  %8.1f  %5.1f  %5.3f%s", Ex, xsec, SF, sigma, str.c_str() );
+  }
+
+};
+
+
+struct ExcitedEnergies {
+
+  std::vector<EnergyLevel> ExList;
+
+  void Clear(){
+    ExList.clear();
+  }
+
+  void Add(float Ex, float xsec, float SF, float sigma){
+    ExList.push_back( EnergyLevel(Ex, xsec, SF, sigma));
+  }
+
+  void Print() const {
+    printf("Energy[MeV]  Rel.Xsec     SF  sigma\n");
+    for( size_t i = 0; i < ExList.size(); i++){
+      ExList[i].Print("\n");
+    }
+  }
+
+};
 
 class ReactionConfig {
 
@@ -52,8 +90,8 @@ public:
   float beamEx;             ///excitation_energy_of_A[MeV]
   float beamEnergy;         ///MeV/u
   float beamEnergySigma;    ///beam-energy_sigma_in_MeV/u
-  float beamAngle;          ///beam-angle_in_mrad
-  float beamAngleSigma;     ///beam-emittance_in_mrad
+  float beamTheta;          ///beam-angle_in_mrad
+  float beamThetaSigma;     ///beam-emittance_in_mrad
   float beamX;              ///x_offset_of_Beam_in_mm
   float beamY;              ///y_offset_of_Beam_in_mm
 
@@ -64,6 +102,7 @@ public:
   std::string beamStoppingPowerFile;         ///stopping_power_for_beam
 
   Recoil recoil[2];
+  ExcitedEnergies exList[2];
 
   int numEvents;            ///number_of_Event_being_generated
   bool isRedo;         ///isReDo
@@ -97,8 +136,8 @@ inline void ReactionConfig::SetReactionSimple(int beamA, int beamZ,
 
   beamEnergy = beamEnergy_AMeV;
   beamEnergySigma = 0;
-  beamAngle = 0;    
-  beamAngleSigma = 0;   
+  beamTheta = 0;    
+  beamThetaSigma = 0;   
   beamX = 0;            
   beamY = 0;            
 
@@ -124,6 +163,9 @@ inline bool ReactionConfig::LoadReactionConfig(TMacro * macro){
 
   if( macro == NULL ) return false;
 
+  exList[0].Clear();
+  exList[1].Clear();
+
   int recoilFlag = 0;
   int recoilLine = 0;
 
@@ -138,6 +180,7 @@ inline bool ReactionConfig::LoadReactionConfig(TMacro * macro){
     // printf("%d |%s|%d|%d\n", i,  str[0].c_str(), recoilFlag, recoilLine);
 
     if( str[0].find("####") != std::string::npos ) break;
+    if( str[0].find("#---") != std::string::npos ) continue;
     if( str[0].find("#===") != std::string::npos ) {
       recoilFlag ++;
       recoilLine = 0;
@@ -151,8 +194,8 @@ inline bool ReactionConfig::LoadReactionConfig(TMacro * macro){
 
       if( recoilLine == 3 ) beamEnergy      = atof(str[0].c_str());
       if( recoilLine == 4 ) beamEnergySigma = atof(str[0].c_str());
-      if( recoilLine == 5 ) beamAngle       = atof(str[0].c_str());
-      if( recoilLine == 6 ) beamAngleSigma  = atof(str[0].c_str());
+      if( recoilLine == 5 ) beamTheta       = atof(str[0].c_str());
+      if( recoilLine == 6 ) beamThetaSigma  = atof(str[0].c_str());
       if( recoilLine == 7 ) beamX = atof(str[0].c_str());
       if( recoilLine == 8 ) beamY = atof(str[0].c_str());
 
@@ -179,6 +222,8 @@ inline bool ReactionConfig::LoadReactionConfig(TMacro * macro){
       if( recoilLine == 5 ) recoil[ID].decayA  = atoi(str[0].c_str());
       if( recoilLine == 6 ) recoil[ID].decayZ  = atoi(str[0].c_str());
 
+      if( recoilLine > 6 && str.size() == 4) exList[ID].Add( atoi(str[0].c_str()), atoi(str[1].c_str()), atoi(str[2].c_str()), atoi(str[3].c_str()));
+
     }
 
     recoilLine ++;
@@ -202,7 +247,7 @@ inline void ReactionConfig::Print() const{
   printf("------------------------------ Beam\n");
   printf("   beam : A = %3d, Z = %2d, Ex = %.2f MeV\n", beamA, beamZ, beamEx);
   printf(" beam Energy : %.2f +- %.2f MeV/u, dE/E = %5.2f %%\n", beamEnergy, beamEnergySigma, beamEnergySigma/beamEnergy);
-  printf("       Angle : %.2f +- %.2f mrad\n", beamAngle, beamAngleSigma);
+  printf("       Angle : %.2f +- %.2f mrad\n", beamTheta, beamThetaSigma);
   printf("      offset : (x,y) = (%.2f, %.2f) mmm \n", beamX, beamY);
 
   printf("------------------------------ Target\n");
@@ -215,7 +260,9 @@ inline void ReactionConfig::Print() const{
   }
   
   for( int i = 0; i < 2; i ++ ){
-    printf("------------------------------ Recoil-%d\n", i); recoil[i].Print();
+    printf("------------------------------ Recoil-%d\n", i); 
+    recoil[i].Print();
+    exList[i].Print();
   }
   
   

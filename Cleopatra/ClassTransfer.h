@@ -22,18 +22,10 @@
 class TransferReaction {
 public:
   TransferReaction(){Inititization();};
-  TransferReaction(int beamA, int beamZ,
-                         int targetA, int targetZ,
-                         int recoilA, int recoilZ, float beamEnergy_AMeV){ 
-    Inititization();
-    SetReactionSimple(beamA, beamZ,
-                      targetA, targetZ,
-                      recoilA, recoilZ, beamEnergy_AMeV);
-  }
-  TransferReaction(string configFile, unsigned short ID = 0){
-    Inititization();
-    SetReactionFromFile(configFile, ID);
-  }
+  TransferReaction(string configFile, unsigned short ID = 0);
+  TransferReaction(int beamA,   int beamZ,
+                   int targetA, int targetZ,
+                   int recoilA, int recoilZ, float beamEnergy_AMeV);
 
   ~TransferReaction();
 
@@ -43,18 +35,20 @@ public:
   void SetB(int A, int Z);
   void SetIncidentEnergyAngle(double KEA, double theta, double phi);
 
+  void SetReactionFromFile(std::string configFile, unsigned short ID = 0);
   void SetReactionSimple(int beamA, int beamZ,
                          int targetA, int targetZ,
                          int recoilA, int recoilZ, float beamEnergy_AMeV);
 
   void SetExA(double Ex);
   void SetExB(double Ex);
-  void SetReactionFromFile(string configFile, unsigned short ID = 0);
-  
+
   TString GetReactionName();
   TString GetReactionName_Latex();
 
-  ReactionConfig GetRectionConfig() { return config;}
+  ReactionConfig  GetRectionConfig() { return config;}
+  Recoil          GetRecoil()        { return recoil;}
+  ExcitedEnergies GetExList()        { return exList;}
 
   double GetMass_A() const {return mA + ExA;}
   double GetMass_a() const {return ma;}
@@ -65,27 +59,28 @@ public:
   double GetQValue()    {return mA + ExA + ma - mb - mB - ExB;}
   double GetMaxExB()    {return Etot - mb - mB;}
   
-  TLorentzVector GetPA(){return PA;}
-  TLorentzVector GetPa(){return Pa;}
-  TLorentzVector GetPb(){return Pb;}
-  TLorentzVector GetPB(){return PB;}
+  TLorentzVector GetPA() const {return PA;}
+  TLorentzVector GetPa() const {return Pa;}
+  TLorentzVector GetPb() const {return Pb;}
+  TLorentzVector GetPB() const {return PB;}
   
   void PrintFourVectors() const;
   void PrintReaction() const;
 
+  double CalkCM(double ExB); //momentum at CM frame
   void CalReactionConstant();
-
+  std::pair<double, double> CalExThetaCM(double e, double z, double Bfield, double a); 
   void Event(double thetaCM_rad, double phiCM_rad);
   
   double GetMomentumbCM()   {return p;}
   double GetReactionBeta()  {return beta;}
   double GetReactionGamma() {return gamma;}
   double GetCMTotalEnergy() {return Etot;}
-
-  std::pair<double, double> CalExThetaCM(double e, double z, double Bfield, double a); 
+  double GetEZSlope(double BField)   {return 299.792458 * recoil.lightZ * abs(BField) / TMath::TwoPi() * beta / 1000.;} // MeV/mm
   
 private:
 
+  ExcitedEnergies exList;
   Recoil recoil;
   ReactionConfig config;
 
@@ -103,6 +98,7 @@ private:
   double beta, gamma; //CM boost beta
   double Etot;
   double p; // CM frame momentum of b, B
+  double slope; // slope of the 
   
   TLorentzVector PA, Pa, Pb, PB;
 
@@ -111,6 +107,20 @@ private:
   void Inititization();
    
 };
+
+TransferReaction::TransferReaction(string configFile, unsigned short ID){
+  Inititization();
+  SetReactionFromFile(configFile, ID);
+}
+
+TransferReaction::TransferReaction(int beamA, int beamZ,
+                         int targetA, int targetZ,
+                         int recoilA, int recoilZ, float beamEnergy_AMeV){ 
+  Inititization();
+  SetReactionSimple(beamA, beamZ,
+                    targetA, targetZ,
+                    recoilA, recoilZ, beamEnergy_AMeV);
+}
 
 void TransferReaction::Inititization(){
   
@@ -224,7 +234,10 @@ void TransferReaction::SetReactionFromFile(string configFile, unsigned short ID)
     SetA(config.beamA, config.beamZ);
     Seta(config.targetA, config.targetZ);
 
+    SetExA(config.beamEx);
+
     recoil = config.recoil[ID];
+    exList = config.exList[ID];
 
     Setb(recoil.lightA, recoil.lightZ);
     SetB(recoil.heavyA, recoil.heavyZ);
@@ -261,8 +274,13 @@ TString TransferReaction::format(TString name){
 }
 TString TransferReaction::GetReactionName_Latex(){
   TString rName;
-  rName.Form("%s(%s,%s)%s", format(nameA).Data(), format(namea).Data(), format(nameb).Data(), format(nameB).Data()); 
+  rName.Form("%s(%s,%s)%s @ %.2f MeV/u", format(nameA).Data(), format(namea).Data(), format(nameb).Data(), format(nameB).Data(), config.beamEnergy); 
   return rName;
+}
+
+double TransferReaction::CalkCM(double ExB){
+  if( !isBSet || !isReady) return TMath::QuietNaN();
+  return TMath::Sqrt( (Etot*Etot - TMath::Power(mb + mB + ExB,2)) * (Etot*Etot - TMath::Power(mb - mB - ExB,2)) ) / 2 / Etot;
 }
 
 void TransferReaction::CalReactionConstant(){
@@ -278,12 +296,10 @@ void TransferReaction::CalReactionConstant(){
   beta = k / (mA + ExA + ma + T);
   gamma = 1 / TMath::Sqrt(1- beta * beta);   
   Etot = TMath::Sqrt(TMath::Power(mA + ExA + ma + T,2) - k * k);
-  p = TMath::Sqrt( (Etot*Etot - TMath::Power(mb + mB + ExB,2)) * (Etot*Etot - TMath::Power(mb - mB - ExB,2)) ) / 2 / Etot;
   
   PA.SetXYZM(0, 0, k, mA + ExA);
   PA.RotateY(thetaIN);
-  PA.RotateZ(phiIN);
-  
+  PA.RotateZ(phiIN);  
   Pa.SetXYZM(0,0,0,ma);
 
   PA.SetUniqueID(config.beamZ);
@@ -292,6 +308,8 @@ void TransferReaction::CalReactionConstant(){
   PB.SetUniqueID(recoil.heavyZ);
   
   isReady = true;
+  p = CalkCM(ExB);
+
 }
 
 void TransferReaction::PrintFourVectors() const {
@@ -315,7 +333,7 @@ void TransferReaction::PrintReaction() const {
   printf("------------------------------ Beam\n");
   printf("   beam : A = %3d, Z = %2d, Ex = %.2f MeV\n", config.beamA, config.beamZ, config.beamEx);
   printf(" beam Energy : %.2f +- %.2f MeV/u, dE/E = %5.2f %%\n", config.beamEnergy, config.beamEnergySigma, config.beamEnergySigma/config.beamEnergy);
-  printf("       Angle : %.2f +- %.2f mrad\n", config.beamAngle, config.beamAngleSigma);
+  printf("       Angle : %.2f +- %.2f mrad\n", config.beamTheta, config.beamThetaSigma);
   printf("      offset : (x,y) = (%.2f, %.2f) mmm \n", config.beamX, config.beamY);
 
   printf("------------------------------ Target\n");
@@ -325,14 +343,14 @@ void TransferReaction::PrintReaction() const {
   printf("  light : A = %3d, Z = %2d \n", recoil.lightA, recoil.lightZ);
   printf("  heavy : A = %3d, Z = %2d \n", recoil.heavyA, recoil.heavyZ);
   printf("=====================================================\n");  
+  exList.Print();
+  printf("=====================================================\n");  
 
 }
 
 void TransferReaction::Event(double thetaCM_rad, double phiCM_rad){
 
-  if( isReady == false ){
-    CalReactionConstant();
-  }
+  if( !isReady ) CalReactionConstant();
 
   //---- to CM frame
   TLorentzVector Pc = PA + Pa;

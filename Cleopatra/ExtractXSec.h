@@ -23,6 +23,7 @@
 #include <TString.h>
 #include <TMath.h>
 #include <TGraph.h>
+#include <TMacro.h>
 #include <TF1.h>
 #include <TObjArray.h>
 #include "../Armory/AnalysisLib.h"
@@ -293,26 +294,9 @@ int ExtractXSec (string readFile, int indexForElastic=1) {
   }
   printf("---------------------------------------------------\n");
   
-  //================================== save *.Ex.txt
-  string saveExName = readFile;
-  int len = saveExName.length();
-  saveExName = saveExName.substr(0, len - 4); 
-  saveExName += ".Ex.txt";
-  printf("Output : %s \n", saveExName.c_str());
-  FILE * file_Ex;
-  file_Ex = fopen(saveExName.c_str(), "w+");
-  
-  fprintf(file_Ex, "//generated_by_ExtractXSec.h____Ex____Xsec(4pi)____SF____sigma\n");
-
-  for( int i = 0; i < numCal ; i++){
-      fprintf(file_Ex, "%9.5f     %9.5f  1.0  0.000\n", Ex[i], partialXsec[i]);
-  }
-  fprintf(file_Ex, "#=====End_of_File\n");
-  fclose(file_Ex);
-  
   //================================== save file.Xsec.txt
   string saveFileName = readFile;
-  len = saveFileName.length();
+  int len = saveFileName.length();
   saveFileName = saveFileName.substr(0, len - 4); 
   saveFileName += ".Xsec.txt";
   printf("Output : %s \n", saveFileName.c_str());
@@ -324,7 +308,7 @@ int ExtractXSec (string readFile, int indexForElastic=1) {
   }
   
   int space = 19;
-  fprintf(file_out, "%8s\t", "Angel");
+  fprintf(file_out, "%8s\t", "Angle");
   for( int i = 0; i < numCal ; i++){
       fprintf(file_out, "%*s", space, title[i].c_str());
   }
@@ -338,6 +322,14 @@ int ExtractXSec (string readFile, int indexForElastic=1) {
     fprintf(file_out, "\n");
   }
   fclose(file_out);
+
+  //================================== Make TMacro for ExList
+
+  TMacro ExList;
+  ExList.AddLine("#---Ex   relative_xsec   SF   sigma_in_MeV");
+  for( int i = 0; i < numCal ; i++){
+    ExList.AddLine(Form("%9.5f     %9.5f  1.0  0.000", Ex[i], partialXsec[i]));
+  }  
   
   //================================== Save in ROOT
   len = saveFileName.length();
@@ -345,8 +337,8 @@ int ExtractXSec (string readFile, int indexForElastic=1) {
   TString fileName = saveFileName;
   fileName += ".root"; 
   printf("Output : %s \n", fileName.Data());
+
   TFile * fileOut = new TFile(fileName, "RECREATE" );
-  
   gList = new TObjArray(); ///no SetTitle() method for TObjArray
   gList->SetName("TGraph of d.s.c");
   TObjArray * fList = new TObjArray();
@@ -372,12 +364,11 @@ int ExtractXSec (string readFile, int indexForElastic=1) {
     
     fList->Add(dist[i]);
     
-    //delete tempFunc;
-    
   }
-  gList->Write("qList", 1);
-  fList->Write("pList", 1);
-  
+  gList->Write("thetaCM_TGraph", 1);
+  fList->Write("thetaCM_TF1", 1);
+
+  ExList.Write("ExList");
   
   fileOut->Write();
   fileOut->Close();

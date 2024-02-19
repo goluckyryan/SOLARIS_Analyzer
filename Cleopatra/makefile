@@ -1,8 +1,11 @@
 CC=g++
 
-ALL = Isotope InFileCreator ExtractXSec ExtractXSecFromText PlotTGraphTObjArray FindThetaCM Transfer PlotSimulation
+ALL = Isotope InFileCreator ExtractXSec ExtractXSecFromText PlotTGraphTObjArray Cleopatra FindThetaCM Transfer
 
 all: $(ALL)
+
+Isotope: ../Cleopatra/ClassIsotope.h ../Cleopatra/Isotope.C
+	$(CC) Isotope.C -o Isotope
 
 InFileCreator: InFileCreator.C InFileCreator.h ../Cleopatra/ClassIsotope.h ../Cleopatra/constant.h potentials.h
 	$(CC) InFileCreator.C -o InFileCreator `root-config --cflags --glibs`
@@ -16,17 +19,14 @@ ExtractXSecFromText: ExtractXSecFromText.C ExtractXSec.h
 PlotTGraphTObjArray: PlotTGraphTObjArray.C PlotTGraphTObjArray.h
 	$(CC) PlotTGraphTObjArray.C -o PlotTGraphTObjArray `root-config --cflags --glibs`
 
+Cleopatra: Cleopatra.C
+	$(CC) Cleopatra.C -o Cleopatra `root-config --cflags --glibs`
+
 FindThetaCM: FindThetaCM.C FindThetaCM.h ../Cleopatra/ClassHelios.h ../Cleopatra/ClassIsotope.h ../Cleopatra/constant.h
 	$(CC) FindThetaCM.C -o FindThetaCM `root-config --cflags --glibs`
 
-Transfer: Transfer.C Transfer.h ../Cleopatra/ClassHelios.h ../Cleopatra/ClassIsotope.h ../Cleopatra/constant.h
+Transfer: Transfer.C Transfer.h ../Cleopatra/ClassTransfer.h ../Cleopatra/ClassHelios.h ../Cleopatra/ClassIsotope.h ../Cleopatra/constant.h 
 	$(CC) Transfer.C -o Transfer `root-config --cflags --glibs`
-
-PlotSimulation: PlotSimulation.C Check_Simulation.C
-	$(CC) PlotSimulation.C -o PlotSimulation `root-config --cflags --glibs`
-
-Isotope: ../Cleopatra/ClassIsotope.h ../Cleopatra/Isotope.C
-	$(CC) Isotope.C -o Isotope
 
 clean:
 	/bin/rm -f $(ALL)

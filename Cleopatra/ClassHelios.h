@@ -133,34 +133,40 @@ public:
   trajectory GetTrajectory_B() const {return orbitB;}
   
   DetGeo GetDetectorGeometry() const {return detGeo;}
+  Array GetArrayGeometry()     const {return array;}
   
-  TString GetHitMessage()        const {return hitMessage;}
-  TString GetAcceptanceMessage() const {return accMessage;}
+  TString GetHitMessage()         {return hitMessage;}
+  TString GetAcceptanceMessage()  { AcceptanceCodeToMsg(acceptanceCode); return acceptanceMsg;}
   
+  TString AcceptanceCodeToMsg(short code );
+
 private:   
       
-   DetGeo detGeo;
-   Array array;
-   
-   trajectory orbitb, orbitB;
-   
-   double e,detX ; ///energy of light recoil, position X
-   double rhoHit;  /// radius of particle-b hit on recoil detector
-   
-   double eB;  ///energy of heavy recoil
-   
-   bool isDetReady;
+  DetGeo detGeo;
+  Array array;
+  
+  trajectory orbitb, orbitB;
+  
+  double e,detX ; ///energy of light recoil, position X
+  double rhoHit;  /// radius of particle-b hit on recoil detector
+  
+  double eB;  ///energy of heavy recoil
+  
+  bool isDetReady;
 
-   TString hitMessage;
-   TString accMessage; //acceptance check
-   
-   double xOff, yOff; // beam position
+  TString hitMessage;
+  TString acceptanceMsg; //acceptance check
+  short acceptanceCode;
+  
+  double xOff, yOff; // beam position
 
-   bool overrideDetDistance;
-   bool overrideFirstPos;
-   bool isCoincidentWithRecoil;
-   
-   const double c = 299.792458; //mm/ns
+  bool overrideDetDistance;
+  bool overrideFirstPos;
+  bool isCoincidentWithRecoil;
+  
+  const double c = 299.792458; //mm/ns
+
+
 };
 
 HELIOS::HELIOS(){
@@ -179,7 +185,8 @@ HELIOS::HELIOS(){
   isDetReady = false;
 
   hitMessage = "";
-  accMessage = "";
+  acceptanceMsg = "";
+  acceptanceCode = 0;
 
   overrideDetDistance = false;
   overrideFirstPos = false;
@@ -257,108 +264,137 @@ void HELIOS::PrintGeometry() const{
 
 }
 
+TString HELIOS::AcceptanceCodeToMsg(short code ){
+
+   switch(code){
+      case   3 : acceptanceMsg = "try one more loop"; break;
+      case   2 : acceptanceMsg = "hit less than the nearest array. increase loop"; break;
+      case   1 : acceptanceMsg = "GOOD!! hit Array"; break;
+
+      case   0 : acceptanceMsg = "detector geometry incomplete."; break;
+      case  -1 : acceptanceMsg = "array at upstream, z is downstream."; break;
+      case  -2 : acceptanceMsg = "array at downstream, z is upstream."; break;
+      case  -3 : acceptanceMsg = "hit at the XY gap."; break;
+      case  -4 : acceptanceMsg = "hit more upstream than the array length"; break;
+      case  -5 : acceptanceMsg = "hit more downstream than the array length"; break;
+      case  -6 : acceptanceMsg = "hit blocker"; break;
+      case  -7 : acceptanceMsg = "hit array Z-gap"; break;
+
+      case -10 : acceptanceMsg = "rho is too big"; break;
+      case -11 : acceptanceMsg = "rho is too small"; break;
+      case -12 : acceptanceMsg = "light recoil blocked by recoil detector"; break;
+      case -13 : acceptanceMsg = "more than 3 loops."; break;
+      case -14 : acceptanceMsg = "heavy recoil does not hit recoil detector"; break;
+      case -15 : acceptanceMsg = "det Row ID == -1"; break;
+      default : acceptanceMsg = "unknown error."; break;
+   }
+
+   return acceptanceMsg;
+
+}
+
 int HELIOS::CheckDetAcceptance(){
    
-   //CalArrayHit and CalRecoilHit must be done before.
-   
-   if( isDetReady == false ) return 0;
+  //CalArrayHit and CalRecoilHit must be done before.
+  
+  if( isDetReady == false ) { acceptanceCode = 0; return acceptanceCode; }
 
-   // -1 ========= when recoil direction is not same side of array
-   if( array.firstPos < 0 && orbitb.z > 0 ) {accMessage = "array at upstream, z is downstream."; return -1;}
-   if( array.firstPos > 0 && orbitb.z < 0 ) {accMessage = "array at downstream, z is upstream."; return -1;}
+  // -1 ========= when recoil direction is not same side of array
+  if( array.firstPos < 0 && orbitb.z > 0 ) {acceptanceCode = -1; return acceptanceCode;}
+  
+  // -2 ========= when recoil direction is not same side of array
+  if( array.firstPos > 0 && orbitb.z < 0 ) {acceptanceCode = -2; return acceptanceCode;}
 
-   // -11 ======== rho is too small
-   if(  2 * orbitb.rho < array.detPerpDist ) { accMessage = "rho is too small"; return -11;} 
-   
-   // -15 ========= if detRowID == -1, should be (2 * orbitb.rho < perpDist)
-   if( orbitb.detRowID == -1 ) {accMessage = "det Row ID == -1"; return -15;}
-   
-   // -10 =========== when rho is too big . 
-   if( detGeo.bore < 2 * orbitb.rho) { accMessage = "rho is too big"; return -10;} 
-   
-   // -14 ========== check particle-B hit radius on recoil dectector
-   if( isCoincidentWithRecoil && orbitB.R > detGeo.recoilOuterRadius  ) {
-    accMessage = "heavy recoil does not hit recoil detector";
-    return -14;
-   }
-   //if( isCoincidentWithRecoil && (orbitB.R > rhoRecoilout || orbitB.R < rhoRecoilin) ) return -14;
-   
-   // -12 ========= check is particle-b was blocked by recoil detector
-   rhoHit = GetR(detGeo.recoilPos);
-   if( orbitb.z > 0 && detGeo.recoilPos > 0 && orbitb.z > detGeo.recoilPos && rhoHit < detGeo.recoilOuterRadius ) { accMessage = "light recoil blocked by recoil detector"; return -12;}
-   if( orbitb.z < 0 && detGeo.recoilPos < 0 && orbitb.z < detGeo.recoilPos && rhoHit < detGeo.recoilOuterRadius ) { accMessage = "light recoil blocked by recoil detector"; return -12;}
-   
-   // -13 ========= not more than 3 loops
-   if( orbitb.loop > 3 ) {accMessage = "more than 3 loops."; return -13;}
-   
-   // -2 ========= calculate the "y"-distance from detector center
-   if( sqrt(orbitb.R*orbitb.R - array.detPerpDist * array.detPerpDist)> array.detWidth/2 ) { accMessage = "hit at the XY gap."; return -2;} 
-   
-   // -3 ==== when zPos further the range of whole array, more loop would not save
-   if( array.firstPos < 0 && orbitb.z < array.detPos[0] - array.detLength ) { accMessage = "hit more upstream than the array length"; return -3; }
-   if( array.firstPos > 0 && orbitb.z > array.detPos[array.nDet-1] + array.detLength ) { accMessage = "hit more downstream than the array length"; return -3;} 
+  // -11 ======== rho is too small
+  if(  2 * orbitb.rho < array.detPerpDist ) { acceptanceCode = -11; return acceptanceCode;} 
+  
+  // -15 ========= if detRowID == -1, should be (2 * orbitb.rho < perpDist)
+  if( orbitb.detRowID == -1 ) {acceptanceCode = -15; return acceptanceCode;}
+  
+  // -10 =========== when rho is too big . 
+  if( detGeo.bore < 2 * orbitb.rho) { acceptanceCode = -10; return acceptanceCode;} 
+  
+  // -14 ========== check particle-B hit radius on recoil dectector
+  if( isCoincidentWithRecoil && orbitB.R > detGeo.recoilOuterRadius  ) {acceptanceCode = -14; return acceptanceCode;} 
 
-   // -4 ======== Hit on blacker
-   if( array.blocker != 0 && array.firstPos > 0 && array.detPos[0] - array.blocker  < orbitb.z && orbitb.z < array.detPos[0] ) { accMessage = "hit blocker"; return -4;} 
-   if( array.blocker != 0 && array.firstPos < 0 && array.detPos[array.nDet-1]  < orbitb.z && orbitb.z < array.detPos[array.nDet-1] + array.blocker ) { accMessage = "hit blocker"; return -4;} 
+  //if( isCoincidentWithRecoil && (orbitB.R > rhoRecoilout || orbitB.R < rhoRecoilin) ) return -14;
+  
+  // -12 ========= check is particle-b was blocked by recoil detector
+  rhoHit = GetR(detGeo.recoilPos);
+  if( orbitb.z > 0 && detGeo.recoilPos > 0 && orbitb.z > detGeo.recoilPos && rhoHit < detGeo.recoilOuterRadius ) { acceptanceCode = -12; return acceptanceCode;}
+  if( orbitb.z < 0 && detGeo.recoilPos < 0 && orbitb.z < detGeo.recoilPos && rhoHit < detGeo.recoilOuterRadius ) { acceptanceCode = -12; return acceptanceCode;}
+  
+  // -13 ========= not more than 3 loops
+  if( orbitb.loop > 3 ) {acceptanceCode = -13; return acceptanceCode;}
+  
+  // -3 ========= calculate the "y"-distance from detector center
+  if( sqrt(orbitb.R*orbitb.R - array.detPerpDist * array.detPerpDist)> array.detWidth/2 ) { acceptanceCode = -3; return acceptanceCode;} 
+  
+  // -4, -5 ==== when zPos further the range of whole array, more loop would not save
+  if( array.firstPos < 0 && orbitb.z < array.detPos[0] - array.detLength )            { acceptanceCode = -4; return acceptanceCode;}
+  if( array.firstPos > 0 && orbitb.z > array.detPos[array.nDet-1] + array.detLength ) { acceptanceCode = -5; return acceptanceCode;} 
 
-   // 2 ======  when zPos less then the nearest position, more loop may hit
-   int increaseLoopFlag = 0;
-   if( array.firstPos < 0 && array.detPos[array.nDet-1] < orbitb.z ) increaseLoopFlag = 2; 
-   if( array.firstPos > 0 && array.detPos[0] > orbitb.z ) increaseLoopFlag = 2; 
-   if (increaseLoopFlag == 2 ) {
-      orbitb.z += orbitb.z0;
-      orbitb.effLoop += 1.0;
-      orbitb.loop += 1;
-      orbitb.t = orbitb.t0 * orbitb.effLoop;
-      accMessage = " hit less than the nearest array. increase loop ";
-      return 2;
-   }
+  // -6 ======== Hit on blacker
+  if( array.blocker != 0 && array.firstPos > 0 && array.detPos[0] - array.blocker  < orbitb.z && orbitb.z < array.detPos[0] ) {acceptanceCode = -6; return acceptanceCode;} 
+  if( array.blocker != 0 && array.firstPos < 0 && array.detPos[array.nDet-1]  < orbitb.z && orbitb.z < array.detPos[array.nDet-1] + array.blocker ) { acceptanceCode = -6; return acceptanceCode;} 
+
+  // 2 ======  when zPos less then the nearest position, more loop may hit
+  int increaseLoopFlag = 0;
+  if( array.firstPos < 0 && array.detPos[array.nDet-1] < orbitb.z ) increaseLoopFlag = 2; 
+  if( array.firstPos > 0 && array.detPos[0] > orbitb.z ) increaseLoopFlag = 2; 
+  if (increaseLoopFlag == 2 ) {
+    orbitb.z += orbitb.z0;
+    orbitb.effLoop += 1.0;
+    orbitb.loop += 1;
+    orbitb.t = orbitb.t0 * orbitb.effLoop;
+    acceptanceCode = 2; 
+    return acceptanceCode;
+  }
    
-   // 1 ======= check hit array z- position
-   if( array.firstPos < 0 ){
-      for( int i = 0; i < array.nDet; i++){
-         if( array.detPos[i] - array.detLength <= orbitb.z && orbitb.z <= array.detPos[i]) {
-            orbitb.detID = i;
-            detX = ( orbitb.z - (array.detPos[i] + array.detLength/2 ))/ array.detLength * 2 ;// range from -1 , 1 
-            accMessage = "hit array";
-            return 1;
-         }
-      }      
-   }else{
-      for( int i = 0; i < array.nDet ; i++){
-         if( array.detPos[i] <= orbitb.z && orbitb.z <= array.detPos[i] + array.detLength)  {
-            ///printf(" %d | %f < z = %f < %f \n", i,  array.detPos[i], orbitb.z, array.detPos[i]+length); 
-            orbitb.detID = i;
-            detX = ( orbitb.z - (array.detPos[i] - array.detLength/2 ))/ array.detLength*2 ;// range from -1 , 1 
-            accMessage = "hit array";
-            return 1;
-         }
+  // 1 ======= check hit array z- position
+  if( array.firstPos < 0 ){
+    for( int i = 0; i < array.nDet; i++){
+      if( array.detPos[i] - array.detLength <= orbitb.z && orbitb.z <= array.detPos[i]) {
+        orbitb.detID = i;
+        detX = ( orbitb.z - (array.detPos[i] + array.detLength/2 ))/ array.detLength * 2 ;// range from -1 , 1 
+        acceptanceCode = 1; 
+        return acceptanceCode;
       }
-   }
+    }      
+  }else{
+    for( int i = 0; i < array.nDet ; i++){
+      if( array.detPos[i] <= orbitb.z && orbitb.z <= array.detPos[i] + array.detLength)  {
+        ///printf(" %d | %f < z = %f < %f \n", i,  array.detPos[i], orbitb.z, array.detPos[i]+length); 
+        orbitb.detID = i;
+        detX = ( orbitb.z - (array.detPos[i] - array.detLength/2 ))/ array.detLength*2 ;// range from -1 , 1 
+        acceptanceCode = 1; 
+        return acceptanceCode;
+      }
+    }
+  }
 
    
-   // -5 ======== check hit array gap
-   if( array.firstPos < 0 ){
-      for( int i = 0; i < array.nDet-1 ; i++){
-         if( array.detPos[i] < orbitb.z && orbitb.z < array.detPos[i+1] - array.detLength ) { accMessage = "hit array Z-gap"; return -5; }//increaseLoopFlag = 3; 
-      }      
-   }else{
-      for( int i = 0; i < array.nDet-1 ; i++){
-         if( array.detPos[i] + array.detLength < orbitb.z && orbitb.z < array.detPos[i+1]  ) { accMessage = "hit array Z-gap"; return -5; }//increaseLoopFlag = 3;
-      }
-   }
-   if (increaseLoopFlag == 3 ) {
-      orbitb.z += orbitb.z0;
-      orbitb.effLoop += 1.0;
-      orbitb.loop += 1;
-      orbitb.t = orbitb.t0 * orbitb.effLoop;
-      accMessage = " try one more loop. ";
-      return 3;
-   }
+  // -7 ======== check hit array gap
+  if( array.firstPos < 0 ){
+    for( int i = 0; i < array.nDet-1 ; i++){
+        if( array.detPos[i] < orbitb.z && orbitb.z < array.detPos[i+1] - array.detLength ) { acceptanceCode = -7; return acceptanceCode; }//increaseLoopFlag = 3; 
+    }      
+  }else{
+    for( int i = 0; i < array.nDet-1 ; i++){
+        if( array.detPos[i] + array.detLength < orbitb.z && orbitb.z < array.detPos[i+1]  ) { acceptanceCode = -7; return acceptanceCode; }//increaseLoopFlag = 3;
+    }
+  }
+  if (increaseLoopFlag == 3 ) {
+    orbitb.z += orbitb.z0;
+    orbitb.effLoop += 1.0;
+    orbitb.loop += 1;
+    orbitb.t = orbitb.t0 * orbitb.effLoop;
+    acceptanceCode = 3;
+    return acceptanceCode;
+  }
    
-   accMessage = " unknown reason ";
-   return -20; // for unknown reason
+   acceptanceCode = -20 ;
+   return acceptanceCode; // for unknown reason
 }
 
 void HELIOS::CalTrajectoryPara(TLorentzVector P, bool isLightRecoil){

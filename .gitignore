@@ -12,6 +12,10 @@ data
 data_raw
 root_data
 
+*.in
+*.out
+*.txt
+
 Cleopatra/ExtractXSec
 Cleopatra/ExtractXSecFromText
 Cleopatra/FindThetaCM

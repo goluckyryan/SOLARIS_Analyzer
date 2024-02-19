@@ -78,11 +78,10 @@ int main (int argc, char *argv[]) { //TODO add angle range
   InFileCreator( readFile, ptolemyInFileName, angMin, angMax, angStep);
   
   //================= run ptolemy
-  
   char command[200];
   string ptolemyOutFileName = argv[1];
   ptolemyOutFileName += ".out";
-  sprintf(command, "./ptolemy <%s> %s", ptolemyInFileName.c_str(),  ptolemyOutFileName.c_str());
+  sprintf(command, "../Cleopatra/ptolemy <%s> %s", ptolemyInFileName.c_str(),  ptolemyOutFileName.c_str());
   printf("=================== Run Ptolemy\n");
   printf("%s \n", command);
   system(command);

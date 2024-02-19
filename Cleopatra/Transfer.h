@@ -23,185 +23,159 @@ double exDistFunc(Double_t *x, Double_t * par){
   return par[(int) x[0]];
 }
 
+void PrintEZPlotPara(TransferReaction tran, HELIOS helios){
+
+  printf("==================================== E-Z plot slope\n");
+  double  betaRect = tran.GetReactionBeta() ;
+  double     gamma = tran.GetReactionGamma();
+  double        mb = tran.GetMass_b();
+  double       pCM = tran.GetMomentumbCM();
+  double         q = TMath::Sqrt(mb*mb + pCM*pCM); ///energy of light recoil in center of mass
+  double     slope = tran.GetEZSlope(helios.GetBField()); /// MeV/mm
+  printf("                       e-z slope : %f MeV/mm\n", slope);   
+  double intercept = q/gamma - mb; // MeV
+  printf("    e-z intercept (ground state) : %f MeV\n", intercept); 
+
+}
+
 void Transfer(
-         string      basicConfig = "reactionConfig.txt", 
-         string heliosDetGeoFile = "detectorGeo.txt", 
-         string   excitationFile = "Ex.txt", ///when no file, only ground state
-         TString     ptolemyRoot = "DWBA.root", /// when no file, use isotropic distribution of thetaCM
-         TString    saveFileName = "transfer.root",
-         TString        filename = "reaction.dat"){ /// when no file, no output.
+         std::string      basicConfig = "reactionConfig.txt", 
+         std::string heliosDetGeoFile = "detectorGeo.txt", 
+         unsigned short            ID = 0,  // this is the ID for the array
+         TString          ptolemyRoot = "DWBA.root",
+         TString         saveFileName = "transfer.root"){
 
   //############################################# Set Reaction
+
   TransferReaction transfer;
-  transfer.SetReactionFromFile(basicConfig);
+  HELIOS helios;
+  Decay decay;
+
+  std::vector<double> kbCM; /// momentum of b in CM frame
+  TF1 * exDist = nullptr;
+
+  transfer.SetReactionFromFile(basicConfig, ID);
+  helios.SetDetectorGeometry(heliosDetGeoFile, ID);
 
   printf("*****************************************************************\n");
   printf("*\e[1m\e[33m        %27s                            \e[0m*\n", transfer.GetReactionName().Data());
   printf("*****************************************************************\n");
   printf("----- loading reaction setting from %s. \n", basicConfig.c_str());
-  printf("\e[32m#################################### Beam \e[0m\n");
+  printf("----- loading geometry setting from %s. \n", heliosDetGeoFile.c_str());
+ 
+  printf("\e[32m#################################### Reaction & HELIOS configuration\e[0m\n");   
 
-  const ReactionConfig reactionConfig = transfer.GetRectionConfig();
+  transfer.PrintReaction();
 
-  reactionConfig.PrintReactionConfig();
+  if(transfer.GetRecoil().isDecay) {
+    decay.SetMotherDaugther(transfer.GetRecoil());
+  }
 
-  vector<float> ExAList = reactionConfig.beamEx;
-  int nExA = (int) ExAList.size();
+  helios.PrintGeometry();
+  PrintEZPlotPara(transfer, helios);
 
-  //############################################# Set HELIOS
-  printf("\e[32m#################################### HELIOS configuration\e[0m\n");   
-  HELIOS helios;
-  helios.SetDetectorGeometry(heliosDetGeoFile);
 
-  const DetGeo detGeo = helios.GetDetectorGeometry();
+  DetGeo detGeo = helios.GetDetectorGeometry();
+  Array array = helios.GetArrayGeometry();
+  ReactionConfig reactConfig = transfer.GetRectionConfig();
+  Recoil recoil = transfer.GetRecoil();
   
-  printf("==================================== E-Z plot slope\n");
-  double  betaRect = transfer.GetReactionBeta() ;
-  double gamma = transfer.GetReactionGamma();
-  double    mb = transfer.GetMass_b();
-  double   pCM = transfer.GetMomentumbCM();
-  double     q = TMath::Sqrt(mb*mb + pCM*pCM); ///energy of light recoil in center of mass
-  double slope = 299.792458 * reactionConfig.recoilLightZ * abs(helios.GetBField()) / TMath::TwoPi() * betaRect / 1000.; /// MeV/mm
-  printf("                       e-z slope : %f MeV/mm\n", slope);   
-  double intercept = q/gamma - mb; // MeV
-  printf("    e-z intercept (ground state) : %f MeV\n", intercept); 
+  //*############################################# save reaction.dat
+  // if( filename != "" ) {
+  //   FILE * keyParaOut;
+  //   keyParaOut = fopen (filename.Data(), "w+");
 
-  //############################################# save reaction.dat
-  if( filename != "" ) {
-    FILE * keyParaOut;
-    keyParaOut = fopen (filename.Data(), "w+");
+  //   printf("=========== save key reaction constants to %s \n", filename.Data());
+  //   fprintf(keyParaOut, "%-15.4f  //%s\n", transfer.GetMass_b(), "mass_b");
+  //   fprintf(keyParaOut, "%-15d  //%s\n",   reactConfig.recoilLightZ, "charge_b");
+  //   fprintf(keyParaOut, "%-15.8f  //%s\n", transfer.GetReactionBeta(), "betaCM");
+  //   fprintf(keyParaOut, "%-15.4f  //%s\n", transfer.GetCMTotalEnergy(), "Ecm");
+  //   fprintf(keyParaOut, "%-15.4f  //%s\n", transfer.GetMass_B(), "mass_B");
+  //   fprintf(keyParaOut, "%-15.4f  //%s\n", slope/betaRect, "alpha=slope/betaRect");
 
-    printf("=========== save key reaction constants to %s \n", filename.Data());
-    fprintf(keyParaOut, "%-15.4f  //%s\n", transfer.GetMass_b(), "mass_b");
-    fprintf(keyParaOut, "%-15d  //%s\n",   reactionConfig.recoilLightZ, "charge_b");
-    fprintf(keyParaOut, "%-15.8f  //%s\n", transfer.GetReactionBeta(), "betaCM");
-    fprintf(keyParaOut, "%-15.4f  //%s\n", transfer.GetCMTotalEnergy(), "Ecm");
-    fprintf(keyParaOut, "%-15.4f  //%s\n", transfer.GetMass_B(), "mass_B");
-    fprintf(keyParaOut, "%-15.4f  //%s\n", slope/betaRect, "alpha=slope/betaRect");
-
-    fflush(keyParaOut);
-    fclose(keyParaOut);
-  }
+  //   fflush(keyParaOut);
+  //   fclose(keyParaOut);
+  // }
   
-  //############################################# Target scattering, only energy loss
-  bool isTargetScattering = reactionConfig.isTargetScattering;
-  float           density = reactionConfig.targetDensity;
-  float   targetThickness = reactionConfig.targetThickness;
+  //*############################################# Target scattering, only energy loss
+  // bool isTargetScattering = reactConfig.isTargetScattering;
+  // float           density = reactConfig.targetDensity;
+  // float   targetThickness = reactConfig.targetThickness;
   
-  if(isTargetScattering) printf("\e[32m#################################### Target Scattering\e[0m\n");
-  TargetScattering msA;
-  TargetScattering msB;
-  TargetScattering msb;
+  // if(isTargetScattering) printf("\e[32m#################################### Target Scattering\e[0m\n");
+  // TargetScattering msA;
+  // TargetScattering msB;
+  // TargetScattering msb;
 
-  if(reactionConfig.isTargetScattering) printf("======== Target : (thickness : %6.2f um) x (density : %6.2f g/cm3) = %6.2f ug/cm2\n", 
-                                               targetThickness * 1e+4, 
-                                               density, 
-                                               targetThickness * density * 1e+6);  
+  // if(reactConfig.isTargetScattering) printf("======== Target : (thickness : %6.2f um) x (density : %6.2f g/cm3) = %6.2f ug/cm2\n", 
+  //                                              targetThickness * 1e+4, 
+  //                                              density, 
+  //                                              targetThickness * density * 1e+6);  
 
-  if( reactionConfig.isTargetScattering ){
-    msA.LoadStoppingPower(reactionConfig.beamStoppingPowerFile);
-    msb.LoadStoppingPower(reactionConfig.recoilLightStoppingPowerFile);
-    msB.LoadStoppingPower(reactionConfig.recoilHeavyStoppingPowerFile);
-  }
+  // if( reactConfig.isTargetScattering ){
+  //   msA.LoadStoppingPower(reactConfig.beamStoppingPowerFile);
+  //   msb.LoadStoppingPower(reactConfig.recoilLightStoppingPowerFile);
+  //   msB.LoadStoppingPower(reactConfig.recoilHeavyStoppingPowerFile);
+  // }
 
-  //############################################# Decay of particle-B
-  Decay decay;
-  if(reactionConfig.isDecay) {
-    printf("\e[32m#################################### Decay\e[0m\n");
-    decay.SetMotherDaugther(reactionConfig.recoilHeavyA,
-                            reactionConfig.recoilHeavyZ,
-                            reactionConfig.heavyDecayA,
-                            reactionConfig.heavyDecayZ);
-  }
-  //############################################# loading excitation energy
-  printf("\e[32m#################################### excitation energies\e[0m\n");
-  vector<double> ExKnown;
-  vector<double> ExStrength;
-  vector<double> ExWidth;
-  vector<double> SF;
-  vector<double> y0; /// intercept of e-z plot
-  vector<double> kCM; /// momentum of b in CM frame
-  printf("----- loading excitation energy levels (%s).", excitationFile.c_str());
-  ifstream file;
-  file.open(excitationFile.c_str());
-  string isotopeName;
-  if( file.is_open() ){
-    string line;
-    while( getline(file, line) ){
-      ///printf("%s \n", line.c_str());
-      if( line.substr(0,2) == "//" ) continue;
-      if( line.substr(0,2) == "#=" ) break;
+  //*############################################# Decay of particle-B
+  // Decay decay[2];
+  // if(reactConfig.isDecay) {
+  //   printf("\e[32m#################################### Decay\e[0m\n");
+  //   decay.SetMotherDaugther(reactConfig.recoilHeavyA,
+  //                           reactConfig.recoilHeavyZ,
+  //                           reactConfig.heavyDecayA,
+  //                           reactConfig.heavyDecayZ);
+  // }
 
-      vector<string> str = AnalysisLib::SplitStr(line, " ");
-
-      ExKnown.push_back(atof(str[0].c_str()));
-      ExStrength.push_back(atof(str[1].c_str()));
-      SF.push_back(atof(str[2].c_str()));
-      ExWidth.push_back(atof(str[3].c_str()));
-
-    }
-    file.close();
-    printf("... done.\n");
-    int n = (int) ExKnown.size();
-    
-    printf("%3s | %7s | %5s | %3s | %10s | %5s \n", "", "Ex[MeV]", "Xsec", "SF", "sigma[MeV]", "y0[MeV]");
-    printf("----+---------+------+-----+------------+--------\n");
-    for(int i = 0; i < n ; i++){
-      transfer.SetExB(ExKnown[i]);
-      transfer.CalReactionConstant();
-      kCM.push_back(transfer.GetMomentumbCM());
-      y0.push_back(TMath::Sqrt(mb*mb + kCM[i]*kCM[i])/gamma - mb);
-      if( reactionConfig.isDecay ) {
-        TLorentzVector temp(0,0,0,0);
-        int decayID = decay.CalDecay(temp, ExKnown[i], 0);
-        if( decayID == 1) {
-          printf("%3d | %7.2f | %5.2f | %3.1f |   %5.3f    | %5.2f --> Decay. \n", i, ExKnown[i], ExStrength[i], SF[i], ExWidth[i], y0[i]);
-        }else{
-          printf("%3d | %7.2f | %5.2f | %3.1f |   %5.3f    | %5.2f \n", i, ExKnown[i], ExStrength[i], SF[i], ExWidth[i], y0[i]);
-        }
-      }else{
-        printf("%3d | %7.2f | %5.2f | %3.1f |   %5.3f    | %5.2f \n", i, ExKnown[i], ExStrength[i], SF[i], ExWidth[i], y0[i]);
-      }
-    }
-    printf("----+---------+-------+-----+------------+--------\n");
-  }else{
-    printf("... fail ------> only ground state.\n");
-    ExKnown.push_back(0.0);
-    ExStrength.push_back(1.0);
-    ExWidth.push_back(0.0);
-    transfer.SetExB(ExKnown[0]);
-    transfer.CalReactionConstant();
-    kCM.push_back(transfer.GetMomentumbCM());
-    y0.push_back(TMath::Sqrt(mb*mb + kCM[0]*kCM[0])/gamma - mb);
-  }
-  
-  //---- create Ex-distribution
-  TF1 * exDist = NULL;
-  if( ExKnown.size() > 1 ) {
-    printf("---- creating Ex-distribution \n");
-    int exSize = ExKnown.size();
-    exDist = new TF1("exDist", exDistFunc, 0, exSize, exSize);
-    for(int i = 0; i < exSize; i++){
-      exDist->SetParameter(i, ExStrength[i]*SF[i]);
-    }
-  }
+  ExcitedEnergies exList = transfer.GetRectionConfig().exList[ID];
   
   //############################################# Load DWBAroot for thetaCM distribution
   printf("\e[32m#################################### Load DWBA input : %s  \e[0m\n", ptolemyRoot.Data());
   TF1 * dist = NULL;
   TFile * distFile = new TFile(ptolemyRoot, "read");
-  TObjArray * distList = NULL;
+  TObjArray * distList = nullptr;
+  TMacro * dwbaExList = nullptr;
   if( distFile->IsOpen() ) {
-    distList = (TObjArray *) distFile->FindObjectAny("pList"); // the function List
-    int distSize = distList->GetLast() + 1;
-    if( distSize != ExKnown.size() ) {
-      printf(" The number of distribution from Ptolmey Calculation is not equal to number of Ex input \n"); 
-      printf("   --> the Ptolmey calculation is probably not matched with Ex input.\n"); 
-      printf(" .... not use DWBA input.  \n"); 
-      distFile->Close();
+    printf("--------- Found DWBA thetaCM distributions. Use the ExList from DWBA.\n"); 
+
+    distList = (TObjArray *) distFile->FindObjectAny("thetaCM_TF1"); // the function List
+
+    exList.Clear();
+
+    dwbaExList = (TMacro *) distFile->FindObjectAny("ExList");   
+    int numEx = dwbaExList->GetListOfLines()->GetSize() - 1 ;
+    for(int i = 1; i <= numEx ; i++){
+      string temp = dwbaExList->GetListOfLines()->At(i)->GetName();
+      if( temp[0] == '/' ) continue;
+      vector<string> tempStr = AnalysisLib::SplitStr(temp, " ");
+      exList.Add( atof(tempStr[0].c_str()), atof(tempStr[1].c_str()), 1.0, 0.00);
     }
+
   }else{
-    printf("------- no DWBA input. \n");
+    printf("------- no DWBA input. Use the ExList from %s\n", basicConfig.c_str());    
+  }
+
+
+  printf("------------------------------ Heavy Recoil excitation\n"); 
+  printf("Energy[MeV]  Rel.Xsec     SF  sigma\n");
+
+  int numEx = exList.ExList.size();
+
+  for( int j = 0; j < numEx; j++){
+    double ex = exList.ExList[j].Ex;
+    kbCM.push_back(transfer.CalkCM(ex));
+    int decayID = decay.CalDecay(TLorentzVector (0,0,0,0), ex, 0);
+    exList.ExList[j].Print(decayID == 1 ? "-->Decay" : "\n");
+  } 
+
+  //---- create Ex-distribution
+  if( exList.ExList.size() > 1 ) {
+    printf("---- creating Ex-distribution \n");
+    exDist = new TF1("exDist", exDistFunc, 0, numEx, numEx);
+    for(int q = 0; q < numEx; q++){
+      exDist->SetParameter(q, exList.ExList[q].xsec*exList.ExList[q].SF);
+    }
   }
 
   //############################################# build tree
@@ -211,36 +185,21 @@ void Transfer(
 
   TMacro config(basicConfig.c_str());
   TMacro detGeoTxt(heliosDetGeoFile.c_str());
-  TMacro exList(excitationFile.c_str());
-  TMacro reactionData(filename.Data());
-  double KEAmean = reactionConfig.beamEnergy;
-  TString str;
-  str.Form("%s @ %.2f MeV/u", transfer.GetReactionName_Latex().Data(), KEAmean);
-  config.SetName(str.Data());
+  config.SetName(transfer.GetReactionName_Latex().Data());
   config.Write("reactionConfig");
   detGeoTxt.Write("detGeo");
-  exList.Write("ExList");
-  reactionData.Write("reactionData");
-  
+
   if( distList != NULL ) distList->Write("DWBA", 1);
+  if( dwbaExList != NULL ) dwbaExList->Write("DWBA_ExList", 1);
+
   
   TMacro hitMeaning;
-  str = "=======================meaning of Hit ID\n"; hitMeaning.AddLine(str.Data());
-  str = "   1 = light recoil hit array & heavy recoil hit recoil\n"; hitMeaning.AddLine(str.Data());
-  str = "   0 = no detector\n"; hitMeaning.AddLine(str.Data());
-  str = "  -1 = light recoil go opposite side of array\n"; hitMeaning.AddLine(str.Data());
-  str = "  -2 = light recoil hit > det width\n"; hitMeaning.AddLine(str.Data());
-  str = "  -3 = light recoil hit > array \n"; hitMeaning.AddLine(str.Data());
-  str = "  -4 = light recoil hit blocker \n"; hitMeaning.AddLine(str.Data());
-  str = " -10 = light recoil orbit radius too big  \n"; hitMeaning.AddLine(str.Data());
-  str = " -11 = light recoil orbit radius too small\n"; hitMeaning.AddLine(str.Data());
-  str = " -12 = when reocol at the same side of array, light recoil blocked by recoil detector\n"; hitMeaning.AddLine(str.Data());
-  str = " -13 = more than 3 loops\n"; hitMeaning.AddLine(str.Data());
-  str = " -14 = heavy recoil did not hit recoil  \n"; hitMeaning.AddLine(str.Data());
-  str = " -15 = cannot find hit on array\n"; hitMeaning.AddLine(str.Data());
-  str = " -20 = unknown\n"; hitMeaning.AddLine(str.Data());
-  str = "===========================================\n"; hitMeaning.AddLine(str.Data());
-  
+  hitMeaning.AddLine("======================= meaning of Hit\n"); 
+  for( int code = -15 ; code <= 1; code ++ ){
+    hitMeaning.AddLine( Form( "%4d = %s", code, helios.AcceptanceCodeToMsg(code).Data() ));
+  }
+  hitMeaning.AddLine(" other = unknown\n");
+  hitMeaning.AddLine("===========================================\n");  
   hitMeaning.Write("hitMeaning");
 
   int hit; /// the output of Helios.CalHit
@@ -274,11 +233,6 @@ void Transfer(
   double rho, rhoB; ///orbit radius
   tree->Branch("rho",   &rho, "orbit_radius_light/D");
   tree->Branch("rhoB", &rhoB, "orbit_radius_heavy/D");
-  
-  int ExAID;
-  double ExA;
-  tree->Branch("ExAID", &ExAID, "ExAID/I");
-  tree->Branch("ExA",     &ExA, "ExA/D");
 
   int ExID;
   double Ex;
@@ -288,26 +242,21 @@ void Transfer(
   double ExCal, thetaCMCal;
   tree->Branch("ExCal",           &ExCal, "ExCal/D");
   tree->Branch("thetaCMCal", &thetaCMCal, "thetaCMCal/D");
-
-  double KEA, theta, phi;
-  tree->Branch("beamTheta", &theta, "beamTheta/D");
-  tree->Branch("beamPhi",     &phi, "beamPhi/D");
-  tree->Branch("beamKEA",     &KEA, "beamKEA/D");
   
-  double TbLoss; /// energy loss of particle-b from target scattering
-  double KEAnew; ///beam energy after target scattering
-  double depth;  /// reaction depth;
-  double Ecm;
-  if( reactionConfig.isTargetScattering ){
-    tree->Branch("depth",   &depth, "depth/D");
-    tree->Branch("TbLoss", &TbLoss, "TbLoss/D");
-    tree->Branch("KEAnew", &KEAnew, "KEAnew/D");
-    tree->Branch("Ecm",       &Ecm, "Ecm/D");
-  }
+  // double TbLoss; /// energy loss of particle-b from target scattering
+  // double KEAnew; ///beam energy after target scattering
+  // double depth;  /// reaction depth;
+  // double Ecm;
+  // if( reactConfig.isTargetScattering ){
+  //   tree->Branch("depth",   &depth, "depth/D");
+  //   tree->Branch("TbLoss", &TbLoss, "TbLoss/D");
+  //   tree->Branch("KEAnew", &KEAnew, "KEAnew/D");
+  //   tree->Branch("Ecm",       &Ecm, "Ecm/D");
+  // }
 
   double decayTheta; /// the change of thetaB due to decay
   double xRecoil_d, yRecoil_d, rhoRecoil_d, Td;
-  if( reactionConfig.isDecay ) {
+  if( recoil.isDecay ) {
     tree->Branch("decayTheta",   &decayTheta, "decayTheta/D");
     tree->Branch("xRecoil_d",     &xRecoil_d, "xRecoil_d/D");
     tree->Branch("yRecoil_d",     &yRecoil_d, "yRecoil_d/D");
@@ -325,6 +274,7 @@ void Transfer(
   tree->Branch("yRecoil",     &yRecoil, "yRecoil/D");
   tree->Branch("rhoRecoil", &rhoRecoil, "rhoRecoil/D");
   
+
   ///in case need ELUM
   double xElum1, yElum1, rhoElum1;
   if( detGeo.elumPos1 != 0 ) {
@@ -360,6 +310,12 @@ void Transfer(
   const int gxSize = 50;
   TF1 ** gx = new TF1*[gxSize];
   TString name;
+
+  double mb = transfer.GetMass_b();
+  double betaRect = transfer.GetReactionBeta();
+  double gamma = transfer.GetReactionGamma();
+  double slope = transfer.GetEZSlope(helios.GetBField()); /// MeV/mm
+
   for( int i = 0; i < gxSize; i++){
     name.Form("g%d", i);     
     gx[i] = new TF1(name, "([0]*TMath::Sqrt([1]+[2]*x*x)+[5]*x)/([3]) - [4]", -1000, 1000);      
@@ -376,40 +332,25 @@ void Transfer(
     printf("/");
     if( i > 1 && i % 40 == 0 ) printf("\n");
   }
-  gList->Write("gList", TObject::kSingleKey);
+  gList->Write("EZ_thetaCM", TObject::kSingleKey);
   printf(" %d constant thetaCM functions\n", gxSize);
 
-  int n = ExKnown.size();
-  TObjArray * fList = new TObjArray();
-  TF1** f = new TF1*[n];
-  for( int i = 0; i< n ; i++){
-    name.Form("f%d", i);     
-    f[i] = new TF1(name, "[0] + [1] * x", -1000, 1000);      
-    f[i]->SetParameter(0, y0[i]);
-    f[i]->SetParameter(1, slope);
-    f[i]->SetNpx(1000);
-    fList->Add(f[i]);
-    printf(".");
-  }
-  fList->Write("fList", TObject::kSingleKey);
-  printf(" %d e-z infinte-small detector functions\n", n);
-  
   //--- cal modified f
   TObjArray * fxList = new TObjArray();
-  TGraph ** fx = new TGraph*[n];
+  TGraph ** fx = new TGraph*[numEx];
   vector<double> px, py;
   int countfx = 0;
-  for( int j = 0 ; j < n; j++){
+  for( int j = 0 ; j < numEx; j++){
     double a = helios.GetDetRadius();
-    double q = TMath::Sqrt(mb*mb + kCM[j] * kCM[j] );
+    double q = TMath::Sqrt(mb*mb + kbCM[j] * kbCM[j] );
     px.clear();
     py.clear();
     countfx = 0;
     for(int i = 0; i < 100; i++){
       double thetacm = TMath::Pi()/TMath::Log(100) * (TMath::Log(100) - TMath::Log(100-i)) ;//using log scale, for more point in small angle.
-      double temp = TMath::TwoPi() * slope / betaRect / kCM[j] * a / TMath::Sin(thetacm); 
-      double pxTemp = betaRect /slope * (gamma * betaRect * q - gamma * kCM[j] * TMath::Cos(thetacm)) * (1 - TMath::ASin(temp)/TMath::TwoPi()) ;
-      double pyTemp = gamma * q - mb - gamma * betaRect * kCM[j] * TMath::Cos(thetacm);   
+      double temp = TMath::TwoPi() * slope / betaRect / kbCM[j] * a / TMath::Sin(thetacm); 
+      double pxTemp = betaRect /slope * (gamma * betaRect * q - gamma * kbCM[j] * TMath::Cos(thetacm)) * (1 - TMath::ASin(temp)/TMath::TwoPi()) ;
+      double pyTemp = gamma * q - mb - gamma * betaRect * kbCM[j] * TMath::Cos(thetacm);   
       if( TMath::IsNaN(pxTemp) || TMath::IsNaN(pyTemp) ) continue;
       px.push_back(pxTemp);
       py.push_back(pyTemp);
@@ -423,22 +364,22 @@ void Transfer(
     fxList->Add(fx[j]);
     printf(",");
   }
-  fxList->Write("fxList", TObject::kSingleKey);
-  printf(" %d e-z finite-size detector functions\n", n);
+  fxList->Write("EZCurve", TObject::kSingleKey);
+  printf(" %d e-z finite-size detector functions\n", numEx);
 
   //--- cal modified thetaCM vs z
   TObjArray * txList = new TObjArray();
-  TGraph ** tx = new TGraph*[n];
-  for( int j = 0 ; j < n; j++){
+  TGraph ** tx = new TGraph*[numEx];
+  for( int j = 0 ; j < numEx; j++){
     double a = helios.GetDetRadius();
-    double q = TMath::Sqrt(mb*mb + kCM[j] * kCM[j] );
+    double q = TMath::Sqrt(mb*mb + kbCM[j] * kbCM[j] );
     px.clear();
     py.clear();
     countfx = 0;
     for(int i = 0; i < 100; i++){
       double thetacm = (i + 8.) * TMath::DegToRad();
-      double temp = TMath::TwoPi() * slope / betaRect / kCM[j] * a / TMath::Sin(thetacm); 
-      double pxTemp = betaRect /slope * (gamma * betaRect * q - gamma * kCM[j] * TMath::Cos(thetacm)) * (1 - TMath::ASin(temp)/TMath::TwoPi());
+      double temp = TMath::TwoPi() * slope / betaRect / kbCM[j] * a / TMath::Sin(thetacm); 
+      double pxTemp = betaRect /slope * (gamma * betaRect * q - gamma * kbCM[j] * TMath::Cos(thetacm)) * (1 - TMath::ASin(temp)/TMath::TwoPi());
       double pyTemp = thetacm * TMath::RadToDeg();   
       if( TMath::IsNaN(pxTemp) || TMath::IsNaN(pyTemp) ) continue;
       px.push_back(pxTemp);
@@ -453,8 +394,8 @@ void Transfer(
     txList->Add(tx[j]);
     printf("*");
   }
-  txList->Write("txList", TObject::kSingleKey);
-  printf(" %d thetaCM-z for finite-size detector functions\n", n);
+  txList->Write("thetaCM_Z", TObject::kSingleKey);
+  printf(" %d thetaCM-z for finite-size detector functions\n", numEx);
   
   //========timer
   TBenchmark clock;
@@ -464,7 +405,7 @@ void Transfer(
   shown = false;
   
   //change the number of event into human easy-to-read form
-  int numEvent = reactionConfig.numEvents;
+  int numEvent = reactConfig.numEvents;
   int digitLen = TMath::Floor(TMath::Log10(numEvent));
   TString numEventStr;
   if( 3 <= digitLen && digitLen < 6 ){
@@ -476,59 +417,51 @@ void Transfer(
   }
   printf("\e[32m#################################### generating %s events \e[0m\n", numEventStr.Data());
 
+  double KEA = reactConfig.beamEnergy;
+  double theta = reactConfig.beamTheta;
+  double  phi = 0.0;
+      
   //====================================================== calculate event
   int count = 0;
   for( int i = 0; i < numEvent; i++){
     bool redoFlag = true;
-    if( !reactionConfig.isRedo ) redoFlag = false;
+    if( !reactConfig.isRedo ) redoFlag = false;
     do{
-
-      //==== Set Ex of A
-      ExAID = gRandom->Integer(nExA);
-      ExA = ExAList[ExAID];
-      transfer.SetExA(ExA);
-
+      
       //==== Set Ex of B
-      if( ExKnown.size() == 1 ) {
+      if( numEx == 1 ) {
         ExID = 0;
-        Ex = ExKnown[0] + (ExWidth[0] == 0 ? 0 : gRandom->Gaus(0, ExWidth[0]));
+        Ex = exList.ExList[0].Ex + (exList.ExList[0].sigma == 0 ? 0 : gRandom->Gaus(0, exList.ExList[0].sigma));
       }else{
         ExID = exDist->GetRandom();
-        Ex = ExKnown[ExID]+ (ExWidth[ExID] == 0 ? 0 : gRandom->Gaus(0, ExWidth[ExID]));
+        Ex = exList.ExList[ExID].Ex + (exList.ExList[ExID].sigma == 0 ? 0 : gRandom->Gaus(0, exList.ExList[ExID].sigma));
       }
       transfer.SetExB(Ex);
   
       //==== Set incident beam
-      KEA = reactionConfig.beamEnergy;
-      if( reactionConfig.beamEnergySigma == 0 ){
-        KEA = reactionConfig.beamEnergy;
-      }else{
-        KEA = gRandom->Gaus(reactionConfig.beamEnergy, reactionConfig.beamEnergySigma);
+      if( reactConfig.beamEnergySigma != 0 ){
+        KEA = gRandom->Gaus(reactConfig.beamEnergy, reactConfig.beamEnergySigma);
       }
-      theta = 0.0;
-      if( reactionConfig.beamAngleSigma == 0 ){
-        theta = reactionConfig.beamAngle;
-      }else{
-        theta = gRandom->Gaus(reactionConfig.beamAngle, reactionConfig.beamAngleSigma);
+      if( reactConfig.beamThetaSigma != 0 ){
+        theta = gRandom->Gaus(reactConfig.beamTheta, reactConfig.beamThetaSigma);
       }
-      phi = 0.0;
-      
+  
       //==== for taregt scattering
       transfer.SetIncidentEnergyAngle(KEA, theta, 0.);
       transfer.CalReactionConstant();
-      TLorentzVector PA = transfer.GetPA();            
 
+      // TLorentzVector PA = transfer.GetPA();            
       //depth = 0;
-      if( isTargetScattering ){
-        //==== Target scattering, only energy loss
-        depth = targetThickness * gRandom->Rndm();
-        msA.SetTarget(density, depth); 
-        TLorentzVector PAnew = msA.Scattering(PA);
-        KEAnew = msA.GetKE()/reactionConfig.beamA;
-        transfer.SetIncidentEnergyAngle(KEAnew, theta, phi);
-        transfer.CalReactionConstant();
-        Ecm = transfer.GetCMTotalKE();
-      }
+      // if( isTargetScattering ){
+      //   //==== Target scattering, only energy loss
+      //   depth = targetThickness * gRandom->Rndm();
+      //   msA.SetTarget(density, depth); 
+      //   TLorentzVector PAnew = msA.Scattering(PA);
+      //   KEAnew = msA.GetKE()/reactConfig.beamA;
+      //   transfer.SetIncidentEnergyAngle(KEAnew, theta, phi);
+      //   transfer.CalReactionConstant();
+      //   Ecm = transfer.GetCMTotalKE();
+      // }
 
       //==== Calculate thetaCM, phiCM
       if( distFile->IsOpen()){
@@ -545,25 +478,24 @@ void Transfer(
       TLorentzVector Pb = transfer.GetPb();
       TLorentzVector PB = transfer.GetPB();
 
-    //==== Calculate energy loss of scattered and recoil in target
-    if( isTargetScattering ){
-      if( Pb.Theta() < TMath::PiOver2() ){
-        msb.SetTarget(density, targetThickness - depth);
-      }else{
-        msb.SetTarget(density, depth);
-      }
-      Pb = msb.Scattering(Pb);
-      TbLoss = msb.GetKELoss();
-      msB.SetTarget(density, targetThickness - depth);
-      PB = msB.Scattering(PB);
-    }else{
-      TbLoss = 0;
-    }
+      // //==== Calculate energy loss of scattered and recoil in target
+      // if( isTargetScattering ){
+      //   if( Pb.Theta() < TMath::PiOver2() ){
+      //     msb.SetTarget(density, targetThickness - depth);
+      //   }else{
+      //     msb.SetTarget(density, depth);
+      //   }
+      //   Pb = msb.Scattering(Pb);
+      //   TbLoss = msb.GetKELoss();
+      //   msB.SetTarget(density, targetThickness - depth);
+      //   PB = msB.Scattering(PB);
+      // }else{
+      //   TbLoss = 0;
+      // }
 
     //======= Decay of particle-B
     int decayID = 0;
-    int new_zB  = reactionConfig.recoilHeavyZ;
-    if( reactionConfig.isDecay){
+    if( recoil.isDecay){
       
       //decayID = decay.CalDecay(PB, Ex, 0, phiCM + TMath::Pi()/2.); // decay to ground state
       decayID = decay.CalDecay(PB, Ex, 0, phiCM + TMath::Pi()/2); // decay to ground state
@@ -571,7 +503,7 @@ void Transfer(
         PB = decay.GetDaugther_D();
         //decayTheta = decay.GetAngleChange();
         decayTheta = decay.GetThetaCM();
-        new_zB = reactionConfig.heavyDecayZ;
+        PB.SetUniqueID(recoil.decayZ);
       }else{
         decayTheta = TMath::QuietNaN();
       }
@@ -590,20 +522,21 @@ void Transfer(
 
     //==== Helios
     
-    ///printf(" thetaCM : %f \n", thetaCM * TMath::RadToDeg());
+    // printf(" thetaCM : %f, Tb : %f\n", thetaCM * TMath::RadToDeg(), Pb.M());
     
     if( Tb > 0  || TB > 0 ){
-      helios.CalArrayHit(Pb, reactionConfig.recoilLightZ);
-      helios.CalRecoilHit(PB, new_zB);
+
+      helios.CalArrayHit(Pb);
+      helios.CalRecoilHit(PB);
       hit = 2;
-      while( hit > 1 ){   hit = helios.DetAcceptance(); } /// while hit > 1, goto next loop;
+      while( hit > 1 ){  hit = helios.CheckDetAcceptance(); } /// while hit > 1, goto next loop;
       
       trajectory orb_b = helios.GetTrajectory_b();
       trajectory orb_B = helios.GetTrajectory_B();
       
-      e = helios.GetEnergy() + gRandom->Gaus(0, detGeo.array1.eSigma);
+      e = helios.GetEnergy() + gRandom->Gaus(0, array.eSigma );
 
-      double ranX = gRandom->Gaus(0, detGeo.array1.zSigma);
+      double ranX = gRandom->Gaus(0, array.zSigma);
       z = orb_b.z + ranX;
       detX = helios.GetDetX() + ranX;
  
@@ -658,13 +591,13 @@ void Transfer(
       thetaCM = thetaCM * TMath::RadToDeg();
       
       //if decay, get the light decay particle on the recoil;
-      if( reactionConfig.isDecay ){
+      if( recoil.isDecay ){
         if( decayID == 1 ){
           TLorentzVector Pd = decay.GetDaugther_d();
           
           Td = Pd.E() - Pd.M();
           
-          helios.CalRecoilHit(Pd, reactionConfig.heavyDecayZ);
+          helios.CalRecoilHit(Pd);
           
           trajectory orb_d = helios.GetTrajectory_B();
           rhoRecoil_d = orb_d.R;
@@ -684,7 +617,7 @@ void Transfer(
 
     if( hit == 1)  count ++;
 
-    if( reactionConfig.isRedo ){
+    if( reactConfig.isRedo ){
       if( hit == 1) {
         redoFlag = false;
       }else{
@@ -720,7 +653,11 @@ void Transfer(
   saveFile->Close();
   
   distFile->Close();
+  delete exDist;
 
   printf("=============== done. saved as %s. count(hit==1) : %d\n", saveFileName.Data(), count);
   //gROOT->ProcessLine(".q");
+
+  return;
+
 }

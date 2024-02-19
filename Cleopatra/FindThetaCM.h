@@ -21,7 +21,7 @@
 
 void FindThetaCM(double Ex, int nDivision=1, double XRATION = 0.95, 
             std::string basicConfig="reactionConfig.txt",  
-            std::string detGeoFileName = "detectorGeo.txt"){
+            std::string detGeoFileName = "detectorGeo.txt", unsigned short ID = 0){
 
   //---- reaction
   int AA, zA; //beam
@@ -35,24 +35,24 @@ void FindThetaCM(double Ex, int nDivision=1, double XRATION = 0.95,
   double xBeam, yBeam; // mm
 
    /**///========================================================= load files
-  ReactionConfig reactionConfig;
+  ReactionConfig reConfig;
   DetGeo detGeo;
-  if( reactionConfig.LoadReactionConfig(basicConfig) ){
+  if( reConfig.LoadReactionConfig(basicConfig) ){
 
-    KEAmean = reactionConfig.beamEnergy;
-    KEAsigma = reactionConfig.beamEnergySigma;
+    KEAmean = reConfig.beamEnergy;
+    KEAsigma = reConfig.beamEnergySigma;
 
-    thetaMean = reactionConfig.beamAngle;
-    thetaSigma = reactionConfig.beamAngleSigma;
+    thetaMean = reConfig.beamTheta;
+    thetaSigma = reConfig.beamThetaSigma;
 
-    xBeam = reactionConfig.beamX;
-    yBeam = reactionConfig.beamY;
+    xBeam = reConfig.beamX;
+    yBeam = reConfig.beamY;
 
-    AA = reactionConfig.beamA;        zA = reactionConfig.beamZ;
-    Aa = reactionConfig.targetA;      za = reactionConfig.targetZ;
-    Ab = reactionConfig.recoilLightA; zb = reactionConfig.recoilLightZ;
+    AA = reConfig.beamA;        zA = reConfig.beamZ;
+    Aa = reConfig.targetA;      za = reConfig.targetZ;
+    Ab = reConfig.recoil[ID].lightA; zb = reConfig.recoil[ID].lightZ;
 
-    ExA = reactionConfig.beamEx[0];
+    ExA = reConfig.beamEx;
     
   }else{
     printf("cannot load %s \n", basicConfig.c_str());
@@ -97,12 +97,12 @@ void FindThetaCM(double Ex, int nDivision=1, double XRATION = 0.95,
    
    printf("----- loading detector geometery : %s.", detGeoFileName.c_str());
    if(detGeo.LoadDetectorGeo(detGeoFileName) ){
-     pos = detGeo.array1.detPos;
-     a = detGeo.array1.detPerpDist;
-     length = detGeo.array1.detLength;
-     firstPos = detGeo.array1.firstPos;
-     iDet = detGeo.array1.nDet;
-     jDet = detGeo.array1.mDet;
+     pos = detGeo.array[ID].detPos;
+     a = detGeo.array[ID].detPerpDist;
+     length = detGeo.array[ID].detLength;
+     firstPos = detGeo.array[ID].firstPos;
+     iDet = detGeo.array[ID].nDet;
+     jDet = detGeo.array[ID].mDet;
      BField = detGeo.Bfield;
      
      printf("... done.\n");

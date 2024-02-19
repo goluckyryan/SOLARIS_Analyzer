@@ -1,3 +1,5 @@
+#--- '#---' comment line identifier
+#--- beam
 32             //beam_A
 14             //beam_Z
 0.0            //excitation_energy_of_beam[MeV]
@@ -8,6 +10,7 @@
 0.00           //x_offset_of_Beam_in_mm
 0.00           //y_offset_of_Beam_in_mm
 
+#--- target
 2               //target_A
 1               //target_Z
 false           //isTargetScattering
@@ -15,7 +18,8 @@ false           //isTargetScattering
 2.2e-4          //targetThickness_in_cm
 ../SRIM/20F_in_CD2.txt  //stopping_power_for_beam
 
-100000         //number_of_Event_being_generated
+#--- Monte Carlo Setting
+1000000         //number_of_Event_being_generated
 false           //Redo_until_hit_array=all_events_hit_array
 
 #=====reaction_for_1st_Array
@@ -26,6 +30,11 @@ false           //Redo_until_hit_array=all_events_hit_array
 false           //isDacay
 32               //decayNucleus_A
 14               //decayNucleus_Z
+#--- List of Ex of heavy recoil
+#---Ex   relative_xsec   SF   sigma_in_MeV
+0.000    1.0     1.0    0.01
+1.000    1.0     1.0    0.01
+2.000    1.0     1.0    0.01
 
 #=====_reaction_for_2nd_Array_use_ony_when_2nd_array_used
 3               //recoil_light_A
@@ -35,5 +44,13 @@ false           //isDacay
 false           //isDacay
 32               //decayNucleus_A
 14               //decayNucleus_Z
+
+#--- List of Ex of heavy recoil
+#---Ex   relative_xsec   SF   sigma_in_MeV
+
+0.000    1.0     1.0    0.01
+1.000    1.0     1.0    0.01
+2.000    1.0     1.0    0.01
+
 
 ################## end of file

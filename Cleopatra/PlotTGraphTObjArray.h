@@ -30,7 +30,7 @@ void PlotTGraphTObjArray(TString rootFileName, bool isSavePNG = false){
   
   TFile * file = new TFile(rootFileName, "READ");
   
-  TObjArray * gList = (TObjArray *) file->FindObjectAny("qList");
+  TObjArray * gList = (TObjArray *) file->FindObjectAny("thetaCM_TGraph");
   
   if( gList == NULL ) {
     printf("No Result was found.\n");
