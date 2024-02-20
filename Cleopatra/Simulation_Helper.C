@@ -12,7 +12,7 @@
 #include <RQ_OBJECT.h>
 
 
-#include "../Cleopatra/Transfer.h"
+#include "../Cleopatra/SimTransfer.C"
 #include "../Cleopatra/InFileCreator.h"
 #include "../Cleopatra/ExtractXSec.h"
 #include "../Cleopatra/PlotTGraphTObjArray.h"
@@ -57,7 +57,6 @@ private:
    TGCheckButton * isPlot;
    
    TGComboBox    * extractFlag;
-   
    
    TGTextEntry * txtName ;    
    TGTextEntry * txtEx ; 

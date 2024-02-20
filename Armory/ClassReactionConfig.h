@@ -114,7 +114,7 @@ public:
   bool LoadReactionConfig(TString fileName);
   bool LoadReactionConfig(TMacro * macro);
 
-  void Print() const;
+  void Print(int ID = -1, bool withEx = true) const;
   
 private:
 
@@ -237,7 +237,7 @@ inline bool ReactionConfig::LoadReactionConfig(TMacro * macro){
   return true;
 }
 
-inline void ReactionConfig::Print() const{
+inline void ReactionConfig::Print(int ID, bool withEx) const{
 
   printf("=====================================================\n");
 
@@ -261,8 +261,10 @@ inline void ReactionConfig::Print() const{
   
   for( int i = 0; i < 2; i ++ ){
     printf("------------------------------ Recoil-%d\n", i); 
-    recoil[i].Print();
-    exList[i].Print();
+    if( ID == i || ID < 0  ){
+      recoil[i].Print();
+      if( withEx ) exList[i].Print();
+    }
   }
   
   

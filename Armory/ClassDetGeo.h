@@ -95,7 +95,9 @@ public:
   bool LoadDetectorGeo(TString fileName, bool verbose = true);
   bool LoadDetectorGeo(TMacro * macro, bool verbose = true);
 
-  void Print( bool printAll = true) const;
+  void PrintWithoutArray() ;
+  void Print( bool printAll = true) ;
+
 
 private:
 
@@ -203,14 +205,27 @@ inline bool DetGeo::LoadDetectorGeo(TMacro * macro, bool verbose){
 
 }
 
-inline void DetGeo::Print(bool printAll) const{
-
+inline void DetGeo::PrintWithoutArray(){
   printf("=====================================================\n");
-  printf("                 B-field: %8.2f  T, Theta : %6.2f deg \n", Bfield, BfieldTheta);
-  if( BfieldTheta != 0.0 ) {
-    printf("                                      +---- field angle != 0 is not supported!!! \n");
-  }
+  printf("                 B-field: %8.2f  T, %s\n", Bfield, Bfield > 0 ? "out of plan" : "into plan");
+  printf("          B-field Theta : %6.2f deg \n", BfieldTheta);
+
+  if( BfieldTheta != 0.0 ) printf("                                      +---- field angle != 0 is not supported!!! \n");
   printf("     Recoil detector pos: %8.2f mm, radius: %6.2f - %6.2f mm \n", recoilPos, recoilInnerRadius, recoilOuterRadius);
+
+  if( elumPos1 != 0 || elumPos2 != 0 || recoilPos1 != 0 || recoilPos2 != 0){
+    printf("=================================== Auxillary/Imaginary Detectors\n");
+  }
+  if( elumPos1 != 0 )   printf("   Elum 1 pos.: %f mm \n", elumPos1);
+  if( elumPos2 != 0 )   printf("   Elum 2 pos.: %f mm \n", elumPos2);
+  if( recoilPos1 != 0 ) printf(" Recoil 1 pos.: %f mm \n", recoilPos1);
+  if( recoilPos2 != 0 ) printf(" Recoil 2 pos.: %f mm \n", recoilPos2);
+  printf("=====================================================\n");
+}
+
+inline void DetGeo::Print(bool printAll){
+
+  PrintWithoutArray();
 
   for( int i = 0; i < 2 ; i++){
 
@@ -220,14 +235,6 @@ inline void DetGeo::Print(bool printAll) const{
     }
 
   }
-
-  if( elumPos1 != 0 || elumPos2 != 0 || recoilPos1 != 0 || recoilPos2 != 0){
-    printf("=================================== Auxillary/Imaginary Detectors\n");
-  }
-  if( elumPos1 != 0 )   printf("   Elum 1 pos.: %f mm \n", elumPos1);
-  if( elumPos2 != 0 )   printf("   Elum 2 pos.: %f mm \n", elumPos2);
-  if( recoilPos1 != 0 ) printf(" Recoil 1 pos.: %f mm \n", recoilPos1);
-  if( recoilPos2 != 0 ) printf(" Recoil 2 pos.: %f mm \n", recoilPos2);
   printf("=====================================================\n");
 
 }

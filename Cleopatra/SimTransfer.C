@@ -45,8 +45,7 @@ void Transfer(
          TString          ptolemyRoot = "DWBA.root",
          TString         saveFileName = "transfer.root"){
 
-  //############################################# Set Reaction
-
+  //*############################################# Set Reaction
   TransferReaction transfer;
   HELIOS helios;
   Decay decay;
@@ -65,7 +64,7 @@ void Transfer(
  
   printf("\e[32m#################################### Reaction & HELIOS configuration\e[0m\n");   
 
-  transfer.PrintReaction();
+  transfer.PrintReaction(false);
 
   if(transfer.GetRecoil().isDecay) {
     decay.SetMotherDaugther(transfer.GetRecoil());
@@ -118,19 +117,9 @@ void Transfer(
   //   msB.LoadStoppingPower(reactConfig.recoilHeavyStoppingPowerFile);
   // }
 
-  //*############################################# Decay of particle-B
-  // Decay decay[2];
-  // if(reactConfig.isDecay) {
-  //   printf("\e[32m#################################### Decay\e[0m\n");
-  //   decay.SetMotherDaugther(reactConfig.recoilHeavyA,
-  //                           reactConfig.recoilHeavyZ,
-  //                           reactConfig.heavyDecayA,
-  //                           reactConfig.heavyDecayZ);
-  // }
-
   ExcitedEnergies exList = transfer.GetRectionConfig().exList[ID];
   
-  //############################################# Load DWBAroot for thetaCM distribution
+  //*############################################# Load DWBAroot for thetaCM distribution
   printf("\e[32m#################################### Load DWBA input : %s  \e[0m\n", ptolemyRoot.Data());
   TF1 * dist = NULL;
   TFile * distFile = new TFile(ptolemyRoot, "read");
@@ -178,7 +167,7 @@ void Transfer(
     }
   }
 
-  //############################################# build tree
+  //*############################################# build tree
   printf("\e[32m#################################### building Tree in %s\e[0m\n", saveFileName.Data());
   TFile * saveFile = new TFile(saveFileName, "recreate");
   TTree * tree = new TTree("tree", "tree");
@@ -192,6 +181,9 @@ void Transfer(
   if( distList != NULL ) distList->Write("DWBA", 1);
   if( dwbaExList != NULL ) dwbaExList->Write("DWBA_ExList", 1);
 
+  TMacro idMacro;
+  idMacro.AddLine(Form("%d", ID));
+  idMacro.Write("detGeoID");
   
   TMacro hitMeaning;
   hitMeaning.AddLine("======================= meaning of Hit\n"); 
@@ -421,7 +413,7 @@ void Transfer(
   double theta = reactConfig.beamTheta;
   double  phi = 0.0;
       
-  //====================================================== calculate event
+  //*====================================================== calculate event
   int count = 0;
   for( int i = 0; i < numEvent; i++){
     bool redoFlag = true;
@@ -497,7 +489,6 @@ void Transfer(
     int decayID = 0;
     if( recoil.isDecay){
       
-      //decayID = decay.CalDecay(PB, Ex, 0, phiCM + TMath::Pi()/2.); // decay to ground state
       decayID = decay.CalDecay(PB, Ex, 0, phiCM + TMath::Pi()/2); // decay to ground state
       if( decayID == 1 ){
         PB = decay.GetDaugther_D();
@@ -661,3 +652,58 @@ void Transfer(
   return;
 
 }
+
+
+int main (int argc, char *argv[]) {
+  
+  printf("=================================================================\n");
+  printf("==========     Simulate Transfer reaction in HELIOS    ==========\n");
+  printf("=================================================================\n");
+  
+  if(argc == 2 || argc > 7) { 
+    printf("Usage: ./Transfer [1] [2] [3] [4] [5] [6]\n");
+    printf("       default file name \n");
+    printf("   [1] reactionConfig.txt (input) reaction Setting \n");
+    printf("   [2] detectorGeo.txt    (input) detector Setting \n");
+    printf("   [3] ID                 (input) detector & reaction ID (default = 0 ) \n");
+    printf("   [4] DWBA.root          (input) thetaCM distribution from DWBA \n");
+    printf("   [5] transfer.root      (output) rootFile name for output \n");
+    printf("   [6] plot               (input) will it plot stuffs [1/0] \n");
+
+    printf("------------------------------------------------------\n");
+    return 0 ; 
+  }
+
+  std::string       basicConfig = "reactionConfig.txt";
+  std::string  heliosDetGeoFile = "detectorGeo.txt";
+  int                   ID = 0;
+  TString      ptolemyRoot = "DWBA.root"; // when no file, use isotropic distribution of thetaCM
+  TString     saveFileName = "transfer.root";
+  bool           isPlot = false;
+   
+  if( argc >= 2) basicConfig = argv[1];  
+  if( argc >= 3) heliosDetGeoFile = argv[2];  
+  if( argc >= 4) ID = atoi(argv[3]);  
+  if( argc >= 5) ptolemyRoot = argv[4];
+  if( argc >= 6) saveFileName = argv[5];
+  if( argc >= 7) isPlot = atoi(argv[7]);
+  
+  Transfer( basicConfig, heliosDetGeoFile, ID, ptolemyRoot, saveFileName);
+
+  //run Armory/Check_Simulation
+  if( isPlot ){
+    ifstream file_in;
+    file_in.open("../Cleopatra/Check_Simulation.C", ios::in);
+    if( file_in){
+      printf("---- running ../Cleopatra/Check_Simulation.C on %s \n", saveFileName.Data());
+      TString cmd;
+      cmd.Form("root -l '../Cleopatra/Check_Simulation.C(\"%s\")'", saveFileName.Data());
+      
+      system(cmd.Data());
+    }else{
+      printf("cannot find ../Cleopatra/Check_Simulation.C \n");
+    }
+  }
+  
+}
+

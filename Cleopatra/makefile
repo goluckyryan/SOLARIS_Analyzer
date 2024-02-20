@@ -1,6 +1,6 @@
 CC=g++
 
-ALL = Isotope InFileCreator ExtractXSec ExtractXSecFromText PlotTGraphTObjArray Cleopatra FindThetaCM Transfer SimAlpha
+ALL = Isotope InFileCreator ExtractXSec ExtractXSecFromText PlotTGraphTObjArray Cleopatra FindThetaCM SimTransfer SimAlpha
 
 all: $(ALL)
 
@@ -25,11 +25,11 @@ Cleopatra: Cleopatra.C
 FindThetaCM: FindThetaCM.C FindThetaCM.h ../Cleopatra/ClassTransfer.h ../Cleopatra/ClassHelios.h ../Cleopatra/ClassIsotope.h ../Cleopatra/constant.h
 	$(CC) FindThetaCM.C -o FindThetaCM `root-config --cflags --glibs`
 
-Transfer: Transfer.C Transfer.h ../Cleopatra/ClassTransfer.h ../Cleopatra/ClassHelios.h ../Cleopatra/ClassIsotope.h ../Cleopatra/constant.h 
-	$(CC) Transfer.C -o Transfer `root-config --cflags --glibs`
+SimTransfer: SimTransfer.C ../Cleopatra/ClassTransfer.h ../Cleopatra/ClassHelios.h ../Cleopatra/ClassIsotope.h ../Cleopatra/constant.h 
+	$(CC) SimTransfer.C -o SimTransfer `root-config --cflags --glibs`
 
-SimAlpha: alpha.C ../Cleopatra/ClassHelios.h 
-	$(CC) alpha.C -o SimAlpha `root-config --cflags --glibs`
+SimAlpha: SimAlpha.C ../Cleopatra/ClassHelios.h 
+	$(CC) SimAlpha.C -o SimAlpha `root-config --cflags --glibs`
 
 clean:
 	/bin/rm -f $(ALL)
