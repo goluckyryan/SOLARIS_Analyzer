@@ -77,6 +77,7 @@ class HELIOS{
 public:
 
   HELIOS();
+  HELIOS(std::string filename, unsigned short ID);
   ~HELIOS();
   
   void SetCoincidentWithRecoil(bool TorF){ this->isCoincidentWithRecoil = TorF;}
@@ -166,11 +167,25 @@ private:
   
   const double c = 299.792458; //mm/ns
 
+  void Clear();
 
 };
 
 HELIOS::HELIOS(){
-   
+  Clear();
+}
+
+HELIOS::HELIOS(std::string filename, unsigned short ID){
+  Clear();
+  SetDetectorGeometry(filename, ID);
+}
+
+HELIOS::~HELIOS(){
+  
+}
+
+void HELIOS::Clear(){
+
   orbitb.Clear();
   orbitB.Clear();
    
@@ -191,11 +206,6 @@ HELIOS::HELIOS(){
   overrideDetDistance = false;
   overrideFirstPos = false;
   isCoincidentWithRecoil = false;
-   
-}
-
-HELIOS::~HELIOS(){
-  
 }
 
 void HELIOS::OverrideMagneticField(double BField){ 

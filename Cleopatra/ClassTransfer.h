@@ -43,7 +43,7 @@ public:
   void SetExA(double Ex);
   void SetExB(double Ex);
 
-  TString GetReactionName();
+  TString GetReactionName() const;
   TString GetReactionName_Latex();
 
   ReactionConfig  GetRectionConfig() { return config;}
@@ -65,7 +65,7 @@ public:
   TLorentzVector GetPB() const {return PB;}
   
   void PrintFourVectors() const;
-  void PrintReaction() const;
+  void PrintReaction(bool withEx = true) const;
 
   double CalkCM(double ExB); //momentum at CM frame
   void CalReactionConstant();
@@ -252,7 +252,7 @@ void TransferReaction::SetReactionFromFile(string configFile, unsigned short ID)
 
 }
 
-TString TransferReaction::GetReactionName(){
+TString TransferReaction::GetReactionName() const{
   TString rName;
   rName.Form("%s(%s,%s)%s", nameA.c_str(), namea.c_str(), nameb.c_str(), nameB.c_str()); 
   return rName;
@@ -272,6 +272,7 @@ TString TransferReaction::format(TString name){
   }
   return "^{"+temp2+"}"+temp;
 }
+
 TString TransferReaction::GetReactionName_Latex(){
   TString rName;
   rName.Form("%s(%s,%s)%s @ %.2f MeV/u", format(nameA).Data(), format(namea).Data(), format(nameb).Data(), format(nameB).Data(), config.beamEnergy); 
@@ -327,8 +328,10 @@ void TransferReaction::PrintFourVectors() const {
 
 }
 
-void TransferReaction::PrintReaction() const {
+void TransferReaction::PrintReaction(bool withEx) const {
 
+  printf("=====================================================\n");  
+  printf("\e[1m\e[33m %s \e[0m\n", GetReactionName().Data());
   printf("=====================================================\n");  
   printf("------------------------------ Beam\n");
   printf("   beam : A = %3d, Z = %2d, Ex = %.2f MeV\n", config.beamA, config.beamZ, config.beamEx);
@@ -342,10 +345,12 @@ void TransferReaction::PrintReaction() const {
   printf("------------------------------ Recoil\n"); 
   printf("  light : A = %3d, Z = %2d \n", recoil.lightA, recoil.lightZ);
   printf("  heavy : A = %3d, Z = %2d \n", recoil.heavyA, recoil.heavyZ);
-  printf("=====================================================\n");  
-  exList.Print();
-  printf("=====================================================\n");  
+  printf("=====================================================\n"); 
 
+  if( withEx ) { 
+    exList.Print();
+    printf("=====================================================\n");  
+  }
 }
 
 void TransferReaction::Event(double thetaCM_rad, double phiCM_rad){
@@ -394,7 +399,6 @@ void TransferReaction::Event(double thetaCM_rad, double phiCM_rad){
   PB = PBc; PB.Boost(b);
    
 }
-
 
 std::pair<double, double> TransferReaction::CalExThetaCM(double e, double z, double Bfield, double perpDist){
 
