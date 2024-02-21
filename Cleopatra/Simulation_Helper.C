@@ -287,32 +287,32 @@ MyMainFrame::MyMainFrame(const TGWindow *p,UInt_t w,UInt_t h) {
    }
    
    
-   {//====================== Nuclear data API
-      TGGroupFrame * dataFrame = new TGGroupFrame(hframe1, "Nuclear Data", kVerticalFrame);
-      hframe1->AddFrame(dataFrame, new  TGLayoutHints(kLHintsCenterX, 5,5,3,4));
+  //  {//====================== Nuclear data API
+  //     TGGroupFrame * dataFrame = new TGGroupFrame(hframe1, "Nuclear Data", kVerticalFrame);
+  //     hframe1->AddFrame(dataFrame, new  TGLayoutHints(kLHintsCenterX, 5,5,3,4));
       
-      TGHorizontalFrame * hfData = new TGHorizontalFrame(dataFrame); dataFrame->AddFrame(hfData, new TGLayoutHints(kLHintsNormal, 0, 0, 5, 0));   
+  //     TGHorizontalFrame * hfData = new TGHorizontalFrame(dataFrame); dataFrame->AddFrame(hfData, new TGLayoutHints(kLHintsNormal, 0, 0, 5, 0));   
       
-      TGVerticalFrame * vfLabel = new TGVerticalFrame(hfData, 200); hfData->AddFrame(vfLabel );
-      TGVerticalFrame * vfTxt = new TGVerticalFrame(hfData); hfData->AddFrame(vfTxt);
+  //     TGVerticalFrame * vfLabel = new TGVerticalFrame(hfData, 200); hfData->AddFrame(vfLabel );
+  //     TGVerticalFrame * vfTxt = new TGVerticalFrame(hfData); hfData->AddFrame(vfTxt);
       
-      TGLayoutHints * haha = new TGLayoutHints(kLHintsRight | kLHintsCenterY, 5,5,5,2);
-      TGLayoutHints * kaka = new TGLayoutHints(kLHintsLeft  | kLHintsCenterY, 5,5,0,0);
+  //     TGLayoutHints * haha = new TGLayoutHints(kLHintsRight | kLHintsCenterY, 5,5,5,2);
+  //     TGLayoutHints * kaka = new TGLayoutHints(kLHintsLeft  | kLHintsCenterY, 5,5,0,0);
       
-      TGLabel * lb1 = new TGLabel(vfLabel, "Nuclear Name :"); vfLabel->AddFrame(lb1, haha);
-      TGLabel * lb2 = new TGLabel(vfLabel, "Max Ex [MeV] :"); vfLabel->AddFrame(lb2, haha);
+  //     TGLabel * lb1 = new TGLabel(vfLabel, "Nuclear Name :"); vfLabel->AddFrame(lb1, haha);
+  //     TGLabel * lb2 = new TGLabel(vfLabel, "Max Ex [MeV] :"); vfLabel->AddFrame(lb2, haha);
       
       
-      txtName = new TGTextEntry(vfTxt, "25F"); vfTxt->AddFrame(txtName, kaka); txtName->Resize(50, 20);    
-      txtEx = new TGTextEntry(vfTxt, "0"); vfTxt->AddFrame(txtEx, kaka); txtEx->Resize(50, 20);  
+  //     txtName = new TGTextEntry(vfTxt, "25F"); vfTxt->AddFrame(txtName, kaka); txtName->Resize(50, 20);    
+  //     txtEx = new TGTextEntry(vfTxt, "0"); vfTxt->AddFrame(txtEx, kaka); txtEx->Resize(50, 20);  
       
-      TGTextButton *GetData = new TGTextButton(dataFrame, "Get Data");
-      GetData->SetWidth(150);
-      GetData->SetHeight(40);
-      GetData->ChangeOptions( GetData->GetOptions() | kFixedSize );
-      GetData->Connect("Clicked()","MyMainFrame",this,"GetData()");
-      dataFrame->AddFrame(GetData,new  TGLayoutHints(kLHintsRight, 5,5,3,4));
-   }
+  //     TGTextButton *GetData = new TGTextButton(dataFrame, "Get Data");
+  //     GetData->SetWidth(150);
+  //     GetData->SetHeight(40);
+  //     GetData->ChangeOptions( GetData->GetOptions() | kFixedSize );
+  //     GetData->Connect("Clicked()","MyMainFrame",this,"GetData()");
+  //     dataFrame->AddFrame(GetData,new  TGLayoutHints(kLHintsRight, 5,5,3,4));
+  //  }
    
    TGTextButton *exit = new TGTextButton(hframe1,"Exit", "gApplication->Terminate(0)");
    exit->SetWidth(150);

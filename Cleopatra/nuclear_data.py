@@ -45,7 +45,7 @@ def FindSym(Z):
     return 'na'
 def Mass(A, Z):
   try :
-    BEA = float(haha['binding'][haha['z']==Z][haha['n']==(A-Z)])/1000
+    BEA = float(haha['binding'][haha['z']==Z][haha['n']==(A-Z)].iloc[0])/1000
     return (A-Z)*mn + Z*mp - A * BEA
   except :
     return -404
@@ -87,7 +87,7 @@ def Info(AZ):
   try :
     Z = temp['z'][0]
     N = temp['n'][0]
-    mass = Z*mp + N*mn - (Z+N)*temp['binding']/1000
+    mass = float(Z*mp + N*mn - (Z+N)*temp['binding'].iloc[0]/1000)
     halfLife = temp['half_life_sec'][0]
     print("  A : %3d, Z : %3d, N : %3d, Mass : %.4f MeV" % (Z+N, Z, N, mass))
     print("Jpi : %3s,    half-live : %s sec" % (temp['jp'][0], halfLife))
