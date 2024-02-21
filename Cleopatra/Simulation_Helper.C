@@ -5,6 +5,7 @@
 #include <TGButton.h>
 #include <TGLabel.h>
 #include <TGFrame.h>
+#include <TGComboBox.h>
 #include <TGTextEditor.h>
 #include <TGNumberEntry.h>
 #include <TGComboBox.h>
@@ -42,6 +43,8 @@ private:
   TGTextEdit * editor;
   
   TString fileName;
+
+  TGComboBox * detGeoSelector;
   
   TGLabel * fileLabel;
   TGLabel * statusLabel;
@@ -143,10 +146,18 @@ MyMainFrame::MyMainFrame(const TGWindow *p,UInt_t w,UInt_t h) {
       openRec->Connect("Clicked()","MyMainFrame",this, "OpenFile(=1)");
       simFrame->AddFrame(openRec,new  TGLayoutHints(kLHintsRight, 5,5,3,4));
 
+      detGeoSelector = new TGComboBox(simFrame);
+      detGeoSelector->SetHeight(20);
+      detGeoSelector->SetWidth(150);
+      detGeoSelector->AddEntry("Array 1", 0);
+      detGeoSelector->AddEntry("Array 2", 1);
+      detGeoSelector->Select(0);
+      simFrame->AddFrame(detGeoSelector, new TGLayoutHints(kLHintsRight, 5, 5, 3, 4));
+
       withDWBA = new TGCheckButton(simFrame, "Sim with DWBA\n+DWBA.root\n+DWBA.Ex.txt");
       withDWBA->SetWidth(140);
       withDWBA->ChangeOptions(kFixedSize );
-      simFrame->AddFrame(withDWBA, new  TGLayoutHints(kLHintsLeft, 5,5,3,4));
+      simFrame->AddFrame(withDWBA, new  TGLayoutHints(kLHintsRight, 5,5,3,4));
 
       TGTextButton *Sim = new TGTextButton(simFrame,"Simulate");
       Sim->SetWidth(150);
@@ -485,7 +496,7 @@ void MyMainFrame::Command(int ID) {
 
     statusLabel->SetText("Running simulation.......");
     
-    Transfer( basicConfig, heliosDetGeoFile, 0, ptolemyRoot, saveFileName);
+    Transfer( basicConfig, heliosDetGeoFile, detGeoSelector->GetSelected(), ptolemyRoot, saveFileName);
     
     statusLabel->SetText("Plotting simulation.......");
 

@@ -178,7 +178,7 @@ void Check_Simulation(TString filename = "transfer.root",
 
   }else{
 
-    numEx = exListTxt->GetListOfLines()->GetSize();
+    numEx = exListTxt->GetListOfLines()->GetSize()-1;
     for( int i = 0 ;  i < numEx ; i++){
       double ex = atof(exListTxt->GetListOfLines()->At(i)->GetName());
       if( ex < ExRange[0] ) ExRange[0] = ex;
@@ -187,6 +187,8 @@ void Check_Simulation(TString filename = "transfer.root",
     }
 
   }
+  
+  exList.Print();
 
   double dExRange = ExRange[1] - ExRange[0];
   ExRange[0] = ExRange[0] - dExRange * 0.1;
