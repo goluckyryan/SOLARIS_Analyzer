@@ -105,8 +105,8 @@ void Check_Simulation(TString filename = "transfer.root",
   TFile * file = new TFile(filename, "read");
   TTree * tree = (TTree*) file->Get("tree");
   
-  TObjArray * fxList = (TObjArray *) file->FindObjectAny("EZCure");
-  TObjArray * txList = (TObjArray *) file->FindObjectAny("EZ_thetaCM");
+  TObjArray * fxList = (TObjArray *) file->FindObjectAny("EZCurve");
+  TObjArray * txList = (TObjArray *) file->FindObjectAny("thetaCM_Z");
 
   gStyle->SetOptStat("");
   gStyle->SetStatY(0.9);

@@ -34,44 +34,42 @@
 TString isoFileName;
 
 class MyMainFrame {
-   RQ_OBJECT("MyMainFrame")
+  RQ_OBJECT("MyMainFrame")
+
 private:
-   TGMainFrame *fMain;
+  TGMainFrame *fMain;
+
+  TGTextEdit * editor;
   
-   TGTextEdit * editor;
-   
-   TString fileName;
-   
-   TGLabel * fileLabel;
-   TGLabel * statusLabel;
-   
-   TGNumberEntry * angMin;
-   TGNumberEntry * angMax;
-   TGNumberEntry * angStep;
-   
-   TGCheckButton * withDWBA;
-   
-   TGCheckButton * isInFile;
-   TGCheckButton * isRun;
-   TGCheckButton * isExtract;
-   TGCheckButton * isPlot;
-   
-   TGComboBox    * extractFlag;
-   
-   TGTextEntry * txtName ;    
-   TGTextEntry * txtEx ; 
+  TString fileName;
+  
+  TGLabel * fileLabel;
+  TGLabel * statusLabel;
+  
+  TGNumberEntry * angMin;
+  TGNumberEntry * angMax;
+  TGNumberEntry * angStep;
+  
+  TGCheckButton * withDWBA;
+  
+  TGCheckButton * isInFile;
+  TGCheckButton * isRun;
+  TGCheckButton * isExtract;
+  TGCheckButton * isPlot;
+  
+  TGComboBox    * extractFlag;
+  
+  TGTextEntry * txtName ;    
+  TGTextEntry * txtEx ; 
 
-   bool isUse2ndArray;
-   
 public:
-   MyMainFrame(const TGWindow *p,UInt_t w,UInt_t h);
-   virtual ~MyMainFrame();
-   void Command(int);
-   void OpenFile(int);
-   void GetData();
-   bool IsFileExist(TString filename);
+  MyMainFrame(const TGWindow *p,UInt_t w,UInt_t h);
+  virtual ~MyMainFrame();
+  void Command(int);
+  void OpenFile(int);
+  void GetData();
+  bool IsFileExist(TString filename);
 
-   void CheckIsUse2ndArray();
 };
 
 
@@ -144,13 +142,6 @@ MyMainFrame::MyMainFrame(const TGWindow *p,UInt_t w,UInt_t h) {
       openRec->ChangeOptions( openRec->GetOptions() | kFixedSize );
       openRec->Connect("Clicked()","MyMainFrame",this, "OpenFile(=1)");
       simFrame->AddFrame(openRec,new  TGLayoutHints(kLHintsRight, 5,5,3,4));
-      
-      TGTextButton *openEx = new TGTextButton(simFrame, "Ex List");
-      openEx->SetWidth(150);
-      openEx->SetHeight(20);
-      openEx->ChangeOptions( openEx->GetOptions() | kFixedSize );
-      openEx->Connect("Clicked()","MyMainFrame",this, "OpenFile(=2)");
-      simFrame->AddFrame(openEx,new  TGLayoutHints(kLHintsRight, 5,5,3,4));
 
       withDWBA = new TGCheckButton(simFrame, "Sim with DWBA\n+DWBA.root\n+DWBA.Ex.txt");
       withDWBA->SetWidth(140);
@@ -355,13 +346,6 @@ bool MyMainFrame::IsFileExist(TString filename){
   return file.is_open();
 }
 
-void MyMainFrame::CheckIsUse2ndArray(){
-
-  DetGeo detGeo;
-  detGeo.LoadDetectorGeo("../working/detectorGeo.txt", false);
-  isUse2ndArray = detGeo.use2ndArray;
-
-}
 
 void MyMainFrame::OpenFile(int ID){
   
@@ -371,22 +355,12 @@ void MyMainFrame::OpenFile(int ID){
 
   if ( ID == 0 ) fileName = "../working/detectorGeo.txt";
 
-  CheckIsUse2ndArray();
-  if( isUse2ndArray){
-    if ( ID == 1 ) fileName = "../working/reactionConfig2.txt";
-    if ( ID == 2 ) fileName = "../working/Ex2.txt";
-    if ( ID == 3 ) fileName = "../working/DWBA2";
-    if ( ID == 5 ) fileName = "../working/DWBA2.in";
-    if ( ID == 6 ) fileName = "../working/DWBA2.out";
-    if ( ID == 7 ) fileName = "../working/DWBA2.Xsec.txt";    
-  }else{
-    if ( ID == 1 ) fileName = "../working/reactionConfig.txt";
-    if ( ID == 2 ) fileName = "../working/Ex.txt";
-    if ( ID == 3 ) fileName = "../working/DWBA";
-    if ( ID == 5 ) fileName = "../working/DWBA.in";
-    if ( ID == 6 ) fileName = "../working/DWBA.out";
-    if ( ID == 7 ) fileName = "../working/DWBA.Xsec.txt";
-  }
+  if ( ID == 1 ) fileName = "../working/reactionConfig.txt";
+  if ( ID == 3 ) fileName = "../working/DWBA";
+  if ( ID == 5 ) fileName = "../working/DWBA.in";
+  if ( ID == 6 ) fileName = "../working/DWBA.out";
+  if ( ID == 7 ) fileName = "../working/DWBA.Xsec.txt";    
+
   if ( ID == 4 ) fileName = "../working/Check_Simulation_Config.txt";
   if ( ID == 8 ) fileName = isoFileName;
   
@@ -440,8 +414,6 @@ void MyMainFrame::Command(int ID) {
 
   editor->SaveFile(fileName);
 
-  CheckIsUse2ndArray();
-  
   if( ID == 0 ){
     
     if( isInFile->GetState()) {
@@ -495,59 +467,44 @@ void MyMainFrame::Command(int ID) {
 
     string       basicConfig = "reactionConfig.txt";
     string  heliosDetGeoFile = "detectorGeo.txt";
-    string    excitationFile = "Ex.txt"; //when no file, only ground state
     TString      ptolemyRoot = ""; // when no file, use isotropic distribution of thetaCM
     TString     saveFileName = "transfer.root";
-    TString         filename = "reaction.dat"; //when no file, no output    
     
     if( withDWBA->GetState() ) {
-       ptolemyRoot = "DWBA1.root";
-       excitationFile = "DWBA1.Ex.txt";
+       ptolemyRoot = "DWBA.root";
     }
 
-    if( isUse2ndArray ){
-           basicConfig = "reactionConfig2.txt";
-      heliosDetGeoFile = "detectorGeo.txt";
-        excitationFile = "Ex2.txt"; //when no file, only ground state
-           ptolemyRoot = ""; // when no file, use isotropic distribution of thetaCM
-          saveFileName = "transfer2.root";
-              filename = "reaction2.dat"; //when no file, no output    
-      
-      if( withDWBA->GetState() ) {
-        ptolemyRoot = "DWBA2.root";
-        excitationFile = "DWBA2.Ex.txt";
-      }
+    basicConfig = "reactionConfig.txt";
+    heliosDetGeoFile = "detectorGeo.txt";
+    ptolemyRoot = ""; // when no file, use isotropic distribution of thetaCM
+    saveFileName = "transfer.root";
+    
+    if( withDWBA->GetState() ) {
+      ptolemyRoot = "DWBA.root";
     }
 
     statusLabel->SetText("Running simulation.......");
     
-    Transfer( basicConfig, heliosDetGeoFile, excitationFile, ptolemyRoot, saveFileName,  filename);
+    Transfer( basicConfig, heliosDetGeoFile, 0, ptolemyRoot, saveFileName);
     
     statusLabel->SetText("Plotting simulation.......");
 
-    if( isUse2ndArray ){
-      Check_Simulation("transfer2.root");
-    }else{
-      Check_Simulation("transfer1.root");
-    }
+    Check_Simulation("transfer.root");
     
     statusLabel->SetText("Plotted Simulation result");
   }
+
   if( ID == 2 ){
-    if( isUse2ndArray ){
-      Check_Simulation("transfer2.root");
-    }else{
-      Check_Simulation("transfer.root");
-    }
+    Check_Simulation("transfer.root");
     statusLabel->SetText(" Run Simulation first.");
   }
   
   if( ID == 3 ){
-     if( fileName != "" ){
-        statusLabel->SetText(fileName + "   saved.");
-      }else{
-         statusLabel->SetText("cannot save HELP page.");
-      }
+    if( fileName != "" ){
+      statusLabel->SetText(fileName + "   saved.");
+    }else{
+      statusLabel->SetText("cannot save HELP page.");
+    }
   }
   
   if( ID == 4 ){
