@@ -135,9 +135,9 @@ void Transfer(
     dwbaExList = (TMacro *) distFile->FindObjectAny("ExList");   
     int numEx = dwbaExList->GetListOfLines()->GetSize() - 1 ;
     for(int i = 1; i <= numEx ; i++){
-      string temp = dwbaExList->GetListOfLines()->At(i)->GetName();
+      std::string temp = dwbaExList->GetListOfLines()->At(i)->GetName();
       if( temp[0] == '/' ) continue;
-      vector<string> tempStr = AnalysisLib::SplitStr(temp, " ");
+      std::vector<std::string> tempStr = AnalysisLib::SplitStr(temp, " ");
       exList.Add( atof(tempStr[0].c_str()), atof(tempStr[1].c_str()), 1.0, 0.00);
     }
 
@@ -330,7 +330,7 @@ void Transfer(
   //--- cal modified f
   TObjArray * fxList = new TObjArray();
   TGraph ** fx = new TGraph*[numEx];
-  vector<double> px, py;
+  std::vector<double> px, py;
   int countfx = 0;
   for( int j = 0 ; j < numEx; j++){
     double a = helios.GetDetRadius();
@@ -692,8 +692,8 @@ int main (int argc, char *argv[]) {
 
   //run Armory/Check_Simulation
   if( isPlot ){
-    ifstream file_in;
-    file_in.open("../Cleopatra/Check_Simulation.C", ios::in);
+    std::ifstream file_in;
+    file_in.open("../Cleopatra/Check_Simulation.C", std::ios::in);
     if( file_in){
       printf("---- running ../Cleopatra/Check_Simulation.C on %s \n", saveFileName.Data());
       TString cmd;

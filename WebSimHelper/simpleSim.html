@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>DWBA and Monte Carlo Simulation</title>
+  <link rel="icon" type="image/x-icon" href="logos/SOLARIS_favicon.png">
+</head>
+<style>
+ body {
+  font-family: Arial, Helvetica, sans-serif;
+  background: #6DB33E;
+ }
+</style>
+<body>
+
+<h1>DWBA and Monte Carlo Simulation</h1>
+
+<button onclick="GetClipBoard()">Paste Settings from clipboard</button>
+
+<form action = "simpleInput.py" method = "POST" target = "uploaded">
+
+  <h3>Reaction: </h3>
+
+  <table>
+    <tr>
+      <td>Beam Energy</td>
+      <td><input type = "text" name = "KEA" size="6" value="10" /></td>
+      <td style="text-align:left">MeV/u</td>
+    </tr>
+    <tr>
+      <td>Beam </td>
+      <td><input type = "text" name = "beam_AZ" size="6" value="16O"/></td>
+      <td style="text-align:right">J<sup>&pi;</sup></td>
+      <td><input type = "text" id="beam_Jpi" name = "beam_Jpi" size="5" value="0+"/><td>
+      <td style="text-align:right">Ex:</td>
+      <td><input type = "text" name = "beam_Ex" size="6" value="0.00"/></td>
+      <td style="text-align:left">MeV</td>
+    </tr>
+    <tr>
+      <td>Target</td>
+      <td><input type = "text" name = "target_AZ" size="6" value="d"/></td>
+    </tr>
+    <tr>
+      <td>Light recoil</td>
+      <td><input type = "text" name = "lRecoil_AZ" size="6" value="p"/></td>
+    </tr>
+    <tr>
+      <td> Number of events </td>
+      <td><input type = "text" name = "numEvent" size="6" value="100000"/></td>
+    </tr>
+  </table>
+  
+  <h3>Detector:</h3>
+  
+    <table>
+      <tr>
+        <input type="radio" name="SSType" value="HELIOS"/>HELIOS
+        <br>
+        <input type="radio" name="SSType" value="SOLARIS" checked="checked"/>SOLARIS
+        <br>
+        <input type="radio" name="SSType" value="ISS"/>ISS
+      </tr>
+      <tr>
+        <td>B-field </td>
+        <td><input type = "text" name = "BField" size="5" value="-2.5"/></td>
+        <td style="text-align:left">T (minus sign = field point to upstream)</td>
+      </tr>
+      <tr>
+        <td>Array Pos.</td>
+        <td><input type = "text" name = "posArray" size="5" value="-100"/></td>
+        <td style="text-align:left">mm (negative for upstream)</td>
+      </tr>
+      <tr>
+        <td>Recoil Pos.</td>
+        <td><input type = "text" name = "posRecoil" size="5" value="500"/></td>
+        <td style="text-align:left">mm (negative for upstream)</td>
+      </tr>
+    </table>
+
+  <h3>DWBA and E<sub>x</sub> List:</h3>
+
+  <p><b  style="color:red;">For 2-nucleon transfer</b>, <b>Orbital</b> take the form NL=X, where N is number of node, X is momentum number. n and L are related by &Sigma;<sub>i</sub> (2n<sub>i</sub>+l<sub>i</sub>) = 2N + X + 2n + l, where n<sub>i</sub> and l<sub>i</sub> are the principle number and orbital angular momentum of the each transfered nucleon, and n and l are the internal quanta of the 2-nucleon. e.g. (t,p) reaction to 0f orbtial, the left-hand side would be n<sub>i</sub> = 0 and l<sub>i</sub> = 3 and the sum is 3+3 = 6 = 2N + X + 2n+l. Assume n = l = 0, we have 6 = 2N+L. Thus, 3L=0, 2L=2,1L=4, 0L=6. </p>
+
+  TODO: guess the orbital
+  <br>
+  <input type="checkbox" id="pos" onclick="checkParity()" checked/>Positive parity</td>
+  <input type="checkbox" id="neg" onclick="checkParity()" checked/>Negative parity</td>
+  <input type="checkbox" id="unk" onclick="checkParity()" checked/>Unknown parity</td>
+  <br>
+  <button type="button" onclick="addStates()">Add known states</button>
+  Isotope: <input type="text" id="AZ" size="5" value="17O"/>
+  Max Ex: <input type="text" id="maxEx" size="5" value="5"/>MeV
+
+  <p id='waiting'></p>
+
+  <table id="ExTable">
+    <tr>
+      <td><b> E<sub>x</sub> [MeV] </b></td>
+      <td><b> &nbsp;&nbsp;&nbsp;J<sup>&#960;</sup></b></td>
+      <td><b> Orbital </b></td>
+    </tr>
+    </tr>
+     <td><input type="text" name="Ex" size="5" value="0"/></td>
+     <td><input type="text" name="Jpi" size="5" value="3/2+"/></td>
+     <td><input type="text" name="Orb" size="6" value="0d3/2"/></td>
+     <td><button type="button" onclick="addRow(this)">Insert Ex</button></td>
+     <td><button type="button" onclick="deleteRow(this)">Remove Ex</button></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td><button type="button" onclick="copyEx()">Copy Ex</button></td>
+      <td><button type="button" onclick="pasteEx()">&nbsp; Paste Ex &nbsp;</button></td>
+    </tr>
+  </table>
+
+  <p></p>
+  <input type="checkbox" name="DWBA" value="On"/>Cal. DWBA
+  <!--<input type="checkbox" name="onlyDWBA" value="On"/>ONLY Cal. DWBA (tetsing)-->
+
+  <table>
+    <tr>
+      <td>Incoming Channel</td>
+      <td>
+        <select name="op1">
+          <option value="A" selected>D | An & Cai (2006) E < 183, 12 < A < 238</option>
+          <option value="H">D | Han, Shi, & Shen (2006) E < 200, 12 < A < 209</option>
+          <option value="B">D | Bojowald et al. (1988) 50 < E < 80, 27 < A < 208</option>
+          <option value="D">D | Daehnick, Childs, Vrcelj (1980) 11.8 < E < 80, 27 < A < 238 (REL) </option>
+          <option value="C">D | Daehnick, Childs, Vrcelj (1980) 11.8 < E < 80, 27 < A < 238 (NON-REL) </option>
+          <option value="L">D | Lohr and Haeberli (1974) 9 < E < 13, 40 < A  </option>
+          <option value="Q">D | Perey and Perey (1963) 12 < E < 25, 40 < A  </option>
+          <option value="Z">D | Zhang, Pang, Lou (2016) 5 < E < 170, A < 18, spe 6-7Li  </option>
+          <option value="K">P | Koning & Delaroche (2009) E < 200, 24 < A < 209 | Iso.Dep.</option>
+          <option value="V">P | Varner et al. (1991) 16 < E < 65, 4 < A < 209</option>
+          <option value="M">P | Menet et al. (1971) 30 < E < 60, 40 < A </option>
+          <option value="G">P | Becchetti and Greenlees (1969) E < 50, 40 < A </option>
+          <option value="P">P | Perey (1963) E < 20, 30 < A < 100  </option>
+          <option value="x">A=3 | Xu, Guo, Han, & Shen (2011) E < 250, 20 < A < 209 </option>
+          <option value="l">A=3 | Liang, Li, & Cai (2009) E < 270, All masses </option>
+          <option value="p">A=3 | Pang et al. (2009) all E, all masses, Iso. Dep.  </option>
+          <option value="c">A=3 | Li, Liang, Cai (2007), E < 40, 48 < A < 232, Tritons </option>
+          <option value="t">A=3 | Trost et al. (1987) 10 < E < 220, 10 < A < 208 </option>
+          <option value="h">A=3 | Hyakutake et al. (1980) 90 < E < 120, About 58 < A < 92 </option>
+          <option value="b">A=3 | Becchetti and Greenlees (1971), E < 40, 40 < A, Iso. Dep. </option>
+          <option value="s">A=4 | Su & Han (2015) E < 398, 20 < A < 209 </option>
+          <option value="a">A=4 | Avrigeanu et al. (2009) </option>
+          <option value="f">A=4 | Bassani and Picard (1969) 24 < E < 31, A = 90 </option>
+        </select> 
+      <td>
+    </tr>
+    <tr>
+      <td>Outgoing Channel</td>
+      <td>
+        <select name="op2">
+          <option value="A">D | An & Cai (2006) E < 183, 12 < A < 238</option>
+          <option value="H">D | Han, Shi, & Shen (2006) E < 200, 12 < A < 209</option>
+          <option value="B">D | Bojowald et al. (1988) 50 < E < 80, 27 < A < 208</option>
+          <option value="D">D | Daehnick, Childs, Vrcelj (1980) 11.8 < E < 80, 27 < A < 238 (REL) </option>
+          <option value="C">D | Daehnick, Childs, Vrcelj (1980) 11.8 < E < 80, 27 < A < 238 (NON-REL) </option>
+          <option value="L">D | Lohr and Haeberli (1974) 9 < E < 13, 40 < A  </option>
+          <option value="Q">D | Perey and Perey (1963) 12 < E < 25, 40 < A  </option>
+          <option value="Z">D | Zhang, Pang, Lou (2016) 5 < E < 170, A < 18, spe 6-7Li  </option>
+          <option value="K" selected>P | Koning & Delaroche (2009) E < 200, 24 < A < 209, Iso.Dep.</option>
+          <option value="V">P | Varner et al. (1991) 16 < E < 65, 4 < A < 209</option>
+          <option value="M">P | Menet et al. (1971) 30 < E < 60, 40 < A </option>
+          <option value="G">P | Becchetti and Greenlees (1969) E < 50, 40 < A </option>
+          <option value="P">P | Perey (1963) E < 20, 30 < A < 100  </option>
+          <option value="x">A=3 | Xu, Guo, Han, & Shen (2011) E < 250, 20 < A < 209 </option>
+          <option value="l">A=3 | Liang, Li, & Cai (2009) E < 270, All masses </option>
+          <option value="p">A=3 | Pang et al. (2009) all E | all masses, Iso. Dep.  </option>
+          <option value="c">A=3 | Li, Liang, Cai (2007), E < 40, 48 < A < 232, Tritons </option>
+          <option value="t">A=3 | Trost et al. (1987) 10 < E < 220, 10 < A < 208 </option>
+          <option value="h">A=3 | Hyakutake et al. (1980) 90 < E < 120, About 58 < A < 92 </option>
+          <option value="b">A=3 | Becchetti and Greenlees (1971), E < 40, 40 < A, Iso. Dep. </option>
+          <option value="s">A=4 | Su & Han (2015) E < 398, 20 < A < 209 </option>
+          <option value="a">A=4 | Avrigeanu et al. (2009) </option>
+          <option value="f">A=4 | Bassani and Picard (1969) 24 < E < 31, A = 90 </option>
+        </select> 
+      <td>
+    </tr>
+  </table>
+
+  <table>
+    <tr>
+      <input type="checkbox" name="onlyDWBA" value="On"/>Only DWBA and Don't Sim. Angle range (for only DWBA)
+    </tr>
+    <tr>
+      <td>Min [deg]: </td>
+      <td><input type = "text" name = "minAng" size="6" value="0" /></td>
+      <td>Max [deg]: </td>
+      <td><input type = "text" name = "maxAng" size="6" value="90"/></td>
+    </tr>
+  </table>
+
+  <h3> Plot config:</h3>
+
+  <table>
+    <tr>
+      <td><input type="checkbox" name="plot" value="pEZ" checked/>E vs Z</td>
+      <td><input type="checkbox" name="plot" value="pExCal" checked/>Ex (cal.)</td>
+      <td><input type="checkbox" name="plot" value="pThetaCM" checked/>ThetaCM</td>
+    </tr>
+    <tr>
+      <td><input type="checkbox" name="plot" value="pThetaCM_Z" checked/>ThetaCM vs Z</td>
+      <td><input type="checkbox" name="plot" value="pRecoilXY" checked/>Recoil X vs Y</td>
+      <td><input type="checkbox" name="plot" value="pRecoilRThetaCM"/>Recoil-R vs ThetaCM</td>
+    </tr>
+    <tr>
+      <td><input type="checkbox" name="plot" value="pRecoilRZ"/>Recoil R vs Z</td>
+      <td><input type="checkbox" name="plot" value="pTDiffZ"/>Time diff vs Z</td>
+      <td><input type="checkbox" name="plot" value="pArrayXY"/>Array X vs Y</td>
+    </tr>
+  </table>
+
+  <p></p>
+  
+  <input type="checkbox" name="gate" value="hit==1" checked/>Array Hit<br>
+  <input type="checkbox" name="gate" value="loop<=1" checked/>Loop = 1<br>
+  <input type="checkbox" name="gate" value="thetaCM>10" checked/> ThetaCM > 10 deg<br>
+
+  <p></p>
+
+  <input type = "submit" value = "Run DWBA and Simulation" style="width:200px;height:60px;" formtarget="_blank"/>
+</form>
+
+<hr style="height:4px;background-color:#F7CF3C; border-style:none; border-width:none">
+
+<h2>Advanced control</h2>
+
+    <!-- ////////////////////////////////////////// -->
+    <table>
+      <tr> 
+        <td>Download Sample files:</td>
+        <td style="text-align:left">
+          <a href="sample_files/reactionConfig_sample.txt" download="reactionConfig.txt">Reaction File</a>
+        </td>
+      </tr>
+      <tr> 
+        <td></td>
+        <td style="text-align:left">
+          <a href="sample_files/detectorGeo_SOLARIS_sample.txt" download="detectorGeo_SOLAIRS.txt">DetectorGeo (SOLARIS) File</a>
+        </td>
+      </tr>
+      <tr> 
+        <td></td>
+        <td style="text-align:left">
+          <a href="sample_files/detectorGeo_HELIOS_sample.txt" download="detectorGeo_HELIOS.txt">DetectorGeo (HELIOS) File</a>
+        </td>
+      </tr>
+      <tr>
+        <td></td>
+        <td style="text-align:left">
+          <a href="sample_files/Ex_sample.txt" download="Ex.txt">Ex File</a>
+        </td>
+      </tr>
+      <tr>
+        <td></td>
+        <td style="text-align:left">
+          <a href="sample_files/DWBA_sample.txt" download="DWBA">DWBA File</a>
+        </td>
+      </tr>
+      <tr>
+        <td></td>
+        <td style="text-align:left">
+          <a href="sample_files/PlotConfig_sample.txt" download="PlotConfig.txt">Plot Config File</a>
+        </td>
+      </tr>
+    </table>
+    
+    <p></p><!-- ////////////////////////////////////////// -->
+    <form enctype = "multipart/form-data" action = "Simulation_gateway.py" method = "post" target="uploaded">
+      <table>
+        <tr> 
+          <td style="text-align:right" width="200">Reaction File </td> 
+          <td><input type = "file" name = "filename1" /> </td>
+        </tr>
+        <tr> 
+          <td style="text-align:right" width="200">DetectorGeo File </th>
+          <td><input type = "file" name = "filename2" /> </td>
+        </tr>
+        <tr> 
+          <td style="text-align:right" width="200">Ex File </th>
+          <td><input type = "file" name = "filename3" /> </td>
+        </tr>
+        <tr> 
+          <td style="text-align:right" width="200">DWBA File ^ </th>
+          <td><input type = "file" name = "filename4" /> </td>
+        </tr>
+        <tr> 
+          <td style="text-align:right" width="200">*.in File ^ </th>
+          <td><input type = "file" name = "filename4a" /> </td>
+        </tr>
+        <tr> 
+          <td style="text-align:right" width="200">Plot Config File # </th>
+          <td><input type = "file" name = "filename5" /> </td>
+        </tr>
+        <tr>
+          <td>^ can be alone <br># can be omitted</th>
+          <td><input type = "submit" value = "Upload & Run Simulation" style="height:50px; width:200px" formtarget="_blank"/> </td>
+        </tr>
+       </table>
+    </form>
+    
+<ul>
+  <li>File name can be customized.</li>
+  <li>For kinematic simulation, only the reactionConfig.txt, detectorGeo.txt, and Ex.txt are needed.</li>
+  <li>For DWBA calculation, only the DWBA file is needed.</li>
+  <li>If reactionConfig.txt, detectorGeo.txt, and DWBA file are presented, will do DWBA and use the result for simulation.</li>
+  <li>When the DWBA file is presented, the kinematic simulation will use the DWBA result and also the excitation energy. i.e. the user provide Ex.txt will not be used.</li>
+  <li>User can use a customs in File for DWBA calculation. Once the in File exist, it ignores the DWBA file.</li>
+  <li>To change DWBA angular range, download the in file, edit it. But becareful, DWBA for kinematic simulation must be 0 -180 deg.</li>
+</ul>
+
+<hr style="height:4px;background-color:#F7CF3C; border-style:none; border-width:none">
+The source code for calculation can be found in <a href="https://github.com/calemhoffman/digios/tree/master/analysis/Cleopatra/Transfer.C" target="_blank">Here</a>
+
+</body>
+
+
+<script>
+
+function GetClipBoard(){
+  navigator.clipboard.readText().then(
+    function(result){
+      //console.log(result);
+      if( result.substring(0,16) == "====HELIOSMATICS" ){
+        let haha = result.substring(17).split(', ');
+        console.log(haha);
+        //alert(haha);
+        document.getElementsByName('beam_AZ')[0].value = haha[0];
+        document.getElementsByName('beam_Ex')[0].value = haha[1];
+        document.getElementsByName('target_AZ')[0].value = haha[2];
+        document.getElementsByName('lRecoil_AZ')[0].value = haha[3];
+        document.getElementsByName('KEA')[0].value = haha[5];
+        document.getElementsByName('BField')[0].value = haha[4];
+        document.getElementsByName('posArray')[0].value = haha[6];
+        document.getElementsByName('posRecoil')[0].value = haha[7];
+        
+        document.getElementById('AZ').value = haha[8];
+        
+      }
+    }
+  );
+
+}
+
+function copyEx(){
+  let inputs = document.getElementsByTagName("input");
+  let copyText = "====ExList|";
+  for(let i = 0; i < inputs.length; i++){
+    if( inputs[i].type == 'text'){
+      if( inputs[i].name == "Ex" || inputs[i].name == "Jpi" || inputs[i].name == "Orb" ){ 
+        //if( inputs[i].value == "" ) continue;
+        copyText += inputs[i].value;
+        if(inputs[i].name == "Orb") {
+          copyText += "|";
+        }else{
+          copyText += ",";
+        }
+      }
+    }
+  }
+  //console.log(copyText);
+
+  navigator.clipboard.writeText(copyText).then(
+    () => {
+       alert('Ex are copied to clipboard.\n' + copyText);
+    }).catch(
+    () =>{
+       alert('Cannot copy.');
+    });
+}
+
+function pasteEx(){
+  navigator.clipboard.readText().then(
+    function(result){
+      //console.log(result);
+      if( result.substring(0,10) == "====ExList" ){
+        let haha = result.substring(11).split('|');
+        //console.log(haha);
+        let table = document.getElementById("ExTable"); 
+        let nRow = table.rows.length;
+        //console.log(nRow);
+        //remove all Row except the 1st
+        for( let i = nRow; i > 2; i--){
+          table.deleteRow(i - 2);
+        }
+        
+        for( let i = 0; i < haha.length; i++){
+          if( haha[i] == "" ) continue;
+          
+          let kaka = haha[i].split(',');
+          //console.log(kaka);
+          
+          nRow = table.rows.length;
+          let row = table.insertRow(nRow-1);
+          row.innerHTML = '<td><input type="text" name="Ex"  size="5" value="' + kaka[0] + '"/></td> \
+                           <td><input type="text" name="Jpi" size="5" value="' + kaka[1] + '"/></td> \
+                           <td><input type="text" name="Orb" size="6" value="' + kaka[2] + '"/></td>\
+                           <td><button type="button" onclick="addRow(this)">Insert Ex</button></td> \
+                           <td><button type="button" onclick="deleteRow(this)">Remove Ex</button></td>';
+        }
+        
+      }else{
+        alert("Setting not fond in clipboard.");
+      }
+    }
+  );
+}
+
+let parity;
+function checkParity(){
+  parity = 0;
+  if( document.getElementById('pos').checked == true ) parity += 1;
+  if( document.getElementById('neg').checked == true ) parity += 2;
+  if( document.getElementById('unk').checked == true ) parity += 4;
+  //console.log(parity);
+}
+
+checkParity();
+
+function addStates(){
+  let AZ = document.getElementById('AZ').value;
+  let maxEx = document.getElementById('maxEx').value;
+  let beamJpi = document.getElementById('beam_Jpi').value;
+    
+  let str = 'get_nuclear_data.py?isotopes_name=' + AZ + '&maxEx='+maxEx;
+  
+  let table = document.getElementById("ExTable"); 
+  
+  const client = new XMLHttpRequest();
+  
+  client.addEventListener('loadstart', 
+    function(e){
+      document.getElementById('waiting').innerHTML = "wait....retrieving data from IAEA..";
+    }
+  );
+  
+  client.addEventListener('error', 
+    function(e){
+      document.getElementById('waiting').innerHTML = "Error.";
+    }
+  );
+  
+  client.addEventListener('loadend',  
+    function(e){
+      let result = client.responseText.split(/\r?\n/);
+      
+      //clear table
+      let nRow = table.rows.length;
+      for( let j = nRow; j > 2; j--){
+        table.deleteRow(j - 2);
+      }
+      
+      document.getElementById('waiting').innerHTML = "";
+      let count = 0;      
+
+      for( let i = 0; i < result.length; i++){
+        if( i < 17 ) continue;
+        if( result[i] == "</table>" ) break;
+        
+        let kaka = result[i].split(' ').filter(n => n);
+        
+        let ex  = parseFloat(kaka[3])/1000.;
+        let jpi = kaka[7]?.replace('(', '')?.replace(')', '');
+        console.log(ex + ", " + jpi);
+        
+        //check parity
+        if( (((parity >> 2) & 1) != 1) && kaka[7].slice(-1) == ")" ) continue;
+        if( (((parity >> 2) & 1) != 1) && jpi == "," ) continue;
+        if( (((parity) & 1) != 1) && jpi.slice(-1) == "+" ) continue;
+        if( (((parity >> 1) & 1) != 1) && jpi.slice(-1) == "-" ) continue;
+        
+        count ++;
+        nRow = table.rows.length;
+        let row = table.insertRow(nRow-1);
+        row.innerHTML = '<td><input type="text" name="Ex"  size="5" value="' + ex.toFixed(3) + '"/></td> \
+                         <td><input type="text" name="Jpi" size="5" value="' + jpi + '"/></td> \
+                         <td><input type="text" name="Orb" size="6" /></td> \
+                         <td><button type="button" onclick="addRow(this)">Insert Ex</button></td> \
+                         <td><button type="button" onclick="deleteRow(this)">Remove Ex</button></td> \
+                         <td>'+ kaka[7] +'</td>';
+        
+      }
+      if( count == 0 ){
+         document.getElementById('waiting').innerHTML = "no states found.";
+         nRow = table.rows.length;
+         let row = table.insertRow(nRow-1);
+         row.innerHTML = '<td><input type="text" name="Ex"  size="5" value="0"/></td> \
+                         <td><input type="text" name="Jpi" size="5" value="1/2+"/></td> \
+                         <td><input type="text" name="Orb" size="6" value="1s1/2"/></td> \
+                         <td><button type="button" onclick="addRow(this)">Insert Ex</button></td> \
+                         <td><button type="button" onclick="deleteRow(this)">Remove Ex</button></td>';
+      }
+    }
+  );
+
+  client.open('GET', str);
+  client.send();
+  
+}
+
+//document.getElementById("ExTable").find('tr').click( () => {alert( $this.index);} );
+
+function addRow(ele) {
+
+  let iRow = ele.closest('tr').sectionRowIndex;
+
+  let table = document.getElementById("ExTable");   
+  let row = table.insertRow(iRow+1);
+  row.innerHTML = '<td><input type="text" name="Ex" size="5" /></td> \
+                   <td><input type="text" name="Jpi" size="5"/></td> \
+                   <td><input type="text" name="Orb" size="6"/></td> \
+                   <td><button type="button" onclick="addRow(this)">Insert Ex</button></td> \
+                   <td><button type="button" onclick="deleteRow(this)">Remove Ex</button></td>';
+}
+
+function deleteRow(ele){
+  let table = document.getElementById("ExTable");
+  let nRow = table.rows.length;
+  let iRow = ele.closest('tr').sectionRowIndex;
+  if ( nRow > 3){
+     table.deleteRow(iRow);
+  }
+}
+</script>
+
+</html>

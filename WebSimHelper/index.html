@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SOLARIS Si-Array Mode Simulation </title>
+  <meta name="description" content="SOLARIS Si-Array mode simulation. This is ported from the original Heliosmatics in MS excel, Monte Carlo simulation using CERN ROOT, and DWBA simulation using the Peolemy.">
+  <link rel="icon" type="image/x-icon" href="logos/SOLARIS_favicon.png">
+</head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.plot.ly/plotly-2.16.1.min.js"></script>
+<style> 
+  
+  :root{
+    --navWidth: 300px;
+  }
+   
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+  }
+  /* table, th, td { */
+    /* border: 1px solid black; */
+  /* } */
+  table.center{
+   margin-left: auto;
+   margin-right: auto;
+  }
+  header {
+    background-color: #F7CF3C;
+    padding: 10px;
+    text-align: center;
+    font-size: 35px;
+    color: black;
+  }
+  nav {
+    float: left;
+    width : var(--navWidth);
+    height: 100vh;
+    /* background: #6DB33E; */
+    background: #1363A7;
+    padding: 0px;
+  }
+  article {
+    float: none;
+    padding: 0px;
+    margin-left: var(--navWidth);
+    height: 1000px;
+    height : 100vh;
+    /* background: #1363A7; */
+    background: #6DB33E;
+  }
+  a {
+    color : #F7CF3C;
+  }
+ 
+ .column1{
+  float : left;
+  width : 50%;
+  text-align:right;
+ }
+ .column2{
+  float : right;
+  width : 50%;
+  text-align: left;
+ }
+ .row:after {
+   content: "";
+   display: table;
+   clear: both;
+ }
+ 
+  @media (max-width: 1000px) {
+    .column1 {
+      width: 100%;
+      height: 40%;
+      text-align:center;
+    }
+    .column2 {
+      width: 100%;
+      text-align:center;
+    }
+    nav {
+      width: 100%;
+      height: auto;
+      margin-left : 0;
+    }
+    article {
+      float: left;
+      margin-left : 0px;
+      width: 100%;
+      height: 100vh;
+      margin-left : 0;
+    }
+  }
+  
+</style>
+<body>
+
+<header>
+<div class="row">
+  <div class="column1"">
+    <img src="logos/SOLARIS_logo.png" width="300">
+  </div>
+  <div class="column2">
+    <span style="font-size:70px;">Simulation</span>
+  </div>
+</div>
+</header>
+
+<section>
+  
+  <nav  id="nav"> 
+    <div class="visit-counter"></div>
+    <p></p>
+    <table class="center">
+       <tr>
+         <td style="text-align:right"><a href="heliosmatics.html" target="uploaded">HELIOSmatics</a></td>
+       </tr>
+       <tr>
+         <td style="text-align:right"><a href="simpleSim.html" target="uploaded">DWBA and Monte Carlo Simulation</a></td>
+       </tr>
+       <tr>
+         <td style="text-align:right"><a href="miscCal.html" target="uploaded">Misc. Calulations</a></td>
+       </tr>
+       <tr>
+         <td style="text-align:right"><a href="instruction.html" target="uploaded">Intructions & Credits</a></td>
+       </tr>
+
+    <table>    
+
+    <p></p><!-- ////////////////////////////////////////// -->
+
+    <form action = "displayIsoData.py"  method = "POST" target = "NuclearData">
+      <table class="center">
+        <tr>
+          <td style="text-align:right">Isotopes Name:</td>
+          <td><input type = "text" name = "ASym" id="ASym" size="13" value="24F" enterkeyhint="done"/></td>
+        </tr>
+        <tr>
+          <td style="text-align:right">Max Ex [MeV]:</td>
+          <td><input type = "text" name = "maxEx" id="maxEx" size="13" value="can be omitted" enterkeyhint="done"/></td>
+        </tr>
+        <tr> 
+          <td></td>
+          <td><button onclick="PlotLevels()" style="width: 130px;">Get Isotopes Data</button></td>
+        </tr>
+      </table>
+    </form>
+    <div id="Plot_Levels" class="plotStyle"></div>
+    <iframe name="NuclearData" style="border:none;width:100%;height:100%" ></iframe>
+    
+  </nav>
+
+  <!-- ////////////////////////////////////////// -->
+  <article id="article" >
+      <iframe id="main" name="uploaded" style="border:none;width:100%;"  src="heliosmatics.html"></iframe>
+  </article>
+</section>
+
+
+<script src="EnergyLevelsPlot.js"></script>
+
+<script>
+
+  let frame = document.getElementById("main");
+  let frameNav = document.getElementById("nav");
+  let frameArticle = document.getElementById("article");
+
+  let x = window.matchMedia("(max-width: 1000px)");  
+
+  adjustHeight();
+
+  x.addListener(adjustHeight);
+
+  function adjustHeight(){
+    let hhh = frame.contentWindow.document.body.scrollHeight * 1.1 + 'px';
+    
+    frame.style.height = hhh;
+    frameArticle.style.height = hhh;
+    
+    if( x.matches){
+      frameNav.style.height = "40%";
+    }else{
+      frameNav.style.height = hhh;
+    }
+    
+  }
+
+
+  frame.onload = adjustHeight;
+
+
+
+</script>
+
+</body>
+</html>

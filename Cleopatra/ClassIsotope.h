@@ -20,9 +20,8 @@
 #include "constant.h" // amu
 #include <stdlib.h>  //atoi
 #include <algorithm>
-using namespace std;
 
-string massData="/Cleopatra/mass20.txt";
+std::string massData="../Cleopatra/mass20.txt";
 
 // about the mass**.txt
 // Mass Excess = (ATOMIC MASS - A)*amu | e.g. n : (1.088664.91585E-6-1)*amu
@@ -34,15 +33,17 @@ class Isotope {
 public:
   int A, Z;
   double Mass, MassError, BEA;
-  string Name, Symbol;
-  string dataSource;
+  std::string Name, Symbol;
+  std::string dataSource;
   
-  Isotope(){findHeliosPath();};
-  Isotope(int a, int z){ findHeliosPath();SetIso(a,z);  };
-  Isotope(string name){ findHeliosPath(); SetIsoByName(name); };
+  Isotope(){dataSource = massData;};
+  Isotope(int a, int z){ dataSource = massData; SetIso(a,z);  };
+  Isotope(std::string name){ dataSource = massData; SetIsoByName(name); };
+
+  void SetMassTablePath(std::string path){ dataSource = path;}
 
   void SetIso(int a, int z);
-  void SetIsoByName(string name);
+  void SetIsoByName(std::string name);
 
   double CalSp(int Np, int Nn); // this for the Np-proton, Nn-neutron removal 
   double CalSp2(int a, int z); // this is for (a,z) nucleus removal
@@ -59,10 +60,10 @@ public:
    
 private:
   void FindMassByAZ(int a, int z); // give mass, massError, BEA, Name, Symbol;
-  void FindMassByName(string name); // give Z, mass, massError, BEA;
+  void FindMassByName(std::string name); // give Z, mass, massError, BEA;
 
   int TwoJ(int nShell);
-  string Orbital(int nShell);
+  std::string Orbital(int nShell);
   int magic(int i){
     switch (i){
       case 0: return   2; break;
@@ -109,21 +110,7 @@ private:
     lineMass200     = 2774;
   }
   
-  char * heliosPath;
   bool isFindOnce;
-
-  void findHeliosPath(){
-    heliosPath = getenv("HELIOSSYS");
-    if( heliosPath ){
-      dataSource = heliosPath;
-      dataSource += "/analysis" + massData;
-    }else{
-      dataSource = ".." + massData;
-    }
-  }
-  
-  
-  
   
 };
 
@@ -133,16 +120,16 @@ void Isotope::SetIso(int a, int z){
     FindMassByAZ(a,z); 
 }
 
-void Isotope::SetIsoByName(string name){
+void Isotope::SetIsoByName(std::string name){
     FindMassByName(name); 
 }
 
 void Isotope::FindMassByAZ(int A, int Z){
-  string line;
+  std::string line;
   int    lineNum=0;
   int    list_A, list_Z;
 
-  ifstream myfile;
+  std::ifstream myfile;
   int    flag=0;
 
   setFileLines();
@@ -171,11 +158,11 @@ void Isotope::FindMassByAZ(int A, int Z){
             this->BEA       = atof((line.substr(54,11)).c_str());
       		this->Mass      = list_Z*mp + (list_A-list_Z)*mn - this->BEA/1000*list_A;
             this->MassError = atof((line.substr(65,7)).c_str());
-            string str = line.substr(20,2);
+            std::string str = line.substr(20,2);
             str.erase(remove(str.begin(), str.end(), ' '), str.end());
             this->Symbol    = str;
             
-            ostringstream ss;
+            std::ostringstream ss;
             ss << A << this->Symbol;
             this->Name      = ss.str();
      		   flag = 1;
@@ -202,7 +189,7 @@ void Isotope::FindMassByAZ(int A, int Z){
   }
 }
 
-void Isotope::FindMassByName(string name){
+void Isotope::FindMassByName(std::string name){
 
     // done seperate the Mass number and the name 
   if( name == "n" ) {
@@ -220,7 +207,7 @@ void Isotope::FindMassByName(string name){
     if( name == "t" ) name = "3H";
     if( name == "a" ) name = "4He";
     
-    string temp = name;
+    std::string temp = name;
     int lastDigit = 0;
 
     for(int i=0; temp[i]; i++){
@@ -251,12 +238,12 @@ void Isotope::FindMassByName(string name){
     //printf(" Symbol = |%s| , Mass = %d\n", this->Symbol.c_str(), this->A);
 
     // find the nucleus in the data
-    string line;
+    std::string line;
     int    lineNum=0;
     int    list_A;
-    string list_symbol;
+    std::string list_symbol;
 
-    ifstream myfile;
+    std::ifstream myfile;
     int    flag=0;
 
     setFileLines();
@@ -289,11 +276,11 @@ void Isotope::FindMassByName(string name){
       		this->Mass      = this->Z*mp + (list_A-this->Z)*mn - this->BEA/1000*list_A;
             this->MassError = atof((line.substr(65,7)).c_str());
             
-            string str = line.substr(20,2);
+            std::string str = line.substr(20,2);
             str.erase(remove(str.begin(), str.end(), ' '), str.end());
             this->Symbol    = str;
             
-            ostringstream ss;
+            std::ostringstream ss;
             ss << this->A << this->Symbol;
             this->Name      = ss.str();
             flag = 1;
@@ -372,7 +359,7 @@ int Isotope::TwoJ(int nShell){
   return 0;
 }
 
-string Isotope::Orbital(int nShell){
+std::string Isotope::Orbital(int nShell){
 
   switch(nShell){
     case  0: return  "0s1 "; break;  //
@@ -416,7 +403,7 @@ void Isotope::ListShell(){
   int n = A-Z;
   int p = Z;
 
-  int k = min(n,p);
+  int k = std::min(n,p);
   int nMagic = 0;
   for( int i = 0; i < 7; i++){
     if( magic(i) < k && k <= magic(i+1) ){
@@ -434,7 +421,7 @@ void Isotope::ListShell(){
 
   printf("------------------ Core:%3s, inner Core:%3s \n", (core2.Name).c_str(), (core1.Name).c_str());
   printf("         || ");
-  int t = max(n,p);
+  int t = std::max(n,p);
   int nShell = 0;
   do{
     int occ = TwoJ(nShell)+1;
@@ -512,8 +499,6 @@ void Isotope::Print(){
 
   if (Mass > 0){  
     
-    findHeliosPath();
-      
     printf(" using mass data : %s \n", dataSource.c_str());
     printf(" mass of \e[47m\e[31m%s\e[m nucleus (Z,A)=(%3d,%3d) is \e[47m\e[31m%12.5f\e[m MeV, BE/A=%7.5f MeV\n", Name.c_str(), Z, A, Mass, BEA/1000.);     
     printf(" total BE    : %12.5f MeV\n",BEA*A/1000.);

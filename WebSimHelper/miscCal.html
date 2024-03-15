@@ -1,0 +1,287 @@
+<!DOCTYOE html>
+<html>
+
+<style>
+ body{
+   font-family: Arial, Helvetica, sans-serif;
+ }
+ table{
+   border-collapse: collapse;
+   border : 1px solid;
+ }
+ 
+ td{
+   padding : 4px;
+ }
+
+</style>
+
+<body>
+
+
+<h1> enA, pnA, pps convertor </h1>
+
+<table id="convertor">
+  <tr>
+   <td style="text-align:right">Charge state:</td>
+   <td><input type="text" id="ChargeState" size="10" value="6" enterkeyhint="done"/> </td>
+  </tr>
+  <tr>
+   <td style="text-align:right">Attenuation:</td>
+   <td><input type="text" id="att" size="10" value="1e+4" enterkeyhint="done" /> </td>
+  </tr>
+  <tr style="text-align:center">
+    <td>enA </td>
+    <td>pnA </td>
+    <td>pps </td>
+    <td>att. pps </td>
+  </tr>
+  <tr>
+    <td><input type="text" id='enA' size="10" value="6" enterkeyhint="done"/></td>
+    <td><input type="text" id="pnA" size="10" enterkeyhint="done"/></td>
+    <td><input type="text" id="pps" size="10" enterkeyhint="done"/></td>
+    <td width="100"></td>
+  </tr>
+</table>
+
+<h1> Yield Calculator </h1>
+
+<table id="yieldTable">
+  <tr>
+    <td style="text-align:right"> Integrated Xsec </td>
+    <td><Input type="text" id="Xsec" size="10" value="4" enterkeyhint="done"/></td>
+    <td>mb</td>
+  </tr>
+  <tr>
+    <td style="text-align:right"> Beam intensity </td>
+    <td><Input type="text" id="BeamPPS" size="10" value="1e5" enterkeyhint="done"/></td>
+    <td>pps</td>
+  </tr>
+  <tr>
+    <td style="text-align:right"> Target thickness </td>
+    <td><Input type="text" id="thickness" size="10" value="100" enterkeyhint="done"/></td>
+    <td>ug/cm2</td>
+  </tr>
+  <tr>
+    <td style="text-align:right"> Target molar mass </td>
+    <td><Input type="text" id="molar" size="10" value="16" enterkeyhint="done"/></td>
+    <td>g/mol</td>
+  </tr>
+  <tr>
+    <td style="text-align:right"> Nucleus/molecule </td>
+    <td><Input type="text" id="ddd" size="10" value="2" enterkeyhint="done"/></td>
+  </tr>
+  <tr>
+    <td style="text-align:right"> Num of nucleus per area </td>
+    <td></td>
+    <td>count/cm2</td>
+  </tr>
+  <tr>
+    <td style="text-align:right"> Yield per sec </td>
+    <td></td>
+    <td>count/sec</td>
+  </tr>
+  <tr>
+    <td style="text-align:right"> Spectroscopic factor </td>
+    <td><Input type="text" id="SF" size="10" value="0.6" enterkeyhint="done"/></td>
+  </tr>
+  <tr>
+    <td style="text-align:right"> Wanted Count </td>
+    <td><Input type="text" id="wantedCount" size="10" value="1000" enterkeyhint="done"/></td>
+  </tr>
+  <tr>
+    <td style="text-align:right"> stat. uncertainty </td>
+    <td></td>
+    <td>%</td>
+  </tr>
+  <tr>
+    <td style="text-align:right"> Beam Time required </td>
+    <td></td>
+    <td>day</td>
+  </tr>
+</table>
+
+</body>
+
+<script>
+
+function toSci(xx, digi){
+  //return xx.toExponential(digi).replace(/e\+?/, ' x 10^');
+  return xx.toExponential(digi);
+}
+
+function convert(type){
+  let chargeState = document.getElementById('ChargeState').value; 
+  let attenuation = document.getElementById('att').value; 
+  let eee = 6241510000;
+
+  let table = document.getElementById('convertor');
+
+  if ( type == 1 ){
+    let enA = document.getElementById('enA').value;
+    let pnA = enA/chargeState;
+    let pps = pnA*eee;
+    var att = pps/attenuation;
+    document.getElementById('pnA').value = pnA;
+    document.getElementById('pps').value = toSci(pps,3);
+  }
+
+  if ( type == 2 ){
+    let pnA = document.getElementById('pnA').value;
+    let enA = pnA*chargeState;
+    let pps = pnA*eee;
+    var att = pps/attenuation;
+    document.getElementById('enA').value = enA;
+    document.getElementById('pps').value = toSci(pps,3);
+  }
+
+  if ( type == 3 ){
+    let pps = document.getElementById('pps').value;
+    let pnA = pps/eee;
+    let enA = pnA*chargeState;
+    var att = pps/attenuation;
+    document.getElementById('enA').value = enA;
+    document.getElementById('pnA').value = pnA;
+  }
+
+  table.rows[3].cells[3].innerHTML = '<span style="color:#FF0000">' + toSci(att,3) + '</span>';
+
+}
+
+function yieldCal(type){
+  let NA = 6.0221409e+23;
+  let mb2cm = 1e-27;
+
+  let xsec      = document.getElementById('Xsec').value;
+  let beamPPS   = document.getElementById('BeamPPS').value;
+  let thickness = document.getElementById('thickness').value;
+  let molar     = document.getElementById('molar').value;
+  let nParticle = document.getElementById('ddd').value;
+  let SF        = document.getElementById('SF').value;
+  let wantedCount = document.getElementById('wantedCount').value;
+  
+  let table = document.getElementById('yieldTable');
+  
+  let nTarget = thickness * NA * nParticle / molar / 1e6;
+  let yield = xsec * beamPPS * nTarget * mb2cm;
+
+  table.rows[5].cells[1].innerHTML = toSci(nTarget, 3);
+  table.rows[6].cells[1].innerHTML = yield.toPrecision(4);
+
+  let error = Math.sqrt(wantedCount)/wantedCount*100;
+  table.rows[9].cells[1].innerHTML = error.toPrecision(4);
+
+  let day = wantedCount / SF /yield /60/60/24;
+  //table.rows[10].cells[1].innerHTML = day.toPrecision(4);
+  table.rows[10].cells[1].innerHTML = '<span style="color:#FF0000">' + day.toPrecision(4) + '</span>';
+
+}
+
+convert(1);
+yieldCal(1);
+
+
+document.getElementById('enA').addEventListener('keypress', 
+  function(e){
+    //alert( e.keyCode );
+    if(e.keyCode == 13 ){
+      convert(1);      
+    }
+  }, false
+);
+
+
+document.getElementById('pnA').addEventListener('keypress', 
+  function(e){
+    if(e.keyCode == 13){
+      convert(2);      
+    }
+  }, false
+);
+
+
+document.getElementById('pps').addEventListener('keypress', 
+  function(e){
+    if(e.keyCode == 13){
+      convert(3);      
+    }
+  }, false
+);
+
+document.getElementById('att').addEventListener('keypress', 
+  function(e){
+    if(e.keyCode == 13){
+      convert(1);      
+    }
+  }, false
+);
+
+
+document.getElementById('ChargeState').addEventListener('keypress', 
+  function(e){
+    if(e.keyCode == 13){
+      convert(1);      
+    }
+  }, false
+);
+
+
+document.getElementById('Xsec').addEventListener('keypress', 
+  function(e){
+    if(e.keyCode == 13){
+      yieldCal(0);      
+    }
+  }, false
+);
+
+document.getElementById('BeamPPS').addEventListener('keypress', 
+  function(e){
+    if(e.keyCode == 13){
+      yieldCal(1);      
+    }
+  }, false
+);
+
+document.getElementById('thickness').addEventListener('keypress', 
+  function(e){
+    if(e.keyCode == 13){
+      yieldCal(2);      
+    }
+  }, false
+);
+
+document.getElementById('molar').addEventListener('keypress', 
+  function(e){
+    if(e.keyCode == 13){
+      yieldCal(3);      
+    }
+  }, false
+);
+
+document.getElementById('ddd').addEventListener('keypress', 
+  function(e){
+    if(e.keyCode == 13){
+      yieldCal(4);      
+    }
+  }, false
+);
+
+document.getElementById('SF').addEventListener('keypress', 
+  function(e){
+    if(e.keyCode == 13){
+      yieldCal(5);      
+    }
+  }, false
+);
+
+document.getElementById('wantedCount').addEventListener('keypress', 
+  function(e){
+    if(e.keyCode == 13){
+      yieldCal(6);      
+    }
+  }, false
+);
+</script>
+
+
+</html>

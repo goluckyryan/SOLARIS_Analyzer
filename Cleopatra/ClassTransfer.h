@@ -22,7 +22,7 @@
 class TransferReaction {
 public:
   TransferReaction(){Inititization();};
-  TransferReaction(string configFile, unsigned short ID = 0);
+  TransferReaction(std::string configFile, unsigned short ID = 0);
   TransferReaction(int beamA,   int beamZ,
                    int targetA, int targetZ,
                    int recoilA, int recoilZ, float beamEnergy_AMeV);
@@ -84,7 +84,7 @@ private:
   Recoil recoil;
   ReactionConfig config;
 
-  string nameA, namea, nameb, nameB;
+  std::string nameA, namea, nameb, nameB;
   double thetaIN, phiIN;
   double mA, ma, mb, mB;
 
@@ -108,7 +108,7 @@ private:
    
 };
 
-TransferReaction::TransferReaction(string configFile, unsigned short ID){
+TransferReaction::TransferReaction(std::string configFile, unsigned short ID){
   Inititization();
   SetReactionFromFile(configFile, ID);
 }
@@ -227,7 +227,7 @@ void TransferReaction::SetExB(double Ex){
   isReady = false;
 }
 
-void TransferReaction::SetReactionFromFile(string configFile, unsigned short ID){
+void TransferReaction::SetReactionFromFile(std::string configFile, unsigned short ID){
 
   if( config.LoadReactionConfig(configFile) ){
 

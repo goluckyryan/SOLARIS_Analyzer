@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Heliosmatics</title>
+<meta name="description" content="HELIOSmatics was first built by Ben P. Kay in MS Excel around 2010. Later, it was modified by Ryan Tang. Now, it migrates to web.">
+<link rel="icon" type="image/x-icon" href="logos/SOLARIS_favicon.png">
+<script src="https://cdn.plot.ly/plotly-2.16.1.min.js"></script>
+<meta name="viewport" content="width=device-width, height=device-height,  initial-scale=1.0, user-scalable=no, user-scalable=0"/>
+</head>
+<style>
+  body{
+    font-family: Arial, Helvetica, sans-serif;
+    background : #6DB33E;
+  }
+  .column{
+     float : left;
+     width: 650px;
+     padding: 0px;
+  }
+  .row:after {
+     content: "";
+     display: table;
+     clear: both;
+  }
+  .plotStyle{
+    width:650px;
+    height:600px;
+  }
+  .slider{
+    width : 400px;
+  }
+  .plotSlider{
+    width: 400px;
+  }
+
+  hr {
+    height:4px;
+    background-color:#F7CF3C; 
+    border-style:none; 
+    border-width:none;
+  }
+  @media screen and (max-width: 1000px) {
+    .column {
+      width: 100%;
+    }
+    .plotStyle{
+      width:400px;
+      height: 370px;
+    }
+    .slider{
+      width: 200px;
+    }
+    .plotSlider{
+      width: 180px;
+    }
+    img {
+      height: 50px;
+    }
+  }
+</style>
+
+<body>
+
+<h1>HELIOSmatics</h1>
+
+<button onclick="CopyInputs()">Copy settings to clipboard</button>
+
+<h1 id='reactionName' style="color: #1363A7"> 24F(d,p)25F@10MeV/u</h1>
+
+<table>
+ <tr>
+  <td style="text-align:right"> Beam (A):</td>
+  <td><Input type="text" style="width:60px" value="24F" id="beam" enterkeyhint="done"/></td> 
+  <td style="text-align:right"> Beam Ex:</td>
+  <td><Input type="text" style="width:60px" value="0" id="beamEx" enterkeyhint="done"/></td>
+  <td>MeV</td>
+  <td id='beamSp'></td>
+  <!--td id="beamYield"></td>-->
+ </tr>
+ <tr>
+  <td style="text-align:right"> Target (a):</td>
+  <td><Input type="text" style="width:60px" value="d" id="target" enterkeyhint="done"/></td> 
+ </tr>
+ <tr>
+  <td style="text-align:right"> Light (b):</td>
+  <td><Input type="text" style="width:60px" value="p" id="light" enterkeyhint="done"/></td> 
+  <td style="text-align:right"> Q-value:</td>
+  <td id='Q-value'>2.057</td>
+  <td>MeV</td>
+ </tr>
+ <tr>
+  <td style="text-align:right"> Heavy (B):</td>
+  <td id='heavyName'>25F</td> 
+ </tr>
+</table>
+
+<p style="font: 12px" id='heavySp'></p>
+
+<p></p>
+
+<table>
+ <tr>
+   <td>
+     <input type="radio" name="SSType" id='HELIOS' value="HELIOS"/>HELIOS
+   </td>
+   <td>
+     <input type="radio" name="SSType" id='SOLARIS' value="SOLARIS" checked="checked"/>SOLARIS
+   </td>
+   <td>
+     <input type="radio" name="SSType" id='ISS' value="ISS"/>ISS
+   </td>
+ </tr>
+</table>
+<p></p>
+
+<table>
+ <tr>
+  <td style="text-align:right"> B-field (abs.):</td>
+  <td><Input type="text"  style="width:60px" value="2" id='BField' enterkeyhint="done"/></td> 
+  <td>T</td>
+  <td><Input type="range" min="0" max="6" step="0.05" value="2" class="slider" id='BRange'/> </td>
+ </tr>
+
+ <tr>
+  <td style="text-align:right"> Beam Energy:</td>
+  <td><Input type="text" style="width:60px" value="10" id='KEA' enterkeyhint="done"/></td>
+  <td>MeV/u</td>
+  <td><Input type="range" min="0" max="20" step="0.1" value="10" class="slider" id='KEARange'/> </td>
+ </tr>
+ <tr>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td id='minKEA'> </td>
+ </tr>
+</table>
+
+<p></p>
+
+<table id="ExTable", style="border:1px solid; text-align:center;">
+  <tr>
+    <th style="width:85px"> E<sub>x</sub> [MeV]</th>        
+    <th style="width:85px"> &theta;<sub>cm</sub>[deg]</th>
+    <th style="width:70px">E<sub>b</sub>[MeV]</th>
+    <th style="width:70px">Z<sub>b0</sub>[mm]</th>
+    <th style="width:70px">Z<sub>b</sub>[mm]</th>
+    <th style="width:70px">2&rho;<sub>b</sub>[mm]</th>
+    <th style="width:70px">&theta;Lab<sub>b</sub>[deg]</th>
+    <th style="width:60px">T<sub>b</sub>[ns]</th>
+    <th style="width:70px">E<sub>B</sub>[MeV]</th>
+    <th style="width:90px">&theta;Lab<sub>B</sub>[deg]</th>
+    <th style="width:80px">Z<sub>B0</sub>/2[mm]</th>
+    <th style="width:70px">2&rho;<sub>B</sub>[mm]</th>
+  </tr>
+  </tr>
+   <td><input type="text" id='Ex1' name="Ex" size="8" value="0" enterkeyhint="done"/></td>
+   <td><input type="text" id='theta1' name="thetaCM" size="8" value="10" enterkeyhint="done"/></td>
+   <td></td>
+   <td></td>
+   <td></td>
+   <td></td>
+   <td></td>
+   <td></td>
+   <td></td>
+   <td></td>
+   <td></td>
+   <td></td>
+  </tr>
+  </tr>
+   <td><input type="text" id='Ex2' name="Ex" size="8" value="1" enterkeyhint="done"/></td>
+   <td><input type="text" id='theta2' name="thetaCM" size="8" value="40" enterkeyhint="done"/></td>
+   <td></td>
+   <td></td>
+   <td></td>
+   <td></td>
+   <td></td>
+   <td></td>
+   <td></td>
+   <td></td>
+   <td></td>
+   <td></td>
+  </tr>
+  <tr>
+    <td><button type="button" onclick="addRow()" style="width:85px">Add E<sub>x</sub></button></td>
+    <td><button type="button" onclick="deleteRow()">Remove E<sub>x</sub></button></td>
+  </tr>
+</table>
+
+<p></p>
+
+<table>
+ <tr>
+  <td style="text-align:right"> &theta;<sub>CM</sub>:</td>
+  <td><Input type="text" style="width:60px" value="0" id='thetaCM' enterkeyhint="done"/></td> 
+  <td>deg</td>
+  <td><Input type="range" min="0" max="50" step="0.1" value="0" class="slider" id='thetaCMRange'/> </td>
+ </tr>
+ <td style="text-align:right"> Array Pos:</td>
+  <td><Input type="text" style="width:60px" value="-100" id='posArray' enterkeyhint="done"/></td> 
+  <td>mm</td>
+  <td><Input type="range" min="-500" max="1000" step="1" value="-100" class="slider" id='posArrayRange'/> </td>
+ </tr>
+ <tr>
+  <td style="text-align:right"> Recoil Pos:</td>
+  <td><Input type="text" style="width:60px" value="1500" id='posRecoil' enterkeyhint="done"/></td> 
+  <td>mm</td>
+  <td><Input type="range" min="0" max="2000" step="1" value="1500" class="slider" id='posRecoilRange'/> </td>
+ </tr>
+</table>
+
+<table>
+<tr>
+  <td style="text-align:right" > Recoil radius, inner [mm]:</td> 
+  <td><Input type="text"  style="width:40px" value="10" id='innerRecoil' enterkeyhint="done"/></td>
+  <td style="text-align:right" > outter [mm]:</td> 
+  <td><Input type="text"  style="width:40px" value="45" id='outterRecoil' enterkeyhint="done"/></td>
+</tr>
+</table>
+
+<p></p>
+
+
+<div class="row">
+ <div class="column">
+  <table cellspacing="0" cellpadding="0">
+    <tr>
+      <td>
+      <div id="Plot_EZ" class="plotStyle"></div>
+      </td>
+    </tr>
+    <tr> <td>&nbsp;</td></tr>
+    <tr>          
+      <td> &nbsp;zRange can be changed by Array position.</td>
+    </tr>
+    <tr>
+     <td>
+      <table>
+        <tr> 
+          <td>eRange:</td>
+          <td><Input type="text" style="width:60px" value="12" id='eRange' enterkeyhint="done"/></td>
+          <td>MeV</td>
+          <td><Input type="range" min="1" max="30" step="0.1" value="12" class="plotSlider" id='eRangeSlider'/></td>
+        </tr>
+       </table>
+     </td>
+    </tr>
+    <tr> <td>&nbsp;</td></tr>
+  </table>
+ </div>
+ <div class="column">
+ <table cellspacing="0" cellpadding="0">
+  <tr>
+    <td>
+      <div id="Plot_RZ" class="plotStyle"></div>
+    </td>
+  </tr>
+  <tr> <td>&nbsp;</td></tr>
+  <tr>
+   <td> 
+     <table>
+      <tr> 
+        <td>zRange(Min):</td>
+        <td><Input type="text" style="width:60px" value="-200" id='zRange1' enterkeyhint="done"/></td>
+        <td>mm</td>
+        <td><Input type="range" min="-2000" max="4000" step="1" value="-200" class="plotSlider"  id='zRange1Slider'/></td>
+      </tr>
+      <tr> 
+        <td>zRange(Max):</td>
+        <td><Input type="text" style="width:60px" value="2000" id='zRange2' enterkeyhint="done"/></td>
+        <td>mm</td>
+        <td><Input type="range" min="-2000" max="4000" step="1" value="2000" class="plotSlider" id='zRange2Slider'/></td>
+      </tr>
+      <tr> 
+        <td>rRange:</td>
+        <td><Input type="text" style="width:60px" value="50" id='rRange' enterkeyhint="done"/></td>
+        <td>mm</td>
+        <td><Input type="range" min="1" max="400" step="1" value="50" class="plotSlider"  id='rRangeSlider'/></td>
+      </tr>
+     </table>
+  </td>
+ </tr>
+ <tr> <td>&nbsp;</td></tr>
+</table>
+ </div>
+</div>
+
+<p id="n0"></p>
+<p id="n1"></p>
+<p id="n2"></p>
+<p id="n3"></p>
+
+<hr>
+
+<h1>&theta;<sub>CM</sub> Calculator</h1>
+
+The calculation only give &theta;<sub>CM</sub> after the bending.
+<p></p>
+
+<table>
+  <tr>
+    <td>Ex [MeV] : </td>
+    <td><Input type="text" style="width:60px" value="0" id='Ex0' enterkeyhint="done"/></td>
+    <td>&theta;<sub>CM</sub> Gate [deg] : </td>
+    <td><Input type="text" style="width:60px" value="10" id='thetaCMGate' enterkeyhint="done"/></td>
+    <td>X Gate [%] : </td>
+    <td><Input type="text" style="width:60px" value="95" id='XGate' enterkeyhint="done"/></td>
+  </tr>
+  <tr>
+    <table id='thetaCMTable' style="border:1px solid; text-align:center;">
+      <tr>
+        <td style="width:30px"><b>ID</b></td>
+        <td style="width:120px"><b>pos<sub>0</sub>(gated)</b></td>
+        <td style="width:120px"><b>pos<sub>1</sub>(gated)</b></td>
+        <td style="width:60px"><b>&theta;<sub>1</sub>[deg]</b></td>
+        <td style="width:60px"><b>&theta;<sub>2</sub>[deg]</b></td>
+        <td style="width:60px"><b>&theta;<sub>avg</sub>[deg]</b></td>
+        <td style="width:60px"><b>&Delta;&theta;[deg]</b></td>
+        <td style="width:100px"><b>sin(&theta;<sub>avg</sub>)&Delta;&theta;</b></td>
+      </tr>
+    </table>
+  </tr>
+</table>
+
+<!-- ===================================================== -->
+
+<!--
+<hr>
+
+<h1> DWBA and Monte Carlo Simulation (under construction...)</h1>
+
+  <table id='DWBATable' style="border:1px solid; text-align:center;">
+    <tr>
+      <td> E<sub>x</sub> [MeV]</td>
+      <td> J<sup>&#960;</sup></td>
+      <td> Orbital </td>
+    </tr>
+    </tr>
+     <td id='dwba1'>0</td>
+     <td><input type="text" name="Jpi" size="5" value="3/2+" enterkeyhint="done"/></td>
+     <td><input type="text" name="Orb" size="5" value="0d3/2" enterkeyhint="done"/></td>
+    </tr>
+    </tr>
+     <td id='dwba2'>0</td>
+     <td><input type="text" name="Jpi" size="5" value="1/2+" enterkeyhint="done"/></td>
+     <td><input type="text" name="Orb" size="5" value="1s1/2" enterkeyhint="done"/></td>
+    </tr>
+  </table>
+
+  <p></p>
+  <input type="checkbox" name="DWBA" value="On"/>Cal. DWBA
+
+  <table>
+    <tr>
+      <td>Incoming Channel</td>
+      <td>
+        <select name="op1">
+          <option value="A" selected>D | An & Cai (2006), E < 183, 12 < A < 238</option>
+          <option value="H">D | Han, Shi, & Shen, (2006), E < 200 | 12 < A < 209</option>
+          <option value="B">D | Bojowald et al., (1988), 50 < E < 80 | 27 < A < 208</option>
+          <option value="K">P | Koning & Delaroche, (2009), E < 200 | 24 < A < 209 | Iso.Dep.</option>
+          <option value="V">P | Varner et al., (1991), 16 < E < 65 | 4 < A < 209</option>
+          <option value="M">P | Menet et al., (1971), 30 < E < 60 | 40 < A </option>
+          <option value="x">A=3 | Xu, Guo, Han, & Shen, (2011), E < 250 | 20 < A < 209 </option>
+          <option value="l">A=3 | Liang, Li, & Cai, (2009), E < 270 | All masses </option>
+          <option value="x">A=4 | Su & Han, (2015), E < 398 | 20 < A < 209 </option>
+        </select> 
+      <td>
+    </tr>
+    <tr>
+      <td>Outgoing Channel</td>
+      <td>
+        <select name="op2">
+          <option value="A">D | An & Cai (2006), E < 183, 12 < A < 238</option>
+          <option value="H">D | Han, Shi, & Shen, (2006), E < 200 | 12 < A < 209</option>
+          <option value="B">D | Bojowald et al., (1988), 50 < E < 80 | 27 < A < 208</option>
+          <option value="K" selected>P | Koning & Delaroche, (2009), E < 200 | 24 < A < 209 | Iso.Dep.</option>
+          <option value="V">P | Varner et al., (1991), 16 < E < 65 | 4 < A < 209</option>
+          <option value="M">P | Menet et al., (1971), 30 < E < 60 | 40 < A </option>
+          <option value="x">A=3 | Xu, Guo, Han, & Shen, (2011), E < 250 | 20 < A < 209 </option>
+          <option value="l">A=3 | Liang, Li, & Cai, (2009), E < 270 | All masses </option>
+          <option value="x">A=4 | Su & Han, (2015), E < 398 | 20 < A < 209 </option>
+        </select> 
+      <td>
+    </tr>
+  </table>
+
+<h3> Plot config (still working on):</h3>
+
+  <input type="checkbox" name="plot" value="pEZ" checked/>E vs Z<br>
+  <input type="checkbox" name="plot" value="pExCal" checked/>Ex (cal.)<br>
+  <input type="checkbox" name="plot" value="pThetaCM" checked/>ThetaCM<br>
+  <input type="checkbox" name="plot" value="pThetaCM_Z" checked/>ThetaCM vs Z<br>
+  <input type="checkbox" name="plot" value="pRecoilXY" checked/>Recoil X vs Y<br>
+  <input type="checkbox" name="plot" value="pRecoilRThetaCM"/>Recoil-R vs ThetaCM<br>
+  <input type="checkbox" name="plot" value="pRecoilRZ"/>Recoil R vs Z<br>
+  <input type="checkbox" name="plot" value="pArrayXY"/>Array X vs Y<br>
+
+  <p></p>
+  
+  <input type="checkbox" name="gate" value="hit==1" checked/>Array Hit<br>
+  <input type="checkbox" name="gate" value="loop<=1" checked/>Loop = 1<br>
+  <input type="checkbox" name="gate" value="thetaCM>10" checked/> ThetaCM > 10 deg<br>
+
+<p></p>
+
+<input type = "submit" value = "Run Simulation" style="width:200px;height:60px;font-size:20px" />
+
+<p></p>
+<iframe style="border:none;"></iframe>
+-->
+
+<!-- ===================================================== -->
+
+<hr>
+<p></p>
+HELIOSmatics was first built by Ben P. Kay in MS Excel around 2010. It was modified by Ryan Tang later. And now it migrated to the web on Dec, 2022.
+<br>
+The calculation can be found in the source code (heliosmatics.js or press F12)
+
+<p></p>
+
+<!--
+<hr>
+Experimental 3D model
+<div id="Plot_3D" class="plotStyle"></div>
+-->
+
+</body>
+
+<!-- ######################################################################################### -->
+
+<script src="heliosmatics.js"></script>
+  
+<script>
+
+function CopyInputs(){
+  let inputs = document.getElementsByTagName("input");
+  let copyText = "====HELIOSMATICS|";
+  for(let i = 0; i < inputs.length; i++){
+     if( inputs[i].type == 'text'){
+        //console.log(inputs[i].id.substring(0,2));
+        if( inputs[i].id.substring(0,2) == 'Ex' ||  inputs[i].id.substring(0,5) == 'theta' ) {
+          continue;
+        }
+        if( inputs[i].id == 'innerRecoil'){
+           break;
+        }
+        copyText += inputs[i].value + ", ";
+     }
+  }
+  
+  copyText += document.getElementById('heavyName').innerHTML;
+
+  //console.log(copyText);
+
+  navigator.clipboard.writeText(copyText).then(
+    () => {
+       alert('Setting copied to clipboard.\nCan paste it in Monte Carlo simulation.\n' + copyText);
+    }).catch(
+    () =>{
+       alert('Cannot copy.');
+    });
+  
+  //window.open('simpleSim.html');
+ 
+}
+
+</script>
+
+</html>

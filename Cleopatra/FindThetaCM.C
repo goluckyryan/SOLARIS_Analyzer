@@ -34,8 +34,8 @@ int main(int argc, char *argv[]){
   double Ex = 0;
   double xRatio = 0.95;
   int nDiv = 1;
-  string reactionTxt = "reactionConfig.txt";
-  string detGeoTxt = "detectorGeo.txt";
+  std::string reactionTxt = "reactionConfig.txt";
+  std::string detGeoTxt = "detectorGeo.txt";
   int ID = 0;
 
   if ( argc >= 2 ) Ex = atof(argv[1]);

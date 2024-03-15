@@ -26,7 +26,7 @@ void PrintPotential(){
 
 /// A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
 /// 1 1 1 1 0 0 1 1 0 0 1 1 1 0 0 1 1 0 0 0 0 1 0 1 1 1
-string potentialRef(string name){
+std::string potentialRef(std::string name){
   
   //======== Deuteron 
   if( name == "A" ){
@@ -1034,7 +1034,7 @@ bool BassaniPicardPotential(int A, int Z, double E){
   return true;
 }
 
-bool CallPotential(string potName, int A, int Z, double E, int Zproj){
+bool CallPotential(std::string potName, int A, int Z, double E, int Zproj){
   bool okFlag = false;
   
   if( potName == "A") okFlag = AnCaiPotential(A, Z, E);

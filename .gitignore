@@ -15,6 +15,7 @@ root_data
 *.in
 *.out
 *.txt
+*.csv
 
 Cleopatra/ExtractXSec
 Cleopatra/ExtractXSecFromText
@@ -26,3 +27,5 @@ Cleopatra/PlotSimulation
 Cleopatra/PlotTGraphTObjArray
 Cleopatra/SimAlpha
 Cleopatra/SimTransfer
+
+__pycache__

@@ -94,7 +94,7 @@ void FindThetaCM(double Ex, int nDivision=1, double XRATION = 0.95,
     
   int iDet = array.nDet;
   double length = array.detLength;
-  vector<double> midPos;
+  std::vector<double> midPos;
    
   for(int i = 0; i < iDet; i++){
     if( array.firstPos > 0 ){
