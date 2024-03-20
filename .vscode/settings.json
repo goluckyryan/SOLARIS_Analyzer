@@ -124,7 +124,11 @@
     "script_multi.C": "cpp",
     "Isotope.C": "cpp",
     "classisotope.h": "c",
-    "knockoutSim.C": "cpp"
+    "knockoutSim.C": "cpp",
+    "test.C": "cpp",
+    "SimTransfer.C": "cpp",
+    "httpaccess.C": "cpp",
+    "httpcontrol.C": "cpp"
   },
 
   "better-comments.multilineComments": true,

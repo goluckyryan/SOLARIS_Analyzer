@@ -289,8 +289,130 @@
 <p id="n2"></p>
 <p id="n3"></p>
 
-<hr>
+<!-- ===================================================== -->
+<h2> DWBA & Monte Carlo Simultion </h2>
 
+<h3>DWBA and E<sub>x</sub> List:</h3>
+<b  style="color:red;">For 2-nucleon transfer</b>, <b>Orbital</b> take the form NL=X, where N is number of node, X is momentum number. n and L are related by &Sigma;<sub>i</sub> (2n<sub>i</sub>+l<sub>i</sub>) = 2N + X + 2n + l, where n<sub>i</sub> and l<sub>i</sub> are the principle number and orbital angular momentum of the each transfered nucleon, and n and l are the internal quanta of the 2-nucleon. e.g. (t,p) reaction to 0f orbtial, the left-hand side would be n<sub>i</sub> = 0 and l<sub>i</sub> = 3 and the sum is 3+3 = 6 = 2N + X + 2n+l. Assume n = l = 0, we have 6 = 2N+L. Thus, 3L=0, 2L=2,1L=4, 0L=6. </p>
+
+Beam J<sup>&pi;</sup>: <input type="text" id="neam_jpi" size="5" value=""/>
+<BR>TODO: guess the orbital for Beam J<sup>&pi;</sup>=0
+<br>
+<input type="checkbox" id="pos" onclick="checkParity()" checked/>Positive parity</td>
+<input type="checkbox" id="neg" onclick="checkParity()" checked/>Negative parity</td>
+<input type="checkbox" id="unk" onclick="checkParity()" checked/>Unknown parity</td>
+<br>
+
+<button type="button" onclick="addStates()">Add known states</button>
+Max Ex: <input type="text" id="maxEx" size="5" value="5"/>MeV
+
+<p id='waiting'></p>
+
+<table id="ExTable2">
+  <tr>
+    <td><b> E<sub>x</sub> [MeV] </b></td>
+    <td><b> &nbsp;&nbsp;&nbsp;J<sup>&#960;</sup></b></td>
+    <td><b> Orbital </b></td>
+  </tr>
+  </tr>
+    <td><input type="text" name="Ex" size="5" value="0"/></td>
+    <td><input type="text" name="Jpi" size="5" value="3/2+"/></td>
+    <td><input type="text" name="Orb" size="6" value="0d3/2"/></td>
+    <td><button type="button" onclick="addRow2(this)">Insert Ex</button></td>
+    <td><button type="button" onclick="deleteRow2(this)">Remove Ex</button></td>
+  </tr>
+  <!-- <tr>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td><button type="button" onclick="copyEx()">Copy Ex</button></td>
+    <td><button type="button" onclick="pasteEx()">&nbsp; Paste Ex &nbsp;</button></td>
+  </tr> -->
+</table>
+
+<p></p>
+<input type="checkbox" name="DWBA" value="On"/>Cal. DWBA
+
+<table>
+  <tr>
+    <td>Incoming Channel</td>
+    <td>
+      <select name="op1">
+        <option value="A" selected>D | An & Cai (2006) E < 183, 12 < A < 238</option>
+        <option value="H">D | Han, Shi, & Shen (2006) E < 200, 12 < A < 209</option>
+        <option value="B">D | Bojowald et al. (1988) 50 < E < 80, 27 < A < 208</option>
+        <option value="D">D | Daehnick, Childs, Vrcelj (1980) 11.8 < E < 80, 27 < A < 238 (REL) </option>
+        <option value="C">D | Daehnick, Childs, Vrcelj (1980) 11.8 < E < 80, 27 < A < 238 (NON-REL) </option>
+        <option value="L">D | Lohr and Haeberli (1974) 9 < E < 13, 40 < A  </option>
+        <option value="Q">D | Perey and Perey (1963) 12 < E < 25, 40 < A  </option>
+        <option value="Z">D | Zhang, Pang, Lou (2016) 5 < E < 170, A < 18, spe 6-7Li  </option>
+        <option value="K">P | Koning & Delaroche (2009) E < 200, 24 < A < 209 | Iso.Dep.</option>
+        <option value="V">P | Varner et al. (1991) 16 < E < 65, 4 < A < 209</option>
+        <option value="M">P | Menet et al. (1971) 30 < E < 60, 40 < A </option>
+        <option value="G">P | Becchetti and Greenlees (1969) E < 50, 40 < A </option>
+        <option value="P">P | Perey (1963) E < 20, 30 < A < 100  </option>
+        <option value="x">A=3 | Xu, Guo, Han, & Shen (2011) E < 250, 20 < A < 209 </option>
+        <option value="l">A=3 | Liang, Li, & Cai (2009) E < 270, All masses </option>
+        <option value="p">A=3 | Pang et al. (2009) all E, all masses, Iso. Dep.  </option>
+        <option value="c">A=3 | Li, Liang, Cai (2007), E < 40, 48 < A < 232, Tritons </option>
+        <option value="t">A=3 | Trost et al. (1987) 10 < E < 220, 10 < A < 208 </option>
+        <option value="h">A=3 | Hyakutake et al. (1980) 90 < E < 120, About 58 < A < 92 </option>
+        <option value="b">A=3 | Becchetti and Greenlees (1971), E < 40, 40 < A, Iso. Dep. </option>
+        <option value="s">A=4 | Su & Han (2015) E < 398, 20 < A < 209 </option>
+        <option value="a">A=4 | Avrigeanu et al. (2009) </option>
+        <option value="f">A=4 | Bassani and Picard (1969) 24 < E < 31, A = 90 </option>
+      </select> 
+    <td>
+  </tr>
+  <tr>
+    <td>Outgoing Channel</td>
+    <td>
+      <select name="op2">
+        <option value="A">D | An & Cai (2006) E < 183, 12 < A < 238</option>
+        <option value="H">D | Han, Shi, & Shen (2006) E < 200, 12 < A < 209</option>
+        <option value="B">D | Bojowald et al. (1988) 50 < E < 80, 27 < A < 208</option>
+        <option value="D">D | Daehnick, Childs, Vrcelj (1980) 11.8 < E < 80, 27 < A < 238 (REL) </option>
+        <option value="C">D | Daehnick, Childs, Vrcelj (1980) 11.8 < E < 80, 27 < A < 238 (NON-REL) </option>
+        <option value="L">D | Lohr and Haeberli (1974) 9 < E < 13, 40 < A  </option>
+        <option value="Q">D | Perey and Perey (1963) 12 < E < 25, 40 < A  </option>
+        <option value="Z">D | Zhang, Pang, Lou (2016) 5 < E < 170, A < 18, spe 6-7Li  </option>
+        <option value="K" selected>P | Koning & Delaroche (2009) E < 200, 24 < A < 209, Iso.Dep.</option>
+        <option value="V">P | Varner et al. (1991) 16 < E < 65, 4 < A < 209</option>
+        <option value="M">P | Menet et al. (1971) 30 < E < 60, 40 < A </option>
+        <option value="G">P | Becchetti and Greenlees (1969) E < 50, 40 < A </option>
+        <option value="P">P | Perey (1963) E < 20, 30 < A < 100  </option>
+        <option value="x">A=3 | Xu, Guo, Han, & Shen (2011) E < 250, 20 < A < 209 </option>
+        <option value="l">A=3 | Liang, Li, & Cai (2009) E < 270, All masses </option>
+        <option value="p">A=3 | Pang et al. (2009) all E | all masses, Iso. Dep.  </option>
+        <option value="c">A=3 | Li, Liang, Cai (2007), E < 40, 48 < A < 232, Tritons </option>
+        <option value="t">A=3 | Trost et al. (1987) 10 < E < 220, 10 < A < 208 </option>
+        <option value="h">A=3 | Hyakutake et al. (1980) 90 < E < 120, About 58 < A < 92 </option>
+        <option value="b">A=3 | Becchetti and Greenlees (1971), E < 40, 40 < A, Iso. Dep. </option>
+        <option value="s">A=4 | Su & Han (2015) E < 398, 20 < A < 209 </option>
+        <option value="a">A=4 | Avrigeanu et al. (2009) </option>
+        <option value="f">A=4 | Bassani and Picard (1969) 24 < E < 31, A = 90 </option>
+      </select> 
+    <td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <input type="checkbox" name="onlyDWBA" value="On"/>Only DWBA and Don't Sim. Angle range (for only DWBA)
+  </tr>
+  <tr>
+    <td>Min [deg]: </td>
+    <td><input type = "text" name = "minAng" size="6" value="0" /></td>
+    <td>Max [deg]: </td>
+    <td><input type = "text" name = "maxAng" size="6" value="90"/></td>
+  </tr>
+</table>
+
+<button type="button" onclick="DWBA_Sim()" style="width:200px;height:60px;">Run DWBA and Simulation</button>
+
+
+<!-- ===================================================== -->
+<hr>
 <h1>&theta;<sub>CM</sub> Calculator</h1>
 
 The calculation only give &theta;<sub>CM</sub> after the bending.
@@ -323,94 +445,6 @@ The calculation only give &theta;<sub>CM</sub> after the bending.
 
 <!-- ===================================================== -->
 
-<!--
-<hr>
-
-<h1> DWBA and Monte Carlo Simulation (under construction...)</h1>
-
-  <table id='DWBATable' style="border:1px solid; text-align:center;">
-    <tr>
-      <td> E<sub>x</sub> [MeV]</td>
-      <td> J<sup>&#960;</sup></td>
-      <td> Orbital </td>
-    </tr>
-    </tr>
-     <td id='dwba1'>0</td>
-     <td><input type="text" name="Jpi" size="5" value="3/2+" enterkeyhint="done"/></td>
-     <td><input type="text" name="Orb" size="5" value="0d3/2" enterkeyhint="done"/></td>
-    </tr>
-    </tr>
-     <td id='dwba2'>0</td>
-     <td><input type="text" name="Jpi" size="5" value="1/2+" enterkeyhint="done"/></td>
-     <td><input type="text" name="Orb" size="5" value="1s1/2" enterkeyhint="done"/></td>
-    </tr>
-  </table>
-
-  <p></p>
-  <input type="checkbox" name="DWBA" value="On"/>Cal. DWBA
-
-  <table>
-    <tr>
-      <td>Incoming Channel</td>
-      <td>
-        <select name="op1">
-          <option value="A" selected>D | An & Cai (2006), E < 183, 12 < A < 238</option>
-          <option value="H">D | Han, Shi, & Shen, (2006), E < 200 | 12 < A < 209</option>
-          <option value="B">D | Bojowald et al., (1988), 50 < E < 80 | 27 < A < 208</option>
-          <option value="K">P | Koning & Delaroche, (2009), E < 200 | 24 < A < 209 | Iso.Dep.</option>
-          <option value="V">P | Varner et al., (1991), 16 < E < 65 | 4 < A < 209</option>
-          <option value="M">P | Menet et al., (1971), 30 < E < 60 | 40 < A </option>
-          <option value="x">A=3 | Xu, Guo, Han, & Shen, (2011), E < 250 | 20 < A < 209 </option>
-          <option value="l">A=3 | Liang, Li, & Cai, (2009), E < 270 | All masses </option>
-          <option value="x">A=4 | Su & Han, (2015), E < 398 | 20 < A < 209 </option>
-        </select> 
-      <td>
-    </tr>
-    <tr>
-      <td>Outgoing Channel</td>
-      <td>
-        <select name="op2">
-          <option value="A">D | An & Cai (2006), E < 183, 12 < A < 238</option>
-          <option value="H">D | Han, Shi, & Shen, (2006), E < 200 | 12 < A < 209</option>
-          <option value="B">D | Bojowald et al., (1988), 50 < E < 80 | 27 < A < 208</option>
-          <option value="K" selected>P | Koning & Delaroche, (2009), E < 200 | 24 < A < 209 | Iso.Dep.</option>
-          <option value="V">P | Varner et al., (1991), 16 < E < 65 | 4 < A < 209</option>
-          <option value="M">P | Menet et al., (1971), 30 < E < 60 | 40 < A </option>
-          <option value="x">A=3 | Xu, Guo, Han, & Shen, (2011), E < 250 | 20 < A < 209 </option>
-          <option value="l">A=3 | Liang, Li, & Cai, (2009), E < 270 | All masses </option>
-          <option value="x">A=4 | Su & Han, (2015), E < 398 | 20 < A < 209 </option>
-        </select> 
-      <td>
-    </tr>
-  </table>
-
-<h3> Plot config (still working on):</h3>
-
-  <input type="checkbox" name="plot" value="pEZ" checked/>E vs Z<br>
-  <input type="checkbox" name="plot" value="pExCal" checked/>Ex (cal.)<br>
-  <input type="checkbox" name="plot" value="pThetaCM" checked/>ThetaCM<br>
-  <input type="checkbox" name="plot" value="pThetaCM_Z" checked/>ThetaCM vs Z<br>
-  <input type="checkbox" name="plot" value="pRecoilXY" checked/>Recoil X vs Y<br>
-  <input type="checkbox" name="plot" value="pRecoilRThetaCM"/>Recoil-R vs ThetaCM<br>
-  <input type="checkbox" name="plot" value="pRecoilRZ"/>Recoil R vs Z<br>
-  <input type="checkbox" name="plot" value="pArrayXY"/>Array X vs Y<br>
-
-  <p></p>
-  
-  <input type="checkbox" name="gate" value="hit==1" checked/>Array Hit<br>
-  <input type="checkbox" name="gate" value="loop<=1" checked/>Loop = 1<br>
-  <input type="checkbox" name="gate" value="thetaCM>10" checked/> ThetaCM > 10 deg<br>
-
-<p></p>
-
-<input type = "submit" value = "Run Simulation" style="width:200px;height:60px;font-size:20px" />
-
-<p></p>
-<iframe style="border:none;"></iframe>
--->
-
-<!-- ===================================================== -->
-
 <hr>
 <p></p>
 HELIOSmatics was first built by Ben P. Kay in MS Excel around 2010. It was modified by Ryan Tang later. And now it migrated to the web on Dec, 2022.
@@ -419,52 +453,11 @@ The calculation can be found in the source code (heliosmatics.js or press F12)
 
 <p></p>
 
-<!--
-<hr>
-Experimental 3D model
-<div id="Plot_3D" class="plotStyle"></div>
--->
-
 </body>
 
 <!-- ######################################################################################### -->
 
 <script src="heliosmatics.js"></script>
-  
-<script>
-
-function CopyInputs(){
-  let inputs = document.getElementsByTagName("input");
-  let copyText = "====HELIOSMATICS|";
-  for(let i = 0; i < inputs.length; i++){
-     if( inputs[i].type == 'text'){
-        //console.log(inputs[i].id.substring(0,2));
-        if( inputs[i].id.substring(0,2) == 'Ex' ||  inputs[i].id.substring(0,5) == 'theta' ) {
-          continue;
-        }
-        if( inputs[i].id == 'innerRecoil'){
-           break;
-        }
-        copyText += inputs[i].value + ", ";
-     }
-  }
-  
-  copyText += document.getElementById('heavyName').innerHTML;
-
-  //console.log(copyText);
-
-  navigator.clipboard.writeText(copyText).then(
-    () => {
-       alert('Setting copied to clipboard.\nCan paste it in Monte Carlo simulation.\n' + copyText);
-    }).catch(
-    () =>{
-       alert('Cannot copy.');
-    });
-  
-  //window.open('simpleSim.html');
- 
-}
-
-</script>
+<script src="montecarlo.js"></script>
 
 </html>
