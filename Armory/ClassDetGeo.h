@@ -60,7 +60,7 @@ struct Array{
 
     printf("   Blocker Position: %8.2f mm \n", firstPos > 0 ? firstPos - blocker : firstPos + blocker );
     printf("     First Position: %8.2f mm \n", firstPos);
-    printf("     number of det : %d x %d \n", mDet, nDet);
+    printf("     number of det : %d x %d (side x col) \n", mDet, nDet);
     printf("   detector facing : %s\n", detFaceOut ? "Out" : "In");
     printf("      energy resol.: %f MeV\n", eSigma);
     printf("       pos-Z resol.: %f mm \n", zSigma);
@@ -111,8 +111,6 @@ public:
   double Bfield;      /// T
   int BfieldSign ;    /// sign of B-field
   double bore;        /// bore , mm
-
-  short numSet;       /// number of array and aux
 
   double zMin, zMax;   /// total range span of all arrays
 
@@ -174,6 +172,8 @@ inline bool DetGeo::LoadDetectorGeo(TMacro * macro, bool verbose){
     if( str[0].find("####") != std::string::npos ) break;
     if( str[0].find("#===") != std::string::npos ) {
       detFlag ++;
+      array.push_back(Array());
+      aux.push_back(Auxillary());
       detLine = 0;
       continue;;
     }
@@ -184,14 +184,6 @@ inline bool DetGeo::LoadDetectorGeo(TMacro * macro, bool verbose){
         BfieldSign = Bfield > 0 ? 1: -1;
       }
       if ( detLine ==  1 ) bore              = atof(str[0].c_str());
-      if ( detLine ==  2 ) {
-        numSet            = atoi(str[0].c_str());
-        for( int i = 0; i < numSet; i++){
-          array.push_back(Array());
-          aux.push_back(Auxillary());
-        }
-      }
-
     }
 
     if( detFlag >  0){
@@ -223,7 +215,7 @@ inline bool DetGeo::LoadDetectorGeo(TMacro * macro, bool verbose){
   zMin =  99999;
   zMax = -99999;
 
-  for( int i = 0; i < 2; i ++ ){
+  for( int i = 0; i < detFlag; i ++ ){
     array[i].DeduceAbsolutePos();
     if (array[i].enable ) {
       double zmax = TMath::Max(array[i].zMin, array[i].zMax);
@@ -242,16 +234,18 @@ inline bool DetGeo::LoadDetectorGeo(TMacro * macro, bool verbose){
 inline void DetGeo::Print(bool printAll){
 
   printf("#####################################################\n");
-  printf("           B-field : %8.2f  T, %s\n", Bfield, Bfield > 0 ? "out of plan" : "into plan");
-  printf("              Bore : %8.2f  mm\n", bore);
-  printf("  No. of det. Set. : %u \n", numSet);
-  for( int i = 0; i < numSet ; i++){
-    printf("================================= %d-th Detector Info (%s)\n", i, array[i].enable ? "enabled" : "disabled");
+  printf("           B-field : %8.2f T, %s\n", Bfield, Bfield > 0 ? "out of plan" : "into plan");
+  printf("              Bore : %8.2f mm\n", bore);
+  printf("  No. of det. Set. : %zu \n", array.size());
+  
+  printf("             z-Min : %8.2f mm\n", zMin);
+  printf("             z-Max : %8.2f mm\n", zMax);
+  for( size_t i = 0; i < array.size() ; i++){
+    printf("================================= %zu-th Detector Info (%s)\n", i, array[i].enable ? "enabled" : "disabled");
     if( printAll || array[i].enable ) {
       array[i].Print();
       aux[i].Print();
     }
-
   }
   printf("#####################################################\n");
 
