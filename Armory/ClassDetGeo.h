@@ -25,7 +25,7 @@ struct Array{
   double eSigma;         /// intrinsic energy resolution MeV
   double zSigma;         /// intrinsic position resolution mm  
   bool  detFaceOut;      ///detector_facing_Out_or_In
-  std::vector<double> pos;  /// near position in meter
+  std::vector<double> pos;  /// realtive position in meter
   int nDet, mDet;      /// nDet = number of different pos, mDet, number of same pos
   std::vector<double> detPos; ///absolute position of detector
 
@@ -46,7 +46,10 @@ struct Array{
     zMax = TMath::Max(detPos.front(), detPos.back()) + (firstPos > 0 ? detLength : 0);
   }
 
-  void PrintArray() const{
+  void Print() const{
+
+    printf("------------------------------- Array\n");
+    
     for(int i = 0; i < nDet ; i++){
       if( firstPos > 0 ){
         printf("%d, %8.2f mm - %8.2f mm \n", i, detPos[i], detPos[i] + detLength);
@@ -65,6 +68,38 @@ struct Array{
 
 };
 
+struct Auxillary{
+
+  //========== recoil
+  double detPos; //
+  double outerRadius;
+  double innerRadius;
+
+  bool isCoincident;
+
+  double detPos1 = 0; // virtual recoil
+  double detPos2 = 0; // virtual recoil
+
+  //========== enum
+  double elumPos1 = 0;
+  double elumPos2 = 0;
+
+  void Print() const {
+    printf("------------------------------- Auxillary\n");
+    printf("     Recoil detector pos: %8.2f mm, radius: %6.2f - %6.2f mm \n", detPos, innerRadius, outerRadius);
+
+    if( elumPos1 != 0 || elumPos2 != 0 || detPos1 != 0 || detPos2 != 0){
+      printf("=================================== Virtual Detectors\n");
+      if( elumPos1 != 0 ) printf("   Elum 1 pos.: %f mm \n", elumPos1);
+      if( elumPos2 != 0 ) printf("   Elum 2 pos.: %f mm \n", elumPos2);
+      if( detPos1  != 0 ) printf(" Recoil 1 pos.: %f mm \n", detPos1);
+      if( detPos2  != 0 ) printf(" Recoil 2 pos.: %f mm \n", detPos2);
+      printf("=====================================================\n");
+    }
+  }
+
+};
+
 class DetGeo {
 
 public:
@@ -75,28 +110,20 @@ public:
 
   double Bfield;      /// T
   int BfieldSign ;    /// sign of B-field
-  double BfieldTheta; /// rad, 0 = z-axis, pi/2 = y axis, pi = -z axis
   double bore;        /// bore , mm
-  
-  double recoilPos;      /// recoil, downstream
-  double recoilInnerRadius;    /// radius recoil inner
-  double recoilOuterRadius;   /// radius recoil outter
 
-  double recoilPos1, recoilPos2; /// imaginary recoils
+  short numSet;       /// number of array and aux
 
-  double elumPos1, elumPos2; /// imaginary elum, only sensitive to light recoil
-
-  //===================1st array
-  Array array[2];
-
-  double zMin, zMax;   /// range of detectors
-  bool isCoincidentWithRecoil;
+  double zMin, zMax;   /// total range span of all arrays
 
   bool LoadDetectorGeo(TString fileName, bool verbose = true);
   bool LoadDetectorGeo(TMacro * macro, bool verbose = true);
 
-  void PrintWithoutArray() ;
-  void Print( bool printAll = true) ;
+  //=================== array
+  std::vector<Array> array;
+  std::vector<Auxillary> aux;
+
+  void Print( bool printAll = false) ;
 
 
 private:
@@ -129,7 +156,7 @@ inline bool DetGeo::LoadDetectorGeo(TMacro * macro, bool verbose){
   TList * haha = macro->GetListOfLines();
   int numLine = (haha)->GetSize();
 
-  for( int i = 0; i < 2 ; i++) array[i].pos.clear();
+  // for( int i = 0; i < 2 ; i++) array[i].pos.clear();
 
   int detFlag = 0;
   int detLine = 0;
@@ -156,31 +183,38 @@ inline bool DetGeo::LoadDetectorGeo(TMacro * macro, bool verbose){
         Bfield = atof(str[0].c_str());
         BfieldSign = Bfield > 0 ? 1: -1;
       }
-      if ( detLine ==  1 ) BfieldTheta       = atof(str[0].c_str());
-      if ( detLine ==  2 ) bore              = atof(str[0].c_str());
-      if ( detLine ==  3 ) recoilPos         = atof(str[0].c_str());
-      if ( detLine ==  4 ) recoilInnerRadius = atof(str[0].c_str());
-      if ( detLine ==  5 ) recoilOuterRadius = atof(str[0].c_str());
-      if ( detLine ==  6 ) isCoincidentWithRecoil = str[0] == "false" ? false: true;
-      if ( detLine ==  7 ) recoilPos1        = atof(str[0].c_str());
-      if ( detLine ==  8 ) recoilPos2        = atof(str[0].c_str());
-      if ( detLine ==  9 ) elumPos1          = atof(str[0].c_str());
-      if ( detLine == 10 ) elumPos2          = atof(str[0].c_str());
+      if ( detLine ==  1 ) bore              = atof(str[0].c_str());
+      if ( detLine ==  2 ) {
+        numSet            = atoi(str[0].c_str());
+        for( int i = 0; i < numSet; i++){
+          array.push_back(Array());
+          aux.push_back(Auxillary());
+        }
+      }
+
     }
 
     if( detFlag >  0){
       unsigned short ID = detFlag - 1;
       if ( detLine ==  0 ) array[ID].enable       = str[0] == "true" ? true : false;
-      if ( detLine ==  1 ) array[ID].detPerpDist  = atof(str[0].c_str());
-      if ( detLine ==  2 ) array[ID].detWidth     = atof(str[0].c_str());
-      if ( detLine ==  3 ) array[ID].detLength    = atof(str[0].c_str());
-      if ( detLine ==  4 ) array[ID].blocker      = atof(str[0].c_str());
-      if ( detLine ==  5 ) array[ID].firstPos     = atof(str[0].c_str());
-      if ( detLine ==  6 ) array[ID].eSigma       = atof(str[0].c_str());
-      if ( detLine ==  7 ) array[ID].zSigma       = atof(str[0].c_str());
-      if ( detLine ==  8 ) array[ID].detFaceOut   = str[0] == "Out" ? true : false;
-      if ( detLine ==  9 ) array[ID].mDet         = atoi(str[0].c_str());
-      if ( detLine >= 10 ) array[ID].pos.push_back(atof(str[0].c_str()));
+      if ( detLine ==  1 ) aux[ID].detPos         = atof(str[0].c_str());
+      if ( detLine ==  2 ) aux[ID].innerRadius    = atof(str[0].c_str());
+      if ( detLine ==  3 ) aux[ID].outerRadius    = atof(str[0].c_str());
+      if ( detLine ==  4 ) aux[ID].isCoincident   = str[0] == "true" ? true : false;
+      if ( detLine ==  5 ) aux[ID].detPos1        = atof(str[0].c_str());
+      if ( detLine ==  6 ) aux[ID].detPos2        = atof(str[0].c_str());
+      if ( detLine ==  7 ) aux[ID].elumPos1       = atof(str[0].c_str());
+      if ( detLine ==  8 ) aux[ID].elumPos2       = atof(str[0].c_str());
+      if ( detLine ==  9 ) array[ID].detPerpDist  = atof(str[0].c_str());
+      if ( detLine == 10 ) array[ID].detWidth     = atof(str[0].c_str());
+      if ( detLine == 11 ) array[ID].detLength    = atof(str[0].c_str());
+      if ( detLine == 12 ) array[ID].blocker      = atof(str[0].c_str());
+      if ( detLine == 13 ) array[ID].firstPos     = atof(str[0].c_str());
+      if ( detLine == 14 ) array[ID].eSigma       = atof(str[0].c_str());
+      if ( detLine == 15 ) array[ID].zSigma       = atof(str[0].c_str());
+      if ( detLine == 16 ) array[ID].detFaceOut   = str[0] == "Out" ? true : false;
+      if ( detLine == 17 ) array[ID].mDet         = atoi(str[0].c_str());
+      if ( detLine >= 18 ) array[ID].pos.push_back(atof(str[0].c_str()));
     }
 
     detLine ++;
@@ -205,37 +239,21 @@ inline bool DetGeo::LoadDetectorGeo(TMacro * macro, bool verbose){
 
 }
 
-inline void DetGeo::PrintWithoutArray(){
-  printf("=====================================================\n");
-  printf("                 B-field: %8.2f  T, %s\n", Bfield, Bfield > 0 ? "out of plan" : "into plan");
-  printf("          B-field Theta : %6.2f deg \n", BfieldTheta);
-
-  if( BfieldTheta != 0.0 ) printf("                                      +---- field angle != 0 is not supported!!! \n");
-  printf("     Recoil detector pos: %8.2f mm, radius: %6.2f - %6.2f mm \n", recoilPos, recoilInnerRadius, recoilOuterRadius);
-
-  if( elumPos1 != 0 || elumPos2 != 0 || recoilPos1 != 0 || recoilPos2 != 0){
-    printf("=================================== Auxillary/Imaginary Detectors\n");
-  }
-  if( elumPos1 != 0 )   printf("   Elum 1 pos.: %f mm \n", elumPos1);
-  if( elumPos2 != 0 )   printf("   Elum 2 pos.: %f mm \n", elumPos2);
-  if( recoilPos1 != 0 ) printf(" Recoil 1 pos.: %f mm \n", recoilPos1);
-  if( recoilPos2 != 0 ) printf(" Recoil 2 pos.: %f mm \n", recoilPos2);
-  printf("=====================================================\n");
-}
-
 inline void DetGeo::Print(bool printAll){
 
-  PrintWithoutArray();
-
-  for( int i = 0; i < 2 ; i++){
-
+  printf("#####################################################\n");
+  printf("           B-field : %8.2f  T, %s\n", Bfield, Bfield > 0 ? "out of plan" : "into plan");
+  printf("              Bore : %8.2f  mm\n", bore);
+  printf("  No. of det. Set. : %u \n", numSet);
+  for( int i = 0; i < numSet ; i++){
+    printf("================================= %d-th Detector Info (%s)\n", i, array[i].enable ? "enabled" : "disabled");
     if( printAll || array[i].enable ) {
-      printf("-----------------------------------%d-th Detector Position \n", i);
-      array[i].PrintArray();
+      array[i].Print();
+      aux[i].Print();
     }
 
   }
-  printf("=====================================================\n");
+  printf("#####################################################\n");
 
 }
 
