@@ -22,6 +22,9 @@ false           //isTargetScattering
 1000000         //number_of_Event_being_generated
 false           //Redo_until_hit_array=all_events_hit_array
 
+#---- Number of Reaction Should equal to number of array in detectorGeo.txt
+#---- If not, somethings funny would happens.
+
 #=================reaction_for_1st_Array
 1               //recoil_light_A
 1               //recoil-light_Z
@@ -49,6 +52,5 @@ false           //isDacay
 0.000    1.0     1.0    0.01
 1.000    1.0     1.0    0.01
 2.000    1.0     1.0    0.01
-
 
 ################## end of file

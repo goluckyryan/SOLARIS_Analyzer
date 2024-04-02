@@ -70,6 +70,7 @@ struct ExcitedEnergies {
   }
 
   void Print() const {
+    printf("...................................\n");
     printf("Energy[MeV]  Rel.Xsec     SF  sigma\n");
     for( size_t i = 0; i < ExList.size(); i++){
       ExList[i].Print("\n");
@@ -101,8 +102,8 @@ public:
   float targetThickness;    ///targetThickness_in_cm
   std::string beamStoppingPowerFile;         ///stopping_power_for_beam
 
-  Recoil recoil[2];
-  ExcitedEnergies exList[2];
+  std::vector<Recoil> recoil;
+  std::vector<ExcitedEnergies> exList;
 
   int numEvents;            ///number_of_Event_being_generated
   bool isRedo;         ///isReDo
@@ -163,9 +164,6 @@ inline bool ReactionConfig::LoadReactionConfig(TMacro * macro){
 
   if( macro == NULL ) return false;
 
-  exList[0].Clear();
-  exList[1].Clear();
-
   int recoilFlag = 0;
   int recoilLine = 0;
 
@@ -184,6 +182,8 @@ inline bool ReactionConfig::LoadReactionConfig(TMacro * macro){
     if( str[0].find("#===") != std::string::npos ) {
       recoilFlag ++;
       recoilLine = 0;
+      recoil.push_back(Recoil());
+      exList.push_back(ExcitedEnergies());
       continue;
     }
 
@@ -230,7 +230,7 @@ inline bool ReactionConfig::LoadReactionConfig(TMacro * macro){
     
   }
 
-  for( int i = 0; i < 2; i++){
+  for( size_t i = 0; i < recoil.size(); i++){
     recoil[i].heavyA = beamA + targetA - recoil[i].lightA;
     recoil[i].heavyZ = beamZ + targetZ - recoil[i].lightZ;
   }
@@ -239,28 +239,29 @@ inline bool ReactionConfig::LoadReactionConfig(TMacro * macro){
 
 inline void ReactionConfig::Print(int ID, bool withEx) const{
 
-  printf("=====================================================\n");
+  printf("#####################################################\n");
 
   printf("number of Simulation Events : %d \n", numEvents);
   printf("    is Redo until hit array : %s \n", isRedo ? "Yes" : "No");
   
-  printf("------------------------------ Beam\n");
+  printf("================================= Beam\n");
   printf("   beam : A = %3d, Z = %2d, Ex = %.2f MeV\n", beamA, beamZ, beamEx);
   printf(" beam Energy : %.2f +- %.2f MeV/u, dE/E = %5.2f %%\n", beamEnergy, beamEnergySigma, beamEnergySigma/beamEnergy);
   printf("       Angle : %.2f +- %.2f mrad\n", beamTheta, beamThetaSigma);
   printf("      offset : (x,y) = (%.2f, %.2f) mmm \n", beamX, beamY);
 
-  printf("------------------------------ Target\n");
-  printf(" target : A = %3d, Z = %2d \n", targetA, targetZ);
-  printf("    is target scattering : %s \n", isTargetScattering ? "Yes" : "No");
+  printf("================================= Target\n");
+  printf("            target : A = %3d, Z = %2d \n", targetA, targetZ);
+  printf(" enable scattering : %s \n", isTargetScattering ? "Yes" : "No");
   if(isTargetScattering){
     printf(" target density : %.f g/cm3\n", targetDensity);
     printf("      thickness : %.f cm\n", targetThickness);
     printf("         beam stopping file : %s \n", beamStoppingPowerFile.c_str());
   }
   
-  for( int i = 0; i < 2; i ++ ){
-    printf("------------------------------ Recoil-%d\n", i); 
+  printf("================================= Number of recoil reactions : %zu\n", recoil.size());
+  for( size_t i = 0; i < recoil.size(); i ++ ){
+    printf("------------------------------------------ Recoil-%zu\n", i); 
     if( ID == i || ID < 0  ){
       recoil[i].Print();
       if( withEx ) exList[i].Print();
@@ -268,7 +269,7 @@ inline void ReactionConfig::Print(int ID, bool withEx) const{
   }
   
   
-  printf("=====================================================\n");
+  printf("#####################################################\n");
 }
 
 #endif
