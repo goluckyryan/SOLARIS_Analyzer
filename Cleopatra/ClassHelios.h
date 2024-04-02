@@ -86,7 +86,6 @@ public:
   void SetBeamPosition(double x, double y) { xOff = x; yOff = y;}
   
   void OverrideMagneticField(double BField);
-  void OverrideMagneticFieldDirection(double BfieldThetaInDeg);
   void OverrideFirstPos(double firstPos);
   void OverrideDetectorDistance(double perpDist);
   void OverrideDetectorFacing(bool isOutside);
@@ -135,6 +134,7 @@ public:
   
   DetGeo GetDetectorGeometry() const {return detGeo;}
   Array GetArrayGeometry()     const {return array;}
+  Auxillary GetAuxGeometry()   const {return aux;}
   
   TString GetHitMessage()         {return hitMessage;}
   TString GetAcceptanceMessage()  { AcceptanceCodeToMsg(acceptanceCode); return acceptanceMsg;}
@@ -145,6 +145,7 @@ private:
       
   DetGeo detGeo;
   Array array;
+  Auxillary aux;
   
   trajectory orbitb, orbitB;
   
@@ -213,10 +214,6 @@ void HELIOS::OverrideMagneticField(double BField){
   this->detGeo.BfieldSign = BField > 0 ? 1: -1;
 }
 
-void HELIOS::OverrideMagneticFieldDirection(double BfieldThetaInDeg){ 
-   this->detGeo.BfieldTheta = BfieldThetaInDeg;
-}
-
 void HELIOS::OverrideFirstPos(double firstPos){
    overrideFirstPos = true;
    printf("------ Overriding FirstPosition to : %8.2f mm \n", firstPos);
@@ -239,7 +236,8 @@ bool HELIOS::SetDetectorGeometry(std::string filename, unsigned short ID){
   if( detGeo.LoadDetectorGeo(filename, false)) {
 
     array = detGeo.array[ID];
-    isCoincidentWithRecoil = detGeo.isCoincidentWithRecoil;
+    aux = detGeo.aux[ID];
+    isCoincidentWithRecoil = detGeo.aux[ID].isCoincident;
     isDetReady = true;
 
   }else{
@@ -253,24 +251,12 @@ bool HELIOS::SetDetectorGeometry(std::string filename, unsigned short ID){
 void HELIOS::PrintGeometry() const{
 
   printf("=====================================================\n");
-  printf("                 B-field: %8.2f  T, Theta : %6.2f deg \n", detGeo.Bfield, detGeo.BfieldTheta);
-  if( detGeo.BfieldTheta != 0.0 ) {
-    printf("                                      +---- field angle != 0 is not supported!!! \n");
-  }
-  printf("     Recoil detector pos: %8.2f mm, radius: %6.2f - %6.2f mm \n", detGeo.recoilPos, detGeo.recoilInnerRadius, detGeo.recoilOuterRadius);
-
+  printf("  B-field : %8.2f T, %s\n", detGeo.Bfield, detGeo.Bfield > 0 ? "out of plan" : "into plan");
+  printf("     Bore : %8.2f mm\n", detGeo.bore);
   printf("----------------------------------- Detector Position \n");
-  array.PrintArray();
-
-  if( detGeo.elumPos1 != 0 || detGeo.elumPos2 != 0 || detGeo.recoilPos1 != 0 || detGeo.recoilPos2 != 0){
-    printf("=================================== Auxillary/Imaginary Detectors\n");
-  }
-  if( detGeo.elumPos1 != 0 )   printf("   Elum 1 pos.: %f mm \n", detGeo.elumPos1);
-  if( detGeo.elumPos2 != 0 )   printf("   Elum 2 pos.: %f mm \n", detGeo.elumPos2);
-  if( detGeo.recoilPos1 != 0 ) printf(" Recoil 1 pos.: %f mm \n", detGeo.recoilPos1);
-  if( detGeo.recoilPos2 != 0 ) printf(" Recoil 2 pos.: %f mm \n", detGeo.recoilPos2);
+  array.Print();
+  aux.Print();
   printf("=====================================================\n");
-
 
 }
 
@@ -325,14 +311,14 @@ int HELIOS::CheckDetAcceptance(){
   if( detGeo.bore < 2 * orbitb.rho) { acceptanceCode = -10; return acceptanceCode;} 
   
   // -14 ========== check particle-B hit radius on recoil dectector
-  if( isCoincidentWithRecoil && orbitB.R > detGeo.recoilOuterRadius  ) {acceptanceCode = -14; return acceptanceCode;} 
+  if( isCoincidentWithRecoil && orbitB.R > aux.outerRadius  ) {acceptanceCode = -14; return acceptanceCode;} 
 
   //if( isCoincidentWithRecoil && (orbitB.R > rhoRecoilout || orbitB.R < rhoRecoilin) ) return -14;
   
   // -12 ========= check is particle-b was blocked by recoil detector
-  rhoHit = GetR(detGeo.recoilPos);
-  if( orbitb.z > 0 && detGeo.recoilPos > 0 && orbitb.z > detGeo.recoilPos && rhoHit < detGeo.recoilOuterRadius ) { acceptanceCode = -12; return acceptanceCode;}
-  if( orbitb.z < 0 && detGeo.recoilPos < 0 && orbitb.z < detGeo.recoilPos && rhoHit < detGeo.recoilOuterRadius ) { acceptanceCode = -12; return acceptanceCode;}
+  rhoHit = GetR(aux.detPos);
+  if( orbitb.z > 0 && aux.detPos > 0 && orbitb.z > aux.detPos && rhoHit < aux.outerRadius ) { acceptanceCode = -12; return acceptanceCode;}
+  if( orbitb.z < 0 && aux.detPos < 0 && orbitb.z < aux.detPos && rhoHit < aux.outerRadius ) { acceptanceCode = -12; return acceptanceCode;}
   
   // -13 ========= not more than 3 loops
   if( orbitb.loop > 3 ) {acceptanceCode = -13; return acceptanceCode;}
@@ -552,10 +538,10 @@ int HELIOS::CalRecoilHit(TLorentzVector PB){
    
    CalTrajectoryPara(PB, false);
    
-   orbitB.z = detGeo.recoilPos;
-   orbitB.x = GetRecoilXPos(detGeo.recoilPos)  ;
-   orbitB.y = GetRecoilYPos(detGeo.recoilPos)  ;
-   orbitB.R = GetRecoilR(detGeo.recoilPos);
+   orbitB.z = aux.detPos;
+   orbitB.x = GetRecoilXPos(aux.detPos)  ;
+   orbitB.y = GetRecoilYPos(aux.detPos)  ;
+   orbitB.R = GetRecoilR(aux.detPos);
    orbitB.effLoop = orbitB.z/orbitB.z0;
    orbitB.t  = orbitB.t0 * orbitB.effLoop ;
    

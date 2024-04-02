@@ -76,6 +76,7 @@ void Transfer(
 
   DetGeo detGeo = helios.GetDetectorGeometry();
   Array array = helios.GetArrayGeometry();
+  Auxillary aux = helios.GetAuxGeometry();
   ReactionConfig reactConfig = transfer.GetRectionConfig();
   Recoil recoil = transfer.GetRecoil();
   
@@ -269,14 +270,14 @@ void Transfer(
 
   ///in case need ELUM
   double xElum1, yElum1, rhoElum1;
-  if( detGeo.elumPos1 != 0 ) {
+  if( aux.elumPos1 != 0 ) {
     tree->Branch("xElum1",     &xElum1, "xElum1/D");
     tree->Branch("yElum1",     &yElum1, "yElum1/D");
     tree->Branch("rhoElum1", &rhoElum1, "rhoElum1/D");
   }
   
   double xElum2, yElum2, rhoElum2;
-  if( detGeo.elumPos2 != 0 ) {
+  if( aux.elumPos2 != 0 ) {
     tree->Branch("xElum2",     &xElum2, "xElum2/D");
     tree->Branch("yElum2",     &yElum2, "yElum2/D");
     tree->Branch("rhoElum2", &rhoElum2, "rhoElum2/D");
@@ -284,13 +285,13 @@ void Transfer(
   
   ///in case need other recoil detector. 
   double xRecoil1, yRecoil1, rhoRecoil1;
-  if( detGeo.recoilPos1 != 0 ){
+  if( aux.detPos1 != 0 ){
     tree->Branch("xRecoil1",     &xRecoil1, "xRecoil1/D");
     tree->Branch("yRecoil1",     &yRecoil1, "yRecoil1/D");
     tree->Branch("rhoRecoil1", &rhoRecoil1, "rhoRecoil1/D");
   }
   double xRecoil2, yRecoil2, rhoRecoil2;
-  if( detGeo.recoilPos2 != 0 ){
+  if( aux.detPos2 != 0 ){
     tree->Branch("xRecoil2",     &xRecoil2, "xRecoil2/D");
     tree->Branch("yRecoil2",     &yRecoil2, "yRecoil2/D");
     tree->Branch("rhoRecoil2", &rhoRecoil2, "rhoRecoil2/D");
@@ -544,15 +545,15 @@ void Transfer(
       
 
       //ELUM
-      if( detGeo.elumPos1 != 0 ){
-        xElum1   = helios.GetXPos(detGeo.elumPos1);
-        yElum1   = helios.GetYPos(detGeo.elumPos1);
-        rhoElum1 = helios.GetR(detGeo.elumPos1);
+      if( aux.elumPos1 != 0 ){
+        xElum1   = helios.GetXPos(aux.elumPos1);
+        yElum1   = helios.GetYPos(aux.elumPos1);
+        rhoElum1 = helios.GetR(aux.elumPos1);
       }
-      if( detGeo.elumPos2 != 0 ){
-        xElum2   = helios.GetXPos(detGeo.elumPos2);
-        yElum2   = helios.GetYPos(detGeo.elumPos2);
-        rhoElum2 = helios.GetR(detGeo.elumPos2);
+      if( aux.elumPos2 != 0 ){
+        xElum2   = helios.GetXPos(aux.elumPos2);
+        yElum2   = helios.GetYPos(aux.elumPos2);
+        rhoElum2 = helios.GetR(aux.elumPos2);
       }
 
       //Recoil
@@ -563,15 +564,15 @@ void Transfer(
       rhoB = orb_B.rho;
 
       //other recoil detectors
-      if ( detGeo.recoilPos1 != 0 ){
-        xRecoil1   = helios.GetRecoilXPos(detGeo.recoilPos1);
-        yRecoil1   = helios.GetRecoilYPos(detGeo.recoilPos1);
-        rhoRecoil1 = helios.GetRecoilR(detGeo.recoilPos1);
+      if ( aux.detPos1 != 0 ){
+        xRecoil1   = helios.GetRecoilXPos(aux.detPos1);
+        yRecoil1   = helios.GetRecoilYPos(aux.detPos1);
+        rhoRecoil1 = helios.GetRecoilR(aux.detPos1);
       }
-      if ( detGeo.recoilPos2 != 0 ){
-        xRecoil2   = helios.GetRecoilXPos(detGeo.recoilPos2);
-        yRecoil2   = helios.GetRecoilYPos(detGeo.recoilPos2);
-        rhoRecoil2 = helios.GetRecoilR(detGeo.recoilPos2);
+      if ( aux.detPos2 != 0 ){
+        xRecoil2   = helios.GetRecoilXPos(aux.detPos2);
+        yRecoil2   = helios.GetRecoilYPos(aux.detPos2);
+        rhoRecoil2 = helios.GetRecoilR(aux.detPos2);
       }
       
       std::pair<double,double> ExThetaCM = transfer.CalExThetaCM(e, z, helios.GetBField(), helios.GetDetRadius());
