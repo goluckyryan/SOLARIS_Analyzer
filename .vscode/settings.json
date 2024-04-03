@@ -128,7 +128,8 @@
     "test.C": "cpp",
     "SimTransfer.C": "cpp",
     "httpaccess.C": "cpp",
-    "httpcontrol.C": "cpp"
+    "httpcontrol.C": "cpp",
+    "SimTransfer2.C": "cpp"
   },
 
   "better-comments.multilineComments": true,

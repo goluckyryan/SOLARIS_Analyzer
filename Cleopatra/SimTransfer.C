@@ -126,20 +126,29 @@ void Transfer(
   TFile * distFile = new TFile(ptolemyRoot, "read");
   TObjArray * distList = nullptr;
   TMacro * dwbaExList = nullptr;
+  TMacro * dwbaReactList = nullptr;
+
+  TMacro dwbaExList_Used;
+
   if( distFile->IsOpen() ) {
     printf("--------- Found DWBA thetaCM distributions. Use the ExList from DWBA.\n"); 
 
     distList = (TObjArray *) distFile->FindObjectAny("thetaCM_TF1"); // the function List
-
+    dwbaExList = (TMacro *) distFile->FindObjectAny("ExList");   
+    dwbaExList_Used.AddLine(dwbaExList->GetListOfLines()->At(0)->GetName());
+    dwbaReactList = (TMacro *) distFile->FindObjectAny("ReactionList");   
     exList.Clear();
 
-    dwbaExList = (TMacro *) distFile->FindObjectAny("ExList");   
     int numEx = dwbaExList->GetListOfLines()->GetSize() - 1 ;
     for(int i = 1; i <= numEx ; i++){
-      std::string temp = dwbaExList->GetListOfLines()->At(i)->GetName();
-      if( temp[0] == '/' ) continue;
-      std::vector<std::string> tempStr = AnalysisLib::SplitStr(temp, " ");
-      exList.Add( atof(tempStr[0].c_str()), atof(tempStr[1].c_str()), 1.0, 0.00);
+      std::string reactionName = dwbaReactList->GetListOfLines()->At(i-1)->GetName();
+      if( reactionName.find( transfer.GetReactionName().Data() ) != std::string::npos) {
+        std::string temp = dwbaExList->GetListOfLines()->At(i)->GetName();
+        dwbaExList_Used.AddLine(temp.c_str());
+        if( temp[0] == '/' ) continue;
+        std::vector<std::string> tempStr = AnalysisLib::SplitStr(temp, " ");
+        exList.Add( atof(tempStr[0].c_str()), atof(tempStr[1].c_str()), 1.0, 0.00);
+      }
     }
 
   }else{
@@ -180,7 +189,9 @@ void Transfer(
   detGeoTxt.Write("detGeo");
 
   if( distList != NULL ) distList->Write("DWBA", 1);
-  if( dwbaExList != NULL ) dwbaExList->Write("DWBA_ExList", 1);
+  if( dwbaExList != NULL ) {
+    dwbaExList_Used.Write("DWBA_ExList", 1);
+  }
 
   TMacro idMacro;
   idMacro.AddLine(Form("%d", ID));

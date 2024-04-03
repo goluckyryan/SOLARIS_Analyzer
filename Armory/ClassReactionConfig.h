@@ -108,8 +108,9 @@ public:
   bool isRedo;         ///isReDo
 
   void SetReactionSimple(int beamA, int beamZ,
-                   int targetA, int targetZ,
-                   int recoilA, int recoilZ, float beamEnergy_AMeV, unsigned short ID);
+                         int targetA, int targetZ,
+                         int recoilA, int recoilZ, 
+                         float beamEnergy_AMeV);
 
   bool LoadReactionConfig(TString fileName);
   bool LoadReactionConfig(TMacro * macro);
@@ -121,18 +122,21 @@ private:
 };
 
 inline void ReactionConfig::SetReactionSimple(int beamA, int beamZ,
-                   int targetA, int targetZ,
-                   int recoilA, int recoilZ, float beamEnergy_AMeV, unsigned short ID){
+                                              int targetA, int targetZ,
+                                              int recoilA, int recoilZ, 
+                                              float beamEnergy_AMeV){
 
   this->beamA = beamA;
   this->beamZ = beamZ;
   this->targetA = targetA;
   this->targetZ = targetZ;
 
-  this->recoil[ID].lightA = recoilA;
-  this->recoil[ID].lightZ = recoilZ;
-  recoil[ID].heavyA = this->beamA + this->targetA - recoil[ID].lightA;
-  recoil[ID].heavyZ = this->beamZ + this->targetZ - recoil[ID].lightZ;
+  this->recoil.push_back(Recoil());
+
+  this->recoil.back().lightA = recoilA;
+  this->recoil.back().lightZ = recoilZ;
+  recoil.back().heavyA = this->beamA + this->targetA - recoil.back().lightA;
+  recoil.back().heavyZ = this->beamZ + this->targetZ - recoil.back().lightZ;
 
   beamEnergy = beamEnergy_AMeV;
   beamEnergySigma = 0;
@@ -260,8 +264,8 @@ inline void ReactionConfig::Print(int ID, bool withEx) const{
   
   printf("================================= Number of recoil reactions : %zu\n", recoil.size());
   for( size_t i = 0; i < recoil.size(); i ++ ){
-    printf("------------------------------------------ Recoil-%zu\n", i); 
     if( ID == i || ID < 0  ){
+      printf("------------------------------------------ Recoil-%zu\n", i); 
       recoil[i].Print();
       if( withEx ) exList[i].Print();
     }

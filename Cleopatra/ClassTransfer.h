@@ -157,12 +157,14 @@ TransferReaction::TransferReaction(std::string configFile, unsigned short ID){
 }
 
 TransferReaction::TransferReaction(int beamA, int beamZ,
-                         int targetA, int targetZ,
-                         int recoilA, int recoilZ, float beamEnergy_AMeV){ 
+                                   int targetA, int targetZ,
+                                   int recoilA, int recoilZ, 
+                                   float beamEnergy_AMeV){ 
   Inititization();
   SetReactionSimple(beamA, beamZ,
                     targetA, targetZ,
-                    recoilA, recoilZ, beamEnergy_AMeV);
+                    recoilA, recoilZ, 
+                    beamEnergy_AMeV);
 }
 
 void TransferReaction::Inititization(){
@@ -243,12 +245,13 @@ void TransferReaction::SetIncidentEnergyAngle(double KEA, double theta, double p
 }
 
 void TransferReaction::SetReactionSimple(int beamA, int beamZ,
-                   int targetA, int targetZ,
-                   int recoilA, int recoilZ, float beamEnergy_AMeV){
+                                         int targetA, int targetZ,
+                                         int recoilA, int recoilZ, 
+                                         float beamEnergy_AMeV){
 
   config.SetReactionSimple(beamA, beamZ,
                              targetA, targetZ,
-                             recoilA, recoilZ, beamEnergy_AMeV, 0);
+                             recoilA, recoilZ, beamEnergy_AMeV);
 
   recoil = config.recoil[0];
 
@@ -280,6 +283,11 @@ void TransferReaction::SetReactionFromFile(std::string configFile, unsigned shor
     Seta(config.targetA, config.targetZ);
 
     SetExA(config.beamEx);
+
+    if( ID > config.recoil.size() ){
+      printf("Reaction Config only has %zu recoil settings. input is %u. Abort.\n", config.recoil.size(), ID);
+      return;
+    }
 
     recoil = config.recoil[ID];
     exList = config.exList[ID];

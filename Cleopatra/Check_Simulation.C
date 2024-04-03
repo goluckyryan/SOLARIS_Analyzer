@@ -73,16 +73,16 @@ void Check_Simulation(TString filename = "transfer.root",
   
   TString gate = ExtractString(startLineNum+1, config);
   double elumRange = ExtractNumber(startLineNum+2, config);
-  vector<double> thetaCMRange = doubleConvertor( StringToVector( ExtractString(startLineNum+3,config) ));
+  std::vector<double> thetaCMRange = doubleConvertor( StringToVector( ExtractString(startLineNum+3,config) ));
   bool shownKELines = (ExtractString(startLineNum+4, config).Remove(4) == "true" ? true : false);
   bool isOverRideEx = (ExtractString(startLineNum+5, config).Remove(4) == "true" ? true : false);
-  vector<double> oExRange = doubleConvertor( StringToVector ( ExtractString(startLineNum+6, config ))); 
+  std::vector<double> oExRange = doubleConvertor( StringToVector ( ExtractString(startLineNum+6, config ))); 
 
   printf("%s \n", gate.Data());
 
   ///==== config Canvas
-  vector<TString> plotConfig = StringToVector( ExtractString(startLineNum, config));
-  vector<plotID> canvas;
+  std::vector<TString> plotConfig = StringToVector( ExtractString(startLineNum, config));
+  std::vector<plotID> canvas;
   int colCount = 0;
   int colCount_new = 0;
   int rowCount = 1;
@@ -100,7 +100,7 @@ void Check_Simulation(TString filename = "transfer.root",
   if( colCount == 0 ) colCount = colCount_new;
   //printf("plot row: %d, col: %d \n", rowCount, colCount);
   
-  vector<int> Div = {colCount, rowCount};
+  std::vector<int> Div = {colCount, rowCount};
     
   TFile * file = new TFile(filename, "read");
   TTree * tree = (TTree*) file->Get("tree");
@@ -140,8 +140,8 @@ void Check_Simulation(TString filename = "transfer.root",
   DetGeo detGeo(detGeoTxt);
   Array array = detGeo.array[detGeoID];
 
-  detGeo.PrintWithoutArray();
-  array.PrintArray();  
+  detGeo.Print();
+  array.Print(); 
 
   printf("=================================\n");
   
@@ -177,13 +177,14 @@ void Check_Simulation(TString filename = "transfer.root",
     }
 
   }else{
-
+    
     numEx = exListTxt->GetListOfLines()->GetSize()-1;
-    for( int i = 0 ;  i < numEx ; i++){
-      double ex = atof(exListTxt->GetListOfLines()->At(i)->GetName());
+    for( int i = 1 ;  i <= numEx ; i++){
+      std::vector<std::string> tempStr = AnalysisLib::SplitStr(exListTxt->GetListOfLines()->At(i)->GetName(), " ");
+      double ex = atof(tempStr[0].c_str());
       if( ex < ExRange[0] ) ExRange[0] = ex;
       if( ex > ExRange[1] ) ExRange[1] = ex;
-      exList.Add(ex, 0, 0, 0);
+      exList.Add(ex, atof(tempStr[1].c_str()), 1.0, 0.00);
     }
 
   }
@@ -191,8 +192,8 @@ void Check_Simulation(TString filename = "transfer.root",
   exList.Print();
 
   double dExRange = ExRange[1] - ExRange[0];
-  ExRange[0] = ExRange[0] - dExRange * 0.1;
-  ExRange[1] = ExRange[1] + dExRange * 0.1;
+  ExRange[0] = ExRange[0] - 0.3 - dExRange * 0.1;
+  ExRange[1] = ExRange[1] + 0.3 + dExRange * 0.1;
    
   printf("Number of Ex states = %d \n", numEx);
    
@@ -200,7 +201,13 @@ void Check_Simulation(TString filename = "transfer.root",
   //eRange by zRange and exList
   
   TransferReaction transfer;
-  transfer.SetReactionSimple( reactionConfig.beamA, reactionConfig.beamZ, reactionConfig.targetA, reactionConfig.targetZ, recoil.lightA, recoil.lightZ, reactionConfig.beamEnergy);
+  transfer.SetReactionSimple( reactionConfig.beamA, 
+                              reactionConfig.beamZ, 
+                              reactionConfig.targetA, 
+                              reactionConfig.targetZ, 
+                              recoil.lightA, 
+                              recoil.lightZ, 
+                              reactionConfig.beamEnergy);
 
   double QQ = transfer.GetCMTotalEnergy();
   double gamm  = transfer.GetReactionGamma();
@@ -208,7 +215,6 @@ void Check_Simulation(TString filename = "transfer.root",
   double slope = transfer.GetEZSlope( detGeo.Bfield);
 
   double eRange[2] = {0, 10};
-  // double intercept = QQ/gamm - mass;   
   eRange[1] =  zRange[2] * slope;
   
   // printf("intercept of 0 MeV : %f MeV \n", intercept); 
@@ -272,14 +278,15 @@ void Check_Simulation(TString filename = "transfer.root",
     }
 
     if( pID == pRecoilXY       ){
-      TH2F * hRecoilXY = new TH2F("hRecoilXY", Form("RecoilXY [gated] @ %4.0f mm; X [mm]; Y [mm]", detGeo.recoilPos ), 400, -detGeo.recoilOuterRadius, detGeo.recoilOuterRadius, 
-                                                                                                                       400, -detGeo.recoilOuterRadius, detGeo.recoilOuterRadius);
+      TH2F * hRecoilXY = new TH2F("hRecoilXY", Form("RecoilXY [gated] @ %4.0f mm; X [mm]; Y [mm]", detGeo.aux[detGeoID].detPos ), 
+                                    400, -detGeo.aux[detGeoID].outerRadius, detGeo.aux[detGeoID].outerRadius, 
+                                    400, -detGeo.aux[detGeoID].outerRadius, detGeo.aux[detGeoID].outerRadius);
       tree->Draw("yRecoil:xRecoil>>hRecoilXY", gate, "colz");
-      TArc * detArc1 = new TArc(0,0, detGeo.recoilOuterRadius);
+      TArc * detArc1 = new TArc(0,0, detGeo.aux[detGeoID].outerRadius);
       detArc1->SetLineColor(kBlue-8);
       detArc1->SetFillStyle(0);
       detArc1->Draw("same");  
-      TArc * detArc2 = new TArc(0,0, detGeo.recoilInnerRadius);
+      TArc * detArc2 = new TArc(0,0, detGeo.aux[detGeoID].innerRadius);
       detArc2->SetLineColor(kBlue-8);
       detArc2->SetFillStyle(0);
       detArc2->Draw("same");  
@@ -293,25 +300,27 @@ void Check_Simulation(TString filename = "transfer.root",
     }
 
     if( pID == pRecoilXY1       ){
-      TH2F * hRecoilXY1 = new TH2F("hRecoilXY1", Form("RecoilXY-1 [gated] @ %4.0f mm; X [mm]; Y [mm]", detGeo.recoilPos1 ), 400, -detGeo.recoilOuterRadius, detGeo.recoilOuterRadius, 
-                                                                                                                            400, -detGeo.recoilOuterRadius, detGeo.recoilOuterRadius);
+      TH2F * hRecoilXY1 = new TH2F("hRecoilXY1", Form("RecoilXY-1 [gated] @ %4.0f mm; X [mm]; Y [mm]", detGeo.aux[detGeoID].detPos1 ), 
+                                      400, -detGeo.aux[detGeoID].outerRadius, detGeo.aux[detGeoID].outerRadius, 
+                                      400, -detGeo.aux[detGeoID].outerRadius, detGeo.aux[detGeoID].outerRadius);
       tree->Draw("yRecoil1:xRecoil1>>hRecoilXY1", gate, "colz");
     }
 
     if( pID == pRecoilXY2       ){
-      TH2F * hRecoilXY2 = new TH2F("hRecoilXY2", Form("RecoilXY-2 [gated] @ %4.0f mm; X [mm]; Y [mm]", detGeo.recoilPos2 ), 400, -detGeo.recoilOuterRadius, detGeo.recoilOuterRadius, 
-                                                                                                                            400, -detGeo.recoilOuterRadius, detGeo.recoilOuterRadius);
+      TH2F * hRecoilXY2 = new TH2F("hRecoilXY2", Form("RecoilXY-2 [gated] @ %4.0f mm; X [mm]; Y [mm]", detGeo.aux[detGeoID].detPos2 ), 
+                                      400, -detGeo.aux[detGeoID].outerRadius, detGeo.aux[detGeoID].outerRadius, 
+                                      400, -detGeo.aux[detGeoID].outerRadius, detGeo.aux[detGeoID].outerRadius);
       tree->Draw("yRecoil2:xRecoil2>>hRecoilXY2", gate, "colz");
     }
 
     if( pID == pRecoilRZ       ){
-      TH2F * hRecoilRZ = new TH2F("hRecoilRZ", "RecoilR - Z [gated]; z [mm]; RecoilR [mm]",  zRange[0], zRange[1], zRange[2], 400,0, detGeo.recoilOuterRadius);
+      TH2F * hRecoilRZ = new TH2F("hRecoilRZ", "RecoilR - Z [gated]; z [mm]; RecoilR [mm]",  zRange[0], zRange[1], zRange[2], 400,0, detGeo.aux[detGeoID].outerRadius);
       tree->Draw("rhoRecoil:z>>hRecoilRZ", gate, "colz");
     }
 
     if( pID == pRecoilRTR      ){
       FindRange("TB", gate, tree, recoilERange);
-      TH2F * hRecoilRTR = new TH2F("hRecoilRTR", "RecoilR - recoilE [gated]; recoil Energy [MeV]; RecoilR [mm]", 500, recoilERange[0], recoilERange[1], 500, 0, detGeo.recoilOuterRadius);
+      TH2F * hRecoilRTR = new TH2F("hRecoilRTR", "RecoilR - recoilE [gated]; recoil Energy [MeV]; RecoilR [mm]", 500, recoilERange[0], recoilERange[1], 500, 0, detGeo.aux[detGeoID].outerRadius);
       tree->Draw("rhoRecoil:TB>>hRecoilRTR", gate, "colz");
     }
 
@@ -391,7 +400,7 @@ void Check_Simulation(TString filename = "transfer.root",
     }
 
     if( pID == pRecoilRThetaCM ){
-      TH2F * hRecoilRThetaCM = new TH2F("hRecoilRThetaCM", "RecoilR - thetaCM [gated]; thetaCM [deg]; RecoilR [mm]", 400, 0, 60, 400,0, detGeo.recoilOuterRadius);
+      TH2F * hRecoilRThetaCM = new TH2F("hRecoilRThetaCM", "RecoilR - thetaCM [gated]; thetaCM [deg]; RecoilR [mm]", 400, 0, 60, 400,0, detGeo.aux[detGeoID].outerRadius);
       tree->Draw("rhoRecoil:thetaCM>>hRecoilRThetaCM", gate, "colz");
     }
 
@@ -430,7 +439,7 @@ void Check_Simulation(TString filename = "transfer.root",
     }
       
     if( pID == pElum1XY ){
-      TH2F * hElum1XY = new TH2F("hElum1XY", Form("Elum-1 XY [gated] @ %.0f mm ; X [mm]; Y [mm]", detGeo.elumPos1),  400, -elumRange, elumRange, 400, -elumRange, elumRange);
+      TH2F * hElum1XY = new TH2F("hElum1XY", Form("Elum-1 XY [gated] @ %.0f mm ; X [mm]; Y [mm]", detGeo.aux[detGeoID].elumPos1),  400, -elumRange, elumRange, 400, -elumRange, elumRange);
       tree->Draw("yElum1:xElum1>>hElum1XY", gate, "colz");
       
       double count = hElum1XY->GetEntries();

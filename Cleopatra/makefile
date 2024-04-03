@@ -28,7 +28,7 @@ FindThetaCM: FindThetaCM.C FindThetaCM.h ClassTransfer.h ClassHelios.h ClassIsot
 SimTransfer: SimTransfer.C ClassTransfer.h ClassHelios.h ClassIsotope.h constant.h 
 	$(CC) SimTransfer.C -o SimTransfer `root-config --cflags --glibs`
 
-SimTransfer2: SimTransfer2.C ClassTransfer.h ClassHelios.h ClassIsotope.h constant.h 
+SimTransfer2: SimTransfer2.C ClassTransfer.h ClassHelios.h ClassIsotope.h constant.h ../Armory/ClassReactionConfig.h ../Armory/ClassDetGeo.h
 	$(CC) SimTransfer2.C -o SimTransfer2 `root-config --cflags --glibs`
 
 SimAlpha: SimAlpha.C ClassHelios.h 
