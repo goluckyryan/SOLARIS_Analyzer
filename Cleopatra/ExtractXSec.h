@@ -326,9 +326,11 @@ int ExtractXSec (string readFile, int indexForElastic=1) {
   //================================== Make TMacro for ExList
 
   TMacro ExList;
+  TMacro ReactList;
   ExList.AddLine("#---Ex   relative_xsec   SF   sigma_in_MeV");
   for( int i = 0; i < numCal ; i++){
     ExList.AddLine(Form("%9.5f     %9.5f  1.0  0.000", Ex[i], partialXsec[i]));
+    ReactList.AddLine(reaction[i].c_str());
   }  
   
   //================================== Save in ROOT
@@ -369,6 +371,7 @@ int ExtractXSec (string readFile, int indexForElastic=1) {
   fList->Write("thetaCM_TF1", 1);
 
   ExList.Write("ExList");
+  ReactList.Write("ReactionList");
   
   fileOut->Write();
   fileOut->Close();

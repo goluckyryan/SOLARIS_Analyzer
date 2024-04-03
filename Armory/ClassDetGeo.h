@@ -112,6 +112,7 @@ public:
   int BfieldSign ;    /// sign of B-field
   double bore;        /// bore , mm
 
+  unsigned short numEnableGeo;
   double zMin, zMax;   /// total range span of all arrays
 
   bool LoadDetectorGeo(TString fileName, bool verbose = true);
@@ -214,10 +215,12 @@ inline bool DetGeo::LoadDetectorGeo(TMacro * macro, bool verbose){
 
   zMin =  99999;
   zMax = -99999;
+  numEnableGeo = 0;
 
   for( int i = 0; i < detFlag; i ++ ){
     array[i].DeduceAbsolutePos();
     if (array[i].enable ) {
+      numEnableGeo ++;
       double zmax = TMath::Max(array[i].zMin, array[i].zMax);
       double zmin = TMath::Min(array[i].zMin, array[i].zMax);
       if( zmax > zMax ) zMax = zmax;

@@ -70,7 +70,6 @@ struct ExcitedEnergies {
   }
 
   void Print() const {
-    printf("...................................\n");
     printf("Energy[MeV]  Rel.Xsec     SF  sigma\n");
     for( size_t i = 0; i < ExList.size(); i++){
       ExList[i].Print("\n");

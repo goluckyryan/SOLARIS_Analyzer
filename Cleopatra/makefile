@@ -1,13 +1,13 @@
 CC=g++
 
-ALL = Isotope InFileCreator ExtractXSec ExtractXSecFromText PlotTGraphTObjArray Cleopatra FindThetaCM SimTransfer SimAlpha
+ALL = Isotope InFileCreator ExtractXSec ExtractXSecFromText PlotTGraphTObjArray Cleopatra FindThetaCM SimTransfer SimTransfer2 SimAlpha
 
 all: $(ALL)
 
-Isotope: ../Cleopatra/ClassIsotope.h ../Cleopatra/Isotope.C
+Isotope: ClassIsotope.h Isotope.C
 	$(CC) Isotope.C -o Isotope
 
-InFileCreator: InFileCreator.C InFileCreator.h ../Cleopatra/ClassIsotope.h ../Cleopatra/constant.h potentials.h
+InFileCreator: InFileCreator.C InFileCreator.h ClassIsotope.h constant.h potentials.h
 	$(CC) InFileCreator.C -o InFileCreator `root-config --cflags --glibs`
 
 ExtractXSec: ExtractXSec.C ExtractXSec.h
@@ -19,16 +19,19 @@ ExtractXSecFromText: ExtractXSecFromText.C ExtractXSec.h
 PlotTGraphTObjArray: PlotTGraphTObjArray.C PlotTGraphTObjArray.h
 	$(CC) PlotTGraphTObjArray.C -o PlotTGraphTObjArray `root-config --cflags --glibs`
 
-Cleopatra: Cleopatra.C
+Cleopatra: Cleopatra.C InFileCreator.h ExtractXSec.h
 	$(CC) Cleopatra.C -o Cleopatra `root-config --cflags --glibs`
 
-FindThetaCM: FindThetaCM.C FindThetaCM.h ../Cleopatra/ClassTransfer.h ../Cleopatra/ClassHelios.h ../Cleopatra/ClassIsotope.h ../Cleopatra/constant.h
+FindThetaCM: FindThetaCM.C FindThetaCM.h ClassTransfer.h ClassHelios.h ClassIsotope.h constant.h
 	$(CC) FindThetaCM.C -o FindThetaCM `root-config --cflags --glibs`
 
-SimTransfer: SimTransfer.C ../Cleopatra/ClassTransfer.h ../Cleopatra/ClassHelios.h ../Cleopatra/ClassIsotope.h ../Cleopatra/constant.h 
+SimTransfer: SimTransfer.C ClassTransfer.h ClassHelios.h ClassIsotope.h constant.h 
 	$(CC) SimTransfer.C -o SimTransfer `root-config --cflags --glibs`
 
-SimAlpha: SimAlpha.C ../Cleopatra/ClassHelios.h 
+SimTransfer2: SimTransfer2.C ClassTransfer.h ClassHelios.h ClassIsotope.h constant.h 
+	$(CC) SimTransfer2.C -o SimTransfer2 `root-config --cflags --glibs`
+
+SimAlpha: SimAlpha.C ClassHelios.h 
 	$(CC) SimAlpha.C -o SimAlpha `root-config --cflags --glibs`
 
 clean:

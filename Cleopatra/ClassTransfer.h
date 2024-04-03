@@ -9,6 +9,7 @@
 
 #include "TLorentzVector.h"
 #include "TMath.h"
+#include "TF1.h"
 
 //=======================================================
 //#######################################################
@@ -22,6 +23,7 @@
 class TransferReaction {
 public:
   TransferReaction(){Inititization();};
+  TransferReaction(ReactionConfig config, unsigned short ID = 0);
   TransferReaction(std::string configFile, unsigned short ID = 0);
   TransferReaction(int beamA,   int beamZ,
                    int targetA, int targetZ,
@@ -29,7 +31,7 @@ public:
 
   ~TransferReaction();
 
-  void SetA(int A, int Z, double Ex);
+  void SetA(int A, int Z, double Ex = 0);
   void Seta(int A, int Z);
   void Setb(int A, int Z);
   void SetB(int A, int Z);
@@ -46,9 +48,9 @@ public:
   TString GetReactionName() const;
   TString GetReactionName_Latex();
 
-  ReactionConfig  GetRectionConfig() { return config;}
-  Recoil          GetRecoil()        { return recoil;}
-  ExcitedEnergies GetExList()        { return exList;}
+  ReactionConfig    GetRectionConfig() { return config;}
+  Recoil            GetRecoil()        { return recoil;}
+  ExcitedEnergies * GetExList()        { return &exList;}
 
   double GetMass_A() const {return mA + ExA;}
   double GetMass_a() const {return ma;}
@@ -77,6 +79,22 @@ public:
   double GetReactionGamma() {return gamma;}
   double GetCMTotalEnergy() {return Etot;}
   double GetEZSlope(double BField)   {return 299.792458 * recoil.lightZ * abs(BField) / TMath::TwoPi() * beta / 1000.;} // MeV/mm
+
+
+  void CreateExDistribution();
+  int GetRandomExID(){
+    if( exDistribution ) {
+      return exDistribution->GetRandom();
+    }
+    return 0;
+  }
+  double GetRandomEx(){ 
+    if( exDistribution ) {
+      int exID = exDistribution->GetRandom();
+      return exList.ExList[exID].Ex;
+    }
+    return TMath::QuietNaN();
+  }
   
 private:
 
@@ -105,8 +123,33 @@ private:
   TString format(TString name);
 
   void Inititization();
+
+  TF1 * exDistribution;
+
+  static double exDistFunc(Double_t *x, Double_t * par){
+    return par[(int) x[0]];
+  }
    
 };
+
+TransferReaction::TransferReaction(ReactionConfig config, unsigned short ID){
+  Inititization();
+
+  SetA(config.beamA, config.beamZ);
+  Seta(config.targetA, config.targetZ);
+
+  SetExA(config.beamEx);
+
+  recoil = config.recoil[ID];
+  exList = config.exList[ID];
+
+  Setb(recoil.lightA, recoil.lightZ);
+  SetB(recoil.heavyA, recoil.heavyZ);
+  SetIncidentEnergyAngle(config.beamEnergy, 0, 0);
+
+  CalReactionConstant();
+
+}
 
 TransferReaction::TransferReaction(std::string configFile, unsigned short ID){
   Inititization();
@@ -133,6 +176,8 @@ void TransferReaction::Inititization(){
   TA = 6;
   T = TA * config.beamA;
   
+  exDistribution = nullptr;
+
   ExA = 0;
   ExB = 0;
   
@@ -147,10 +192,10 @@ void TransferReaction::Inititization(){
 }
 
 TransferReaction::~TransferReaction(){
-
+  delete exDistribution;
 }
 
-void TransferReaction::SetA(int A, int Z, double Ex = 0){
+void TransferReaction::SetA(int A, int Z, double Ex){
   Isotope temp (A, Z);
   mA = temp.Mass;
   config.beamA = A;
@@ -463,5 +508,15 @@ std::pair<double, double> TransferReaction::CalExThetaCM(double e, double z, dou
   return std::make_pair(Ex, thetaCM); 
 }
 
+void TransferReaction::CreateExDistribution(){
+
+  int numEx = exList.ExList.size();
+
+  exDistribution = new TF1("exDistribution", TransferReaction::exDistFunc, 0, numEx, numEx);
+  for(int q = 0; q < numEx; q++){
+    exDistribution->SetParameter(q, exList.ExList[q].xsec*exList.ExList[q].SF);
+  }
+
+}
 
 #endif
