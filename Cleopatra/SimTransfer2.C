@@ -95,6 +95,9 @@ void Transfer(
   TObjArray * distList = nullptr;
   TMacro * dwbaExList = nullptr;
   TMacro * dwbaReactList = nullptr;
+
+  TMacro dwbaExList_Used;
+  TMacro dwbaReactList_Used;
   
   if( distFile->IsOpen() ) {
     printf("\e[32m#################################### Load DWBA input : %s  \e[0m\n", ptolemyRoot.Data());
@@ -102,6 +105,7 @@ void Transfer(
 
     distList = (TObjArray *) distFile->FindObjectAny("thetaCM_TF1"); // the function List
     dwbaExList = (TMacro *) distFile->FindObjectAny("ExList");   
+    dwbaExList_Used.AddLine(dwbaExList->GetListOfLines()->At(0)->GetName());
     dwbaReactList = (TMacro *) distFile->FindObjectAny("ReactionList");   
 
     int numEx = dwbaExList->GetListOfLines()->GetSize() - 1 ;
@@ -115,6 +119,8 @@ void Transfer(
       for( int j = 0; j < numTransfer; j++){
         if( reactionName.find( transfer[j].GetReactionName().Data() ) != std::string::npos) {
           std::string temp = dwbaExList->GetListOfLines()->At(i)->GetName();
+          dwbaReactList_Used.AddLine((reactionName + " | " + std::to_string(j)).c_str());
+          dwbaExList_Used.AddLine(temp.c_str());
           if( temp[0] == '/' ) continue;
           std::vector<std::string> tempStr = AnalysisLib::SplitStr(temp, " ");
           transfer[j].GetExList()->Add( atof(tempStr[0].c_str()), atof(tempStr[1].c_str()), 1.0, 0.00);
@@ -155,7 +161,10 @@ void Transfer(
   detGeoTxt.Write("detGeo");
 
   if( distList != NULL ) distList->Write("DWBA", 1);
-  if( dwbaExList != NULL ) dwbaExList->Write("DWBA_ExList", 1);
+  if( dwbaExList != NULL ) {
+    dwbaExList_Used.Write("DWBA_ExList", 1);
+    dwbaReactList_Used.Write("DWBA_ReactionList", 1);
+  }
 
   
   TMacro hitMeaning;
@@ -299,6 +308,15 @@ void Transfer(
     tree->Branch("yRecoil2",     &yRecoil2, "yRecoil2/D");
     tree->Branch("rhoRecoil2", &rhoRecoil2, "rhoRecoil2/D");
   }
+
+  //======= list of reaction used.
+  TMacro listOfReaction;
+  for( int i = 0; i < numTransfer ; i++){
+    if( !listOfTransfer[i] ) continue;
+    listOfReaction.AddLine(Form("%2d | %s", i, transfer[i].GetReactionName_Latex().Data()));
+  }
+
+  listOfReaction.Write("ListOfReactions");
   
   //======= function for e-z plot for ideal case
   printf("++++ generate functions\n");
@@ -392,8 +410,6 @@ void Transfer(
   for( int i = 0 ; i < numEx; i++) delete fx[i];
   delete [] fx;
   delete fxList;
-
-  printf("============================== dasjdlasdj\n");
 
   // //--- cal modified thetaCM vs z
   // TObjArray * txList = new TObjArray();

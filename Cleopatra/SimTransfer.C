@@ -189,9 +189,8 @@ void Transfer(
   detGeoTxt.Write("detGeo");
 
   if( distList != NULL ) distList->Write("DWBA", 1);
-  if( dwbaExList != NULL ) {
-    dwbaExList_Used.Write("DWBA_ExList", 1);
-  }
+  if( dwbaExList != NULL ) dwbaExList_Used.Write("DWBA_ExList", 1);
+  
 
   TMacro idMacro;
   idMacro.AddLine(Form("%d", ID));
