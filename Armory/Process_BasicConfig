@@ -2,7 +2,7 @@
 
 ##############################################
 #
-# This script define color, PCID, and dataPath
+# This script define color and dataPath
 #
 ##############################################
 
@@ -20,54 +20,71 @@ CYAN='\033[0;36m'
 NC='\033[0m'  #no color
 LRED='\033[1;91m'
 
+echo -e "${RED}##################### Loading Process_BasicConfig.sh ${NC}"
+
 ##############   need to distingish mac and daq
 Arch="$(uname -s)"
 PCName="$(hostname)"
-PCID=-1      #if PCID == 1 (DAQ), 2 (MAC), -1(OTHER)
+PCID=-1      #if PCID == 1 (DAQ), 2 (MAC), 3 (test station), -1(OTHER)
 
 #------ Set up data folder, check disk space
-echo -e "${YELLOW} ##################### Check computer name and arch. ${NC}"
+echo -e "${YELLOW}##################### Check computer name and arch. ${NC}"
 echo "PC name  : ${PCName}"
 echo "Archetech: ${Arch}"
+
+
+rawDataPath=${SOLARISANADIR}/data_raw/
+rootDataPath=${SOLARISANADIR}/root_data/
+
+echo "Raw Data  Path : "${rawDataPath}
+echo "Root Data Path : "${rootDataPath}
+
 
 if [ ${Arch} == "Linux" ] && [ ${PCName} == "solaris-daq" ]; then 
 
   PCID=1
 
-  pathsSetting=${HOME}/SOLARIS_QT6_DAQ/programSettings.txt
-  if [ -e ${pathsSetting} ]; then
-    #echo "Found DAQ programSettings.txt for paths settings"
+  # pathsSetting=${HOME}/SOLARIS_DAQ/programSettings.txt
+  # if [ -e ${pathsSetting} ]; then
+  #   #echo "Found DAQ programSettings.txt for paths settings"
 
-    analysisPath=$(cat ${pathsSetting} | head -n 2 | tail -n 1)
+  #   analysisPath=$(cat ${pathsSetting} | head -n 2 | tail -n 1)
 
-    if [ ! "${analysisPath}" = "$SOLARISANADIR" ]; then
-      echo "The analysisPath from ${analysisPath} is different from present folder $SOLARISANADIR. Abort."
-      exit
-    fi
+  #   if [ ! "${analysisPath}" = "$SOLARISANADIR" ]; then
+  #     echo "The analysisPath from ${analysisPath} is different from present folder $SOLARISANADIR. Abort."
+  #     exit
+  #   fi
 
-    rawDataPathParent=$(cat ${pathsSetting} | head -n 3 | tail -n 1)
-    rootDataPathParent=$(cat ${pathsSetting} | head -n 4 | tail -n 1)
+  #   rawDataPathParent=$(cat ${pathsSetting} | head -n 3 | tail -n 1)
+  #   rootDataPathParent=$(cat ${pathsSetting} | head -n 4 | tail -n 1)
 
-    databaseIP=$(cat ${pathsSetting} | head -n 6 | tail -n 1)
-    databaseName=$(cat ${pathsSetting} | head -n 7 | tail -n 1)
+  #   databaseIP=$(cat ${pathsSetting} | head -n 6 | tail -n 1)
+  #   databaseName=$(cat ${pathsSetting} | head -n 7 | tail -n 1)
 
-    #echo ${rawDataPathParent}
-    #echo ${rootDataPathParent}
-    #echo ${databaseIP}
-    #echo ${databaseName}
+  #   #echo ${rawDataPathParent}
+  #   #echo ${rootDataPathParent}
+  #   #echo ${databaseIP}
+  #   #echo ${databaseName}
 
-  else 
+  # else 
 
-    echo "${RED} Cannot found DAQ programSettings.txt for path settings ${NC}"
-    echo "Seek Ryan for help"
-    exit
+  #   echo "${RED} Cannot found DAQ programSettings.txt for path settings ${NC}"
+  #   echo "Seek Ryan for help"
+  #   exit
 
-  fi
+  # fi
 
 fi
 
 if [ ${Arch} == "Darwin" ] && [ ${PCName} == "SOLARISs-Mac-Studio.local" ]; then 
   PCID=2
-  rawDataPathParent=${HOME}/experimentalData/
-  rootDataPathParent=${HOME}/experimentalData/
+  # rawDataPathParent=${HOME}/experimentalData/
+  # rootDataPathParent=${HOME}/experimentalData/
 fi
+
+if [ ${Arch} == "Linux" ] && [ ${PCName} == "solarisdaq" ]; then 
+  PCID=3
+  # rawDataPathParent=${SOLARISANADIR}/data_raw/
+  # rootDataPathParent=${SOLARISANADIR}/root_data/
+fi
+

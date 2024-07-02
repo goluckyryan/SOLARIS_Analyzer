@@ -9,6 +9,10 @@ if [ -z $SOLARISANADIR ]; then
   exit 
 fi
 
+if [ "$PWD" != "${SOLARISANADIR}/working" ]; then
+  echo "============= go to the Working directory"
+  cd "${SOLARISANADIR}/working"
+fi
 
 if [ $# -eq 0 ] || [ $1 == "-help"  ]; then
   echo "$ Process_Run [RunNum] [EventBuild] [GeneralSort] [TraceMethod] [Monitor]"
@@ -54,17 +58,11 @@ echo "###   Trace Method : $TraceMethod"
 echo "###        Monitor : $isMonitor"
 echo "#################################################"
 
-source ${SOLARISANADIR}/armory/Process_BasicConfig
-source ${SOLARISANADIR}/working/expName.sh
-
-if [ "$PWD" != "${SOLARISANADIR}/working" ]; then
-  echo "============= go to the Working directory"
-  cd "${SOLARISANADIR}/working"
-fi
-
+source ${SOLARISANADIR}/Armory/Process_BasicConfig
+source ${rawDataPath}/expName.sh
 
 #################################### CHECK IS RUN DATA EXIST
-isRunDataExist=true
+isRunDataExist=false
 
 #################################### EVENT BUILDER
 source Process_Download $RUN

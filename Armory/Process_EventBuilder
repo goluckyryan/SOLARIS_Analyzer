@@ -1,9 +1,19 @@
 #!/bin/bash
 
+echo -e "${RED}##################### Loading Process_EventBuilder.sh ${NC}"
+
 if [ -z $SOLARISANADIR ]; then
   echo "###### env variable SOLARISANADIR not defined. Abort. Please run the SOLARIS.sh."
   echo "better add \"source <path_to_SOLARIS.sh>\" into .bashrc"
   exit 
+fi
+
+if command -v EventBuilder > /dev/null 2>&1; then
+  echo "EventBuilder exists"
+else
+  echo -e "${RED}EventBuilder does not exist${NC}"
+  echo -e "${RED}Create a symbolic link of the EventBuilder from the SOLARIS_DAQ/Aux/${NC}"
+  exit
 fi
 
 if [ $# -ne 3 ] || [ $1 == "-help"  ]; then
@@ -19,22 +29,16 @@ RUN=$1
 EventBld=$2
 timeWin=$3
 
-source ${SOLARISANADIR}/armory/Process_BasicConfig
-source ${SOLARISANADIR}/working/expName.sh
+source ${SOLARISANADIR}/Armory/Process_BasicConfig
+if [ -z $expName ]; then
+    source $SOLARISANADIR/working/expName.sh
+fi
 
 runNum=${RUN#0} #remove zero
 RUN=$(printf '%03d' $runNum) ##add back the zero
 
-rawDataPath=$SOLARISANADIR/data_raw
-rootDataPath=$SOLARISANADIR/root_data
-
 rawDataPattern="$rawDataPath/${expName}_${RUN}_*.sol"
 rootDataName="$rootDataPath/run$RUN.root"
-
-dir=$(pwd)
-cd ${SOLARISANADIR}/armory
-make 
-cd ${dir}
 
 #==== check raw data exist
 isRawDataExist=`ls -1 ${rawDataPattern}* 2>/dev/null | wc -l`
@@ -44,11 +48,10 @@ if [ ! $isRawDataExist -gt 0 ]; then
   exit
 fi
 
-echo -e "${CYAN} ============== list of files ${NC}"
+echo -e "${YELLOW} ============== list of files ${NC}"
 \du -h ${rawDataPattern}*
-
 totSize=$(\du -hc ${rawDataPattern}* | tail -n 1 | awk '{print $1}')
-echo -e "${CYAN} ============== total file size : ${totSize}${NC}"
+echo -e "${YELLOW} ============== total file size : ${totSize}${NC}"
 
 
 #==== check raw data timeStamp

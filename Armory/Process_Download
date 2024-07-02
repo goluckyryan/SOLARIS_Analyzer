@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo -e "${RED}##################### Loading Process_Download.sh ${NC}"
+
 if [ $# -eq 0 ] || [ $1 == "-help"  ]; then
   echo "$./process_Download [RunNum]"
   echo "    RunNum = run number"
@@ -11,10 +13,12 @@ RUN=$1
 runNum=${RUN#0} #remove zero
 RUN=$(printf '%03d' $runNum) ##add back the zero
 
-source $SOLARISANADIR/armory/Process_BasicConfig
-source $SOLARISANADIR/working/expName.sh
+source $SOLARISANADIR/Armory/Process_BasicConfig
 
-MacRawDataPath=$rawDataPathParent/$expName/
+if [ -z $expName ]; then
+    source $SOLARISANADIR/working/expName.sh
+fi
+
 IP=solarisdaq # defined at ~/.ssh/config
 USR=solaris
 
@@ -42,7 +46,7 @@ if [ ${RUN} == "all" ]; then
     fi
 
     echo -e "$YELLOW=============================================$NC"
-    tail -10 $MacRawDataPath/data/RunTimeStamp.dat
+    tail -10 $MacRawDataPath/raw_data/RunTimeStamp.dat
     echo -e "$YELLOW=============================================$NC"
     
     exit 1
@@ -60,7 +64,7 @@ RUN=$(printf '%03d' ${RUN})
 
 #######################################
 ####################  Download raw data
-echo -e "${RED}######################### Download raw data: run ${RUN}${NC}"
+echo -e "${CYAN}>>>>>>>>>>>>>>> Download raw data: run ${RUN}${NC}"
 if [ ${PCID} -eq 2 ]; then
 
     #=========== Ping to check the connectivity
@@ -81,25 +85,23 @@ if [ ${PCID} -eq 2 ]; then
         rsync -avuht --progress $USR@$IP:Analysis/working/expName.sh $SOLARISANADIR/working/.
     fi    
 else
-  echo -e "$RED############### Only in SOLARIS MAC can donwload data. skip.$NC"
+  echo -e "$CYAN############### Only in SOLARIS MAC can donwload data. skip.$NC"
 fi
 
 echo -e "$YELLOW=============================================$NC"
-tail -10 $MacRawDataPath/data/RunTimeStamp.dat
+tail -10 ${rawDataPath}/RunTimeStamp.dat
 echo -e "$YELLOW=============================================$NC"
 
-count=`ls -1 $SOLARISANADIR/data_raw/${expName}_${RUN}_*.sol 2>/dev/null | wc -l`
-echo -e "========== Number of Files : ${count}${NC}"
+count=`ls -1 ${rawDataPath}/${expName}_${RUN}_*.sol 2>/dev/null | wc -l`
+echo -e "========================= Number of Files : ${count}${YELLOW}"
 if [ ${count} -eq 0 ]; then
-    echo "============================================"
+    echo "${NC}============================================"
     echo "====  RAW Files of RUN-${RUN} not found! "
     echo "============================================"
-
     isRunDataExist=false
     exit 1
 else
-    echo -e "${YELLOW}"
-    du -hc $SOLARISANADIR/data_raw/${expName}_${RUN}_*.sol
+    du -hc ${rawDataPath}//${expName}_${RUN}_*.sol
     echo -e "$NC============================================="
     isRunDataExist=true
 fi
