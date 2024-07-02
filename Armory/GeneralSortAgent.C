@@ -1,9 +1,9 @@
 
 #include "TTree.h"
-#include "TProof.h"
 #include "TChain.h"
 #include "TMacro.h"
 #include "TFile.h"
+#include "TProof.h"
 
 void GeneralSortAgent(Int_t runNum, int nWorker = 1, int traceMethod = -1){
 
@@ -25,7 +25,7 @@ void GeneralSortAgent(Int_t runNum, int nWorker = 1, int traceMethod = -1){
   if( abs(nWorker) == 1){
 
     option.Form("%d,../root_data/gen_run%03d.root,%d", traceMethod, runNum, 0);
-    chain->Process("../armory/GeneralSort.C+", option);
+    chain->Process("../Armory/GeneralSort.C+", option);
 
   }else{
 
@@ -35,7 +35,7 @@ void GeneralSortAgent(Int_t runNum, int nWorker = 1, int traceMethod = -1){
 
     chain->SetProof();
     option.Form("%d,../root_data/gen_run%03d.root,%d", traceMethod, runNum, 1);
-    chain->Process("../armory/GeneralSort.C+", option);
+    chain->Process("../Armory/GeneralSort.C+", option);
   }
 
   //========== open the output root and copy teh timestamp Marco

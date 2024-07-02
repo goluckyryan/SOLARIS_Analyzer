@@ -62,10 +62,10 @@ public :
 
   // Declaration of leaf types
   ULong64_t       evID;
-  Int_t           multi;
-  Int_t           bd[100];   //[multi]
-  Int_t           ch[100];   //[multi]
-  Int_t           e[100];   //[multi]
+  UInt_t          multi;
+  UShort_t        bd[100];   //[multi]
+  UShort_t        ch[100];   //[multi]
+  UShort_t        e[100];   //[multi]
   ULong64_t       e_t[100];   //[multi]
   UShort_t        lowFlag[100]; //[multi]
   UShort_t        highFlag[100]; //[multi]
@@ -73,7 +73,7 @@ public :
   Int_t           trace[100][2500];   //[multi]
 
   // List of branches
-  TBranch        *b_event_ID;   //!
+  TBranch        *b_evID;   //!
   TBranch        *b_multi;   //!
   TBranch        *b_bd;   //!
   TBranch        *b_ch;   //!
@@ -250,7 +250,12 @@ void GeneralSort::DecodeOption(){
     isParallel = false;
   }
 
-  printf("|%s| %d %s %d \n", option.Data(), traceMethod, saveFileName.Data(), isParallel);
+
+  // printf("      option: |%s|\n", option.Data());
+  // printf("trace method: %d \n", traceMethod);
+  PrintTraceMethod();
+  printf("    Parallel: %d \n", isParallel);
+  printf("   save file: %s \n", saveFileName.Data());
 
 }
 
@@ -262,7 +267,7 @@ void GeneralSort::Init(TTree *tree){
   fChain = tree;
   fChain->SetMakeClass(1);
 
-  fChain->SetBranchAddress("evID",        &evID, &b_event_ID);
+  fChain->SetBranchAddress("evID",        &evID, &b_evID);
   fChain->SetBranchAddress("multi",      &multi, &b_multi);
   fChain->SetBranchAddress("bd",             bd, &b_bd);
   fChain->SetBranchAddress("ch",             ch, &b_ch);
@@ -308,7 +313,7 @@ void GeneralSort::PrintTraceMethod(){
   const char* traceMethodStr;
   switch(traceMethod) {
     case -1 : traceMethodStr = "Ignore Trace"; break;
-    case  0 : traceMethodStr = "Copy"; break;
+    case  0 : traceMethodStr = "None and Copy Trace"; break;
     case  1 : traceMethodStr = "Fit"; break;
     case  2 : traceMethodStr = "Trapezoid"; break;
     default:  traceMethodStr = "Unknown"; break;

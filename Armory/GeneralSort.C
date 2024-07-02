@@ -33,24 +33,22 @@ Bool_t GeneralSort::Process(Long64_t entry){
       }
     }
   }
-  
-  multi = 0;
-  b_event_ID->GetEntry(entry);
+
+  b_evID->GetEntry(entry);
   b_multi->GetEntry(entry);
   b_bd->GetEntry(entry);
   b_ch->GetEntry(entry);
   b_e->GetEntry(entry);
   b_e_t->GetEntry(entry);
 
-  for( int i = 0 ; i < multi; i++){    
+  for( unsigned int i = 0 ; i < multi; i++){    
+
     int detID = mapping::map[bd[i]][ch[i]];
     int detType = mapping::FindDetTypeIndex(detID);
     int low = (i == 0 ? 0 : mapping::detMaxID[detType-1]);
     int reducedDetID = detID - low;
-
     eE[detType][reducedDetID] = e[i] * mapping::detParity[detType];
     eT[detType][reducedDetID] = e_t[i];
-
   }
 
   //@===================================== Trace
@@ -63,7 +61,7 @@ Bool_t GeneralSort::Process(Long64_t entry){
 
     arr->Clear("C");
 
-    for( int i = 0; i < multi; i++){
+    for( unsigned int i = 0; i < multi; i++){
       int detID = mapping::map[bd[i]][ch[i]];
 
 
@@ -152,7 +150,7 @@ void GeneralSort::Terminate(){
   if( !isParallel){
     stpWatch.Start(kFALSE);
     saveFile->cd();
-    newSaveTree->Print("toponly");
+    // newSaveTree->Print("toponly");
     newSaveTree->Write();
     saveFile->Close();
   }

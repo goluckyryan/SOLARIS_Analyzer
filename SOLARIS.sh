@@ -33,7 +33,7 @@ function ShowRunSize {
   	echo 'Please set run number '
     return 0
   fi
-  source $SOLARISANADIR/working/expName.sh
+  source $SOLARISANADIR/data_raw/expName.sh
   RUN=$1
   if [ ${RUN} = "latest" ]; then
     RUN=${runID}
@@ -44,5 +44,5 @@ function ShowRunSize {
   elif [ ${runLen} -eq 2 ]; then
     RUN="0"${RUN}
   fi
-  du -hc $SOLARISANADIR/data_raw/data/${expName}_${RUN}_*.sol
+  du -hc $SOLARISANADIR/data_raw/${expName}_${RUN}_*.sol
 }

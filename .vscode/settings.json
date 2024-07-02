@@ -129,7 +129,8 @@
     "SimTransfer.C": "cpp",
     "httpaccess.C": "cpp",
     "httpcontrol.C": "cpp",
-    "SimTransfer2.C": "cpp"
+    "SimTransfer2.C": "cpp",
+    "haha.C": "cpp"
   },
 
   "better-comments.multilineComments": true,
