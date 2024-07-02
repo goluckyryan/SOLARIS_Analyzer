@@ -88,7 +88,7 @@ public :
     printf("constructor :: %s\n", __func__);
 
     isTraceExist = false;
-    traceMethod = 0; // -1 = ignore trace, 0 = no trace fit, 1 = fit, 2 = trapezoid
+    traceMethod = 0; // 0 = ignore trace, 1 = no trace fit, 2 = fit, 3 = trapezoid
   
     isParallel = false;
 
@@ -199,14 +199,14 @@ void GeneralSort::SetUpTree(){
   }
 
 
-  if( isTraceExist && traceMethod >= 0){
+  if( isTraceExist && traceMethod > 0){
 
     arr = new TClonesArray("TGraph");
 
     newSaveTree->Branch("trace", arr, 256000);
     arr->BypassStreamer();
 
-    if( traceMethod > 0 ){
+    if( traceMethod > 1 ){
 
       teE = new Float_t * [mapping::nDetType];
       teT = new Float_t * [mapping::nDetType];
@@ -250,11 +250,8 @@ void GeneralSort::DecodeOption(){
     isParallel = false;
   }
 
-
-  // printf("      option: |%s|\n", option.Data());
-  // printf("trace method: %d \n", traceMethod);
   PrintTraceMethod();
-  printf("    Parallel: %d \n", isParallel);
+  printf("    Parallel: %s \n", isParallel ? "Yes" : "No");
   printf("   save file: %s \n", saveFileName.Data());
 
 }
@@ -312,10 +309,10 @@ Bool_t GeneralSort::Notify(){
 void GeneralSort::PrintTraceMethod(){
   const char* traceMethodStr;
   switch(traceMethod) {
-    case -1 : traceMethodStr = "Ignore Trace"; break;
-    case  0 : traceMethodStr = "None and Copy Trace"; break;
-    case  1 : traceMethodStr = "Fit"; break;
-    case  2 : traceMethodStr = "Trapezoid"; break;
+    case  0 : traceMethodStr = "Ignore Trace"; break;
+    case  1 : traceMethodStr = "None and Copy Trace"; break;
+    case  2 : traceMethodStr = "Fit"; break;
+    case  3 : traceMethodStr = "Trapezoid"; break;
     default:  traceMethodStr = "Unknown"; break;
   }
   printf("\033[1;33m ===== Trace method ? %s \033[m\n", traceMethodStr);

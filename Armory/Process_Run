@@ -15,14 +15,18 @@ if [ "$PWD" != "${SOLARISANADIR}/working" ]; then
 fi
 
 if [ $# -eq 0 ] || [ $1 == "-help"  ]; then
-  echo "$ Process_Run [RunNum] [EventBuild] [GeneralSort] [TraceMethod] [Monitor]"
+  echo "$ Process_Run [RunNum] [EventBuild] [GeneralSort] [Monitor]"
   echo "        RunNum = run number / \"lastRun\" "
   echo "      EventBld = 2/1/0/-1/-2   || 2 = with Trace"  
-  echo "   GeneralSort = n/0/-n        || n = number of worker"  
-  echo "   TraceMethod = -1/0/1/2      || -1 no trace, 0 save trace, 1 fit, 2 trapezoid(not implemented)"  
+  echo "   GeneralSort = n/0/-n        || n = number of worker + TraceMethod * 100"  
+  echo "                                  TraceMethod =  0 no trace"  
+  echo "                                              =  1 save trace"  
+  echo "                                              =  2 WS fit"  
+  echo "                                              =  3 trapezoid(not implemented)"  
+  echo "                                  e.g. 208 = WS trace with 8 workers"  
   echo "       Monitor = 2/1/0         || 1 = single run,  2 = using the list in ChainMonitors.C"
   echo ""
-  echo "       * negative option = force (except for TraceMethod and Monitor)."
+  echo "       * negative option = force."
   echo "       * Defult timeWindow for Event builder is 100 tick = 800 ns."
   echo ""
   exit 1
@@ -32,13 +36,20 @@ RUN=$1
 runNum=$1
 EventBld=2
 nWorker=1
-TraceMethod=-1
+TraceMethod=0
 isMonitor=1
 
 if [ $# -ge 2 ]; then EventBld=$2; fi
 if [ $# -ge 3 ]; then nWorker=$3; fi
-if [ $# -ge 4 ]; then TraceMethod=$4; fi
-if [ $# -ge 5 ]; then isMonitor=$5; fi
+if [ $# -ge 4 ]; then isMonitor=$4; fi
+
+
+TraceMethod=$((nWorker / 100));
+if [ $temp -lt 0 ]; then
+  TraceMethod=$((-1 * temp));
+fi
+
+nWorker=$((nWorker % 100 ));
 
 if [ "$RUN" == "lastRun" ]; then
   RUN=$runID

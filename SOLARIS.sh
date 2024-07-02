@@ -26,7 +26,7 @@ echo "####### add ${SOLARISANADIR}/Armory into PATH"
 echo "####### Define BASH Alias / Functions for SOLARIS"
 
 alias 2Working='cd ${SOLARISANADIR}/working'
-alias ShowRunTimeStamp='cat $SOLARISANADIR/data_raw/data/RunTimeStamp.dat'
+alias ShowRunTimeStamp='cat $SOLARISANADIR/data_raw/RunTimeStamp.dat'
 
 function ShowRunSize {
   if [ $# -ne 1 ]; then

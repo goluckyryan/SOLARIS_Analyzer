@@ -5,7 +5,7 @@
 #include "TFile.h"
 #include "TProof.h"
 
-void GeneralSortAgent(Int_t runNum, int nWorker = 1, int traceMethod = -1){
+void GeneralSortAgent(Int_t runNum, int nWorker = 1, int traceMethod = 0){
 
   TString name;
   name.Form("../root_data/run%03d.root", runNum);

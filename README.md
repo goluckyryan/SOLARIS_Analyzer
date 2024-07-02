@@ -14,6 +14,10 @@ Analysis
 ├── root_data // symbolic link to converted root file, created by SetUpNewExp  
 └── working // working directory, depends on experiment.
 
+# ROOT issue
+
+We are still using TProof for parallel calculation. TProof is not pre-compiled since 6.32+. And 6.30 only precompiled for Ubuntu 22.04. So, for system using Ubuntu 24.04, user must precompiled to root in order to work.
+
 # Analysis & Simulation
 
 The Armory/AnalysisLib.h constains many small but handy functions.

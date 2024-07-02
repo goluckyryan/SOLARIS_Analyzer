@@ -34,6 +34,7 @@ Bool_t GeneralSort::Process(Long64_t entry){
     }
   }
 
+
   b_evID->GetEntry(entry);
   b_multi->GetEntry(entry);
   b_bd->GetEntry(entry);
@@ -44,6 +45,7 @@ Bool_t GeneralSort::Process(Long64_t entry){
   for( unsigned int i = 0 ; i < multi; i++){    
 
     int detID = mapping::map[bd[i]][ch[i]];
+    if( detID < 0 ) continue;
     int detType = mapping::FindDetTypeIndex(detID);
     int low = (i == 0 ? 0 : mapping::detMaxID[detType-1]);
     int reducedDetID = detID - low;
@@ -52,7 +54,7 @@ Bool_t GeneralSort::Process(Long64_t entry){
   }
 
   //@===================================== Trace
-  if(  isTraceExist && traceMethod >= 0 ){
+  if(  isTraceExist && traceMethod > 0 ){
 
     b_tl->GetEntry(entry);
     b_trace->GetEntry(entry);
@@ -78,7 +80,7 @@ Bool_t GeneralSort::Process(Long64_t entry){
       }
 
       //***=================== fit
-      if( traceMethod == 1){
+      if( traceMethod == 2){
 
         int detType = mapping::FindDetTypeIndex(detID);
         //TODO use a blackList
@@ -113,7 +115,7 @@ Bool_t GeneralSort::Process(Long64_t entry){
       }
 
       //***=================== Trapezoid filter
-      if( traceMethod == 2){
+      if( traceMethod == 3){
         //TODO
       }
 
@@ -173,9 +175,9 @@ void GeneralSort::Terminate(){
 //^##############################################################
 void GeneralSort::Begin(TTree * tree){
 
-  printf( "=================================================================\n");
-  printf( "=====================   SOLARIS GeneralSort.C   =================\n");
-  printf( "=================================================================\n");
+  printf( "================================================================================\n");
+  printf( "============================   SOLARIS GeneralSort.C   =========================\n");
+  printf( "================================================================================\n");
 
   mapping::PrintMapping();
 
