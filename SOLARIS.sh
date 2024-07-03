@@ -46,3 +46,5 @@ function ShowRunSize {
   fi
   du -hc $SOLARISANADIR/data_raw/${expName}_${RUN}_*.sol
 }
+
+2Working

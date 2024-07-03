@@ -129,6 +129,8 @@ public :
   bool isTraceExist;
   int traceMethod;
 
+  void CleanUpMemory();
+
   void SetTraceMethod(int methodID) {traceMethod = methodID;}
   void PrintTraceMethod();
 
@@ -186,6 +188,7 @@ void GeneralSort::SetUpTree(){
   eT = new ULong64_t * [mapping::nDetType];
 
   for( int i = 0 ; i < mapping::nDetType; i++){
+    if( mapping::detNum[i] == 0 ) continue;
     eE[i] = new Float_t[mapping::detNum[i]];
     eT[i] = new ULong64_t[mapping::detNum[i]];
 
@@ -205,6 +208,7 @@ void GeneralSort::SetUpTree(){
 
     newSaveTree->Branch("trace", arr, 256000);
     arr->BypassStreamer();
+    arr->Clear("C");
 
     if( traceMethod > 1 ){
 
@@ -213,6 +217,7 @@ void GeneralSort::SetUpTree(){
       teR = new Float_t * [mapping::nDetType];
 
       for( int i = 0 ; i < mapping::nDetType; i++){
+        if( mapping::detNum[i] == 0 ) continue;
         teE[i] = new Float_t[mapping::detNum[i]];
         teT[i] = new Float_t[mapping::detNum[i]];
         teR[i] = new Float_t[mapping::detNum[i]];
@@ -226,14 +231,14 @@ void GeneralSort::SetUpTree(){
         //TODO use a blackList to skip some trace
 
         newSaveTree->Branch( ("w" + mapping::detTypeName[i]).c_str(),      teE[i], Form("trace_%s[%d]/F",      mapping::detTypeName[i].c_str(), mapping::detNum[i]));
-        newSaveTree->Branch( ("w" + mapping::detTypeName[i]+"T").c_str(),  teT[i], Form("trace_%s_time[%d]/l", mapping::detTypeName[i].c_str(), mapping::detNum[i]));
-        newSaveTree->Branch( ("w" + mapping::detTypeName[i]+"R").c_str(),  teR[i], Form("trace_%s_rise[%d]/l", mapping::detTypeName[i].c_str(), mapping::detNum[i]));
+        newSaveTree->Branch( ("w" + mapping::detTypeName[i]+"T").c_str(),  teT[i], Form("trace_%s_time[%d]/F", mapping::detTypeName[i].c_str(), mapping::detNum[i]));
+        newSaveTree->Branch( ("w" + mapping::detTypeName[i]+"R").c_str(),  teR[i], Form("trace_%s_rise[%d]/F", mapping::detTypeName[i].c_str(), mapping::detNum[i]));
       }
 
     }
-
   }
-  newSaveTree->Print("toponly"); //very important, otherwise the mac will blow up.
+  
+  if( !isParallel ) newSaveTree->Print("toponly");
 }
 
 //^##############################################################
@@ -258,7 +263,7 @@ void GeneralSort::DecodeOption(){
 
 //^##############################################################
 void GeneralSort::Init(TTree *tree){
-
+  printf("============= %s\n", __func__);
   // Set branch addresses and branch pointers
   if (!tree) return;
   fChain = tree;
@@ -273,30 +278,27 @@ void GeneralSort::Init(TTree *tree){
   fChain->SetBranchAddress("lowFlag",   lowFlag, &b_lowFlag);
   fChain->SetBranchAddress("highFlag", highFlag, &b_highFlag);
 
-  TBranch * br = (TBranch *) fChain->GetListOfBranches()->FindObject("tl");
+  TBranch * br = (TBranch *) fChain->GetListOfBranches()->FindObject("traceLen");
   if( br == NULL ){
     printf(" ++++++++ no Trace.\n");
     isTraceExist = false;
   }else{
     printf(" ++++++++ Found Trace.\n");
     isTraceExist = true;
-    fChain->SetBranchAddress("tl", tl, &b_tl);
+    fChain->SetBranchAddress("traceLen", tl, &b_tl);
     fChain->SetBranchAddress("trace", trace, &b_trace);
   }
 
   NumEntries = fChain->GetEntries();
-  printf( " ========== total Entry : %ld\n", NumEntries);
+  printf( " ======== total Entry : %ld\n", NumEntries);
 
   //########################### Get Option 
   DecodeOption();
 
-  if( isTraceExist ){
-    PrintTraceMethod();
-  }else{
-    printf("++++++++ no Trace found\n");
-  }
-
   SetUpTree();
+
+  gFit  = new TF1("gFit", fitFunc, 0, 1250, numPara);
+  gFit->SetLineColor(6);
 
   printf("---- end of Init %s\n ", __func__);
 
@@ -315,7 +317,43 @@ void GeneralSort::PrintTraceMethod(){
     case  3 : traceMethodStr = "Trapezoid"; break;
     default:  traceMethodStr = "Unknown"; break;
   }
-  printf("\033[1;33m ===== Trace method ? %s \033[m\n", traceMethodStr);
+  printf("\033[1;33m ===== Trace method ? %s (%d) \033[m\n", traceMethodStr, traceMethod);
+}
+
+void GeneralSort::CleanUpMemory(){
+  printf("Clean up memory");
+  if( traceMethod > 1 ){
+    for( int i = 0 ; i < mapping::nDetType; i++){
+      if( mapping::detNum[i] == 0 ) continue;
+      delete [] teE[i];
+      delete [] teT[i];
+      delete [] teR[i];
+
+      delete [] eE[i];
+      delete [] eT[i];
+    }
+    delete [] teE;
+    delete [] teT;
+    delete [] teR;
+  }
+
+  for( int i = 0 ; i < mapping::nDetType; i++){
+    if( mapping::detNum[i] == 0 ) continue;
+    delete [] eE[i];
+    delete [] eT[i];
+  }
+  delete [] eE;
+  delete [] eT;
+
+  //trace
+  if( arr ) delete arr ;
+  if( gTrace ) delete gTrace; 
+  if( gFit ) delete gFit;
+  if( arrTrapezoid ) delete arrTrapezoid ;   
+  if( gTrapezoid ) delete gTrapezoid;
+
+  printf(".... done\n");
+
 }
 
 #endif // #ifdef GeneralSort_cxx

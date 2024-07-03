@@ -44,7 +44,7 @@ if [ $# -ge 3 ]; then nWorker=$3; fi
 if [ $# -ge 4 ]; then isMonitor=$4; fi
 
 
-TraceMethod=$((nWorker / 100));
+temp=$((nWorker / 100));
 if [ $temp -lt 0 ]; then
   TraceMethod=$((-1 * temp));
 fi

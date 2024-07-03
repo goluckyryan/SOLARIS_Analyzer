@@ -20,20 +20,22 @@ Bool_t GeneralSort::Process(Long64_t entry){
 
   if( entry < 1 ) printf("============================== start processing data\n");
 
+  if( entry > 5000) return true;
+
   ///initialization
   for( int i = 0; i < mapping::nDetType; i++){
+    if( mapping::detNum[i] == 0 ) continue;
     for( int j = 0; j < mapping::detNum[i]; j++){
       eE[i][j] = TMath::QuietNaN();
       eT[i][j] = 0;
 
-      if( isTraceExist && traceMethod > 0){
+      if( isTraceExist && traceMethod > 1){
         teE[i][j] = TMath::QuietNaN();
         teT[i][j] = TMath::QuietNaN();
         teR[i][j] = TMath::QuietNaN();
       }
     }
   }
-
 
   b_evID->GetEntry(entry);
   b_multi->GetEntry(entry);
@@ -47,8 +49,7 @@ Bool_t GeneralSort::Process(Long64_t entry){
     int detID = mapping::map[bd[i]][ch[i]];
     if( detID < 0 ) continue;
     int detType = mapping::FindDetTypeIndex(detID);
-    int low = (i == 0 ? 0 : mapping::detMaxID[detType-1]);
-    int reducedDetID = detID - low;
+    int reducedDetID = detID - (detID/100) * 100;
     eE[detType][reducedDetID] = e[i] * mapping::detParity[detType];
     eT[detType][reducedDetID] = e_t[i];
   }
@@ -65,7 +66,7 @@ Bool_t GeneralSort::Process(Long64_t entry){
 
     for( unsigned int i = 0; i < multi; i++){
       int detID = mapping::map[bd[i]][ch[i]];
-
+      if( detID < 0 ) continue;
 
       int traceLength = tl[i];
       gTrace = (TGraph*) arr->ConstructedAt(countTrace, "C");
@@ -83,12 +84,11 @@ Bool_t GeneralSort::Process(Long64_t entry){
       if( traceMethod == 2){
 
         int detType = mapping::FindDetTypeIndex(detID);
+        if( mapping::detNum[detType] == 0 ) continue;
+
         //TODO use a blackList
         //if( mapping::detTypeName[detType] != "rdt") continue;
 
-        //TODO try custom build fiting algorithm. May be faster?
-        gFit  = new TF1("gFit", fitFunc, 0, traceLength, numPara);
-        gFit->SetLineColor(6);
         gFit->SetRange(0, traceLength);
 
         gFit->SetParameter(0, e[i]);
@@ -103,15 +103,13 @@ Bool_t GeneralSort::Process(Long64_t entry){
 
         gTrace->Fit("gFit", "QR", "", 0, traceLength);
 
-        int low = (i == 0 ? 0 : mapping::detMaxID[detType-1]);
-        int reducedDetID = detID - low;
-
+        int reducedDetID = detID - (detID/100) * 100;
         teE[detType][reducedDetID] = gFit->GetParameter(0);
         teT[detType][reducedDetID] = gFit->GetParameter(1);
         teR[detType][reducedDetID] = gFit->GetParameter(2);
 
-        delete gFit;
-        gFit = nullptr;
+        // delete gFit;
+        // gFit = nullptr;
       }
 
       //***=================== Trapezoid filter
@@ -147,7 +145,7 @@ void GeneralSort::Terminate(){
 
   printf("=============================== %s\n", __func__);
 
-  DecodeOption();
+  // CleanUpMemory(); //? Should Clean?
 
   if( !isParallel){
     stpWatch.Start(kFALSE);
@@ -161,10 +159,8 @@ void GeneralSort::Terminate(){
   saveFile = TFile::Open(saveFileName);
   if( saveFile->IsOpen() ){
     TTree * tree = (TTree*) saveFile->FindObjectAny("gen_tree");
-    int validCount = tree->GetEntries();
-  
+    int validCount = tree->GetEntries();  
     saveFile->Close();
-  
     printf("=========================================================================\n");
     PrintTraceMethod();
     printf("----- saved as \033[1;33m%s\033[0m. valid event: %d\n", saveFileName.Data() , validCount); 
@@ -190,16 +186,16 @@ void GeneralSort::Begin(TTree * tree){
 }
 
 void GeneralSort::SlaveBegin(TTree * /*tree*/){
-
 }
 
-void GeneralSort::SlaveTerminate(){
+void GeneralSort::SlaveTerminate(){  
+  printf("============= %s\n", __func__);
   if( isParallel){
     printf("%s::SaveTree\n", __func__);
     saveFile->cd();
     newSaveTree->Write();
     fOutput->Add(proofFile);
     saveFile->Close();
+    printf("---- closing this worker\n");
   }
-  
 }
