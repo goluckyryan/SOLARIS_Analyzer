@@ -27,13 +27,14 @@
  * ********************************************************************/
 
 #include <fstream>
-#include <stdlib.h>     /* atof */
 #include <cmath>
 #include <vector>
 #include <iostream>
 #include <stdexcept>
 #include <stdio.h>
 #include <string>
+#include <cstdlib>
+#include <sstream>
 #include <TROOT.h>
 #include <TFile.h>
 #include <TString.h>
@@ -41,8 +42,6 @@
 #include "ExtractXSec.h"
 #include <TApplication.h>
 #include "PlotTGraphTObjArray.h"
-
-using namespace std;
 
 int main (int argc, char *argv[]) { //TODO add angle range
    
@@ -60,7 +59,7 @@ int main (int argc, char *argv[]) { //TODO add angle range
   }
 
   //================= read infile. extract the reactions, write pptolemy infile for each reaction
-  string readFile = argv[1];
+  std::string readFile = argv[1];
   double angMin = 0.;
   double angMax = 180.;
   double angStep = 1.;
@@ -72,19 +71,25 @@ int main (int argc, char *argv[]) { //TODO add angle range
     angStep = atof(argv[4]);
   }
   
-  string ptolemyInFileName = argv[1];
+  std::string ptolemyInFileName = argv[1];
   ptolemyInFileName += ".in";
   printf("=================== Create InFile\n");
   InFileCreator( readFile, ptolemyInFileName, angMin, angMax, angStep);
   
   //================= run ptolemy
-  char command[200];
-  string ptolemyOutFileName = argv[1];
-  ptolemyOutFileName += ".out";
-  sprintf(command, "../Cleopatra/ptolemy <%s> %s", ptolemyInFileName.c_str(),  ptolemyOutFileName.c_str());
+  std::string ptolemyOutFileName = ptolemyInFileName + ".out";
+  std::ostringstream commandStream;
+  commandStream << "../Cleopatra/ptolemy <" << ptolemyInFileName << " " << ptolemyOutFileName;
+  std::string command = commandStream.str();
+
   printf("=================== Run Ptolemy\n");
-  printf("%s \n", command);
-  system(command);
+  printf("%s \n", command.c_str());
+
+  int result = std::system(command.c_str());
+  if (result == -1) {
+      std::cerr << "Error executing system command." << std::endl;
+      return 1;
+  }
 
   //================= extract the Xsec and save as txt and root
   printf("=================== Extract Cross-section\n");
@@ -92,7 +97,7 @@ int main (int argc, char *argv[]) { //TODO add angle range
 
   //================= Call root to plot the d.s.c.
   printf("=================== Plot Result using ROOT.\n");
-  string rootFileName = argv[1];
+  std::string rootFileName = argv[1];
   rootFileName += ".root";
   TApplication app ("app", &argc, argv);
   PlotTGraphTObjArray(rootFileName);
