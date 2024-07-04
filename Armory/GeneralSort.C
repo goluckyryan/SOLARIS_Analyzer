@@ -20,8 +20,6 @@ Bool_t GeneralSort::Process(Long64_t entry){
 
   if( entry < 1 ) printf("============================== start processing data\n");
 
-  if( entry > 5000) return true;
-
   ///initialization
   for( int i = 0; i < mapping::nDetType; i++){
     if( mapping::detNum[i] == 0 ) continue;

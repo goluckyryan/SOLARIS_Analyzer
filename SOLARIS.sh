@@ -16,14 +16,18 @@ export SOLARISANADIR
 
 echo "####### set global variable SOLARISANADIR = ${SOLARISANADIR}"
 
-export PATH=$PATH:$SOLARISANADIR/Armory
+export PATH=$PATH:$SOLARISANADIR/Armory:$SOLARISANADIR/Cleopatra
 
 echo "####### add ${SOLARISANADIR}/Armory into PATH"
+echo "####### add ${SOLARISANADIR}/Cleopatra into PATH"
 
 
 ###########################
 
-echo "####### Define BASH Alias / Functions for SOLARIS"
+echo "####### Define BASH Alias and Functions for SOLARIS"
+echo "           2Working = goto the working directory"
+echo "   ShowRunTimeStamp = show Run Timestamp"
+echo "        ShowRunSize = show Run Size"
 
 alias 2Working='cd ${SOLARISANADIR}/working'
 alias ShowRunTimeStamp='cat $SOLARISANADIR/data_raw/RunTimeStamp.dat'
@@ -46,5 +50,3 @@ function ShowRunSize {
   fi
   du -hc $SOLARISANADIR/data_raw/${expName}_${RUN}_*.sol
 }
-
-2Working

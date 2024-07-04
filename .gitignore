@@ -27,7 +27,7 @@ Cleopatra/PlotSimulation
 Cleopatra/PlotTGraphTObjArray
 Cleopatra/SimAlpha
 Cleopatra/SimTransfer
-Cleopatra/SimTransfer2
+Cleopatra/SimTransfer_single
 Cleopatra/Cleopatra
 
 __pycache__

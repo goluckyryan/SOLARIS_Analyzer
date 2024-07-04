@@ -19,7 +19,9 @@
 #include "ClassTransfer.h"
 #include "ClassHelios.h"
 
-
+double exDistFunc(Double_t *x, Double_t * par){
+  return par[(int) x[0]];
+}
 
 void PrintEZPlotPara(TransferReaction tran, HELIOS helios){
 
@@ -31,146 +33,173 @@ void PrintEZPlotPara(TransferReaction tran, HELIOS helios){
   double         q = TMath::Sqrt(mb*mb + pCM*pCM); ///energy of light recoil in center of mass
   double     slope = tran.GetEZSlope(helios.GetBField()); /// MeV/mm
   printf("                       e-z slope : %f MeV/mm\n", slope);   
-  // double intercept = q/gamma - mb; // MeV
-  // printf("    e-z intercept (ground state) : %f MeV\n", intercept); 
+  double intercept = q/gamma - mb; // MeV
+  printf("    e-z intercept (ground state) : %f MeV\n", intercept); 
 
 }
 
 void Transfer(
-         std::string  basicConfig = "reactionConfig.txt", 
-         std::string   detGeoFile = "detectorGeo.txt", 
-         TString      ptolemyRoot = "DWBA.root",
-         TString     saveFileName = "transfer.root"){
+         std::string      basicConfig = "reactionConfig.txt", 
+         std::string heliosDetGeoFile = "detectorGeo.txt", 
+         unsigned short            ID = 0,  // this is the ID for the array
+         TString          ptolemyRoot = "DWBA.root",
+         TString         saveFileName = "transfer.root"){
 
   //*############################################# Set Reaction
+  TransferReaction transfer;
+  HELIOS helios;
+  Decay decay;
 
-  // std::vector<double> kbCM; /// momentum of b in CM frame
-  // TF1 * exDistribution = nullptr;
+  std::vector<double> kbCM; /// momentum of b in CM frame
+  TF1 * exDist = nullptr;
 
-  DetGeo detGeoConfig;
-  ReactionConfig reactionConfig;
+  transfer.SetReactionFromFile(basicConfig, ID);
+  helios.SetDetectorGeometry(heliosDetGeoFile, ID);
 
-  detGeoConfig.LoadDetectorGeo(detGeoFile, false);
-  reactionConfig.LoadReactionConfig(basicConfig);
-
-  const unsigned short numDetGeo = detGeoConfig.array.size();
-  const unsigned short numReact  = reactionConfig.recoil.size();
-
-  if( numDetGeo != numReact ){
-    printf("\e[31m !!!!!! number of array is not equal to number of reaction.!!! \e[0m\n");
-    printf("Abort\n");
-    return;
-  }
-
-  unsigned short numTransfer = 0;
-
-  for( int i = 0; i < std::min(numDetGeo, numReact); i++){
-    if( detGeoConfig.array[i].enable ) numTransfer ++;
-  }
-
-  TransferReaction * transfer = new TransferReaction[numTransfer];  
-  Decay * decay = new Decay[numTransfer];
-  HELIOS * helios = new HELIOS[numTransfer];
-
-  int count = 0;
-  for( unsigned short i = 0 ; i < numDetGeo; i++){
-    if( detGeoConfig.array[i].enable ){
-      transfer[count].SetReactionFromFile(basicConfig, i);
-      if(transfer[count].GetRecoil().isDecay) {
-        decay[count].SetMotherDaugther(transfer[count].GetRecoil());
-      }
-      helios[count].SetDetectorGeometry(detGeoFile, i);
-
-      count ++;
-    }
-  }
-
+  printf("*****************************************************************\n");
+  printf("*\e[1m\e[33m        %27s                            \e[0m*\n", transfer.GetReactionName().Data());
+  printf("*****************************************************************\n");
   printf("----- loading reaction setting from %s. \n", basicConfig.c_str());
-  printf("----- loading geometry setting from %s. \n", detGeoFile.c_str());
+  printf("----- loading geometry setting from %s. \n", heliosDetGeoFile.c_str());
  
   printf("\e[32m#################################### Reaction & HELIOS configuration\e[0m\n");   
 
+  transfer.PrintReaction(false);
+
+  if(transfer.GetRecoil().isDecay) {
+    decay.SetMotherDaugther(transfer.GetRecoil());
+  }
+
+  helios.PrintGeometry();
+  PrintEZPlotPara(transfer, helios);
+
+
+  DetGeo detGeo = helios.GetDetectorGeometry();
+  Array array = helios.GetArrayGeometry();
+  Auxillary aux = helios.GetAuxGeometry();
+  ReactionConfig reactConfig = transfer.GetRectionConfig();
+  Recoil recoil = transfer.GetRecoil();
+  
+  //*############################################# save reaction.dat
+  // if( filename != "" ) {
+  //   FILE * keyParaOut;
+  //   keyParaOut = fopen (filename.Data(), "w+");
+
+  //   printf("=========== save key reaction constants to %s \n", filename.Data());
+  //   fprintf(keyParaOut, "%-15.4f  //%s\n", transfer.GetMass_b(), "mass_b");
+  //   fprintf(keyParaOut, "%-15d  //%s\n",   reactConfig.recoilLightZ, "charge_b");
+  //   fprintf(keyParaOut, "%-15.8f  //%s\n", transfer.GetReactionBeta(), "betaCM");
+  //   fprintf(keyParaOut, "%-15.4f  //%s\n", transfer.GetCMTotalEnergy(), "Ecm");
+  //   fprintf(keyParaOut, "%-15.4f  //%s\n", transfer.GetMass_B(), "mass_B");
+  //   fprintf(keyParaOut, "%-15.4f  //%s\n", slope/betaRect, "alpha=slope/betaRect");
+
+  //   fflush(keyParaOut);
+  //   fclose(keyParaOut);
+  // }
+  
+  //*############################################# Target scattering, only energy loss
+  // bool isTargetScattering = reactConfig.isTargetScattering;
+  // float           density = reactConfig.targetDensity;
+  // float   targetThickness = reactConfig.targetThickness;
+  
+  // if(isTargetScattering) printf("\e[32m#################################### Target Scattering\e[0m\n");
+  // TargetScattering msA;
+  // TargetScattering msB;
+  // TargetScattering msb;
+
+  // if(reactConfig.isTargetScattering) printf("======== Target : (thickness : %6.2f um) x (density : %6.2f g/cm3) = %6.2f ug/cm2\n", 
+  //                                              targetThickness * 1e+4, 
+  //                                              density, 
+  //                                              targetThickness * density * 1e+6);  
+
+  // if( reactConfig.isTargetScattering ){
+  //   msA.LoadStoppingPower(reactConfig.beamStoppingPowerFile);
+  //   msb.LoadStoppingPower(reactConfig.recoilLightStoppingPowerFile);
+  //   msB.LoadStoppingPower(reactConfig.recoilHeavyStoppingPowerFile);
+  // }
+
+  ExcitedEnergies exList = transfer.GetRectionConfig().exList[ID];
+  
   //*############################################# Load DWBAroot for thetaCM distribution
+  printf("\e[32m#################################### Load DWBA input : %s  \e[0m\n", ptolemyRoot.Data());
+  TF1 * dist = NULL;
   TFile * distFile = new TFile(ptolemyRoot, "read");
   TObjArray * distList = nullptr;
   TMacro * dwbaExList = nullptr;
   TMacro * dwbaReactList = nullptr;
 
   TMacro dwbaExList_Used;
-  TMacro dwbaReactList_Used;
-  
+
   if( distFile->IsOpen() ) {
-    printf("\e[32m#################################### Load DWBA input : %s  \e[0m\n", ptolemyRoot.Data());
     printf("--------- Found DWBA thetaCM distributions. Use the ExList from DWBA.\n"); 
 
     distList = (TObjArray *) distFile->FindObjectAny("thetaCM_TF1"); // the function List
     dwbaExList = (TMacro *) distFile->FindObjectAny("ExList");   
     dwbaExList_Used.AddLine(dwbaExList->GetListOfLines()->At(0)->GetName());
     dwbaReactList = (TMacro *) distFile->FindObjectAny("ReactionList");   
+    exList.Clear();
 
     int numEx = dwbaExList->GetListOfLines()->GetSize() - 1 ;
-    
-    for( int i = 0; i < numTransfer; i++){ transfer[i].GetExList()->Clear(); }
-
-    for( int i = 1; i <= numEx ; i++){
-      //Check DWBA reaction is same as transfer setting
+    for(int i = 1; i <= numEx ; i++){
       std::string reactionName = dwbaReactList->GetListOfLines()->At(i-1)->GetName();
-
-      for( int j = 0; j < numTransfer; j++){
-        if( reactionName.find( transfer[j].GetReactionName().Data() ) != std::string::npos) {
-          std::string temp = dwbaExList->GetListOfLines()->At(i)->GetName();
-          dwbaReactList_Used.AddLine((reactionName + " | " + std::to_string(j)).c_str());
-          dwbaExList_Used.AddLine(temp.c_str());
-          if( temp[0] == '/' ) continue;
-          std::vector<std::string> tempStr = AnalysisLib::SplitStr(temp, " ");
-          transfer[j].GetExList()->Add( atof(tempStr[0].c_str()), atof(tempStr[1].c_str()), 1.0, 0.00);
-        }
+      if( reactionName.find( transfer.GetReactionName().Data() ) != std::string::npos) {
+        std::string temp = dwbaExList->GetListOfLines()->At(i)->GetName();
+        dwbaExList_Used.AddLine(temp.c_str());
+        if( temp[0] == '/' ) continue;
+        std::vector<std::string> tempStr = AnalysisLib::SplitStr(temp, " ");
+        exList.Add( atof(tempStr[0].c_str()), atof(tempStr[1].c_str()), 1.0, 0.00);
       }
     }
 
   }else{
-    printf("------- no DWBA input. Use the ExList from %s\n", basicConfig.c_str()); 
+    printf("------- no DWBA input. Use the ExList from %s\n", basicConfig.c_str());    
   }
 
-  std::vector<bool> listOfTransfer(numTransfer, false);
-  
-  for( int i = 0; i < numTransfer; i++){
-    if( transfer[i].GetExList()->ExList.size() > 0 ){
 
-      listOfTransfer[i] = true;
+  printf("------------------------------ Heavy Recoil excitation\n"); 
+  printf("Energy[MeV]  Rel.Xsec     SF  sigma\n");
 
-      transfer[i].PrintReaction(false);
-      transfer[i].GetExList()->Print();
-      helios[i].PrintGeometry();
-      transfer[i].CreateExDistribution();
-      // PrintEZPlotPara(transfer[i], helios[i]);
-    }else{
-      printf(" Reaction : %s has no excited energy. Skipped. \n", transfer[i].GetReactionName().Data());
+  int numEx = exList.ExList.size();
+
+  for( int j = 0; j < numEx; j++){
+    double ex = exList.ExList[j].Ex;
+    kbCM.push_back(transfer.CalkCM(ex));
+    int decayID = decay.CalDecay(TLorentzVector (0,0,0,0), ex, 0);
+    exList.ExList[j].Print(decayID == 1 ? "-->Decay" : "\n");
+  } 
+
+  //---- create Ex-distribution
+  if( exList.ExList.size() > 1 ) {
+    printf("---- creating Ex-distribution \n");
+    exDist = new TF1("exDist", exDistFunc, 0, numEx, numEx);
+    for(int q = 0; q < numEx; q++){
+      exDist->SetParameter(q, exList.ExList[q].xsec*exList.ExList[q].SF);
     }
   }
-  
+
   //*############################################# build tree
   printf("\e[32m#################################### building Tree in %s\e[0m\n", saveFileName.Data());
   TFile * saveFile = new TFile(saveFileName, "recreate");
   TTree * tree = new TTree("tree", "tree");
 
   TMacro config(basicConfig.c_str());
-  TMacro detGeoTxt(detGeoFile.c_str());
-  config.SetName("ReactionConfig");
+  TMacro detGeoTxt(heliosDetGeoFile.c_str());
+  config.SetName(transfer.GetReactionName_Latex().Data());
   config.Write("reactionConfig");
   detGeoTxt.Write("detGeo");
 
   if( distList != NULL ) distList->Write("DWBA", 1);
-  if( dwbaExList != NULL ) {
-    dwbaExList_Used.Write("DWBA_ExList", 1);
-    dwbaReactList_Used.Write("DWBA_ReactionList", 1);
-  }
+  if( dwbaExList != NULL ) dwbaExList_Used.Write("DWBA_ExList", 1);
+  
 
+  TMacro idMacro;
+  idMacro.AddLine(Form("%d", ID));
+  idMacro.Write("detGeoID");
   
   TMacro hitMeaning;
   hitMeaning.AddLine("======================= meaning of Hit\n"); 
   for( int code = -15 ; code <= 1; code ++ ){
-    hitMeaning.AddLine( Form( "%4d = %s", code, helios[0].AcceptanceCodeToMsg(code).Data() ));
+    hitMeaning.AddLine( Form( "%4d = %s", code, helios.AcceptanceCodeToMsg(code).Data() ));
   }
   hitMeaning.AddLine(" other = unknown\n");
   hitMeaning.AddLine("===========================================\n");  
@@ -178,9 +207,6 @@ void Transfer(
 
   int hit; /// the output of Helios.CalHit
   tree->Branch("hit", &hit, "hit/I");
-
-  int rID; /// reaction ID
-  tree->Branch("rID", &rID, "reactionID/I");
   
   double thetab, phib, Tb;
   double thetaB, phiB, TB;
@@ -233,14 +259,7 @@ void Transfer(
 
   double decayTheta; /// the change of thetaB due to decay
   double xRecoil_d, yRecoil_d, rhoRecoil_d, Td;
-
-  bool isAnyDecay = false;
-  for( int i = 0; i < numTransfer; i++ ){
-    if( !listOfTransfer[i] ) continue;
-    isAnyDecay |= transfer[i].GetRecoil().isDecay;
-  }
-
-  if( isAnyDecay ) {
+  if( recoil.isDecay ) {
     tree->Branch("decayTheta",   &decayTheta, "decayTheta/D");
     tree->Branch("xRecoil_d",     &xRecoil_d, "xRecoil_d/D");
     tree->Branch("yRecoil_d",     &yRecoil_d, "yRecoil_d/D");
@@ -261,24 +280,14 @@ void Transfer(
 
   ///in case need ELUM
   double xElum1, yElum1, rhoElum1;
-  bool isAnyElum1 = false;
-  for( int i = 0; i < numTransfer; i++ ){
-    if( !listOfTransfer[i] ) continue;
-    isAnyElum1 |=  (helios[i].GetAuxGeometry().elumPos1 != 0); 
-  }
-  if( isAnyElum1 ) {
+  if( aux.elumPos1 != 0 ) {
     tree->Branch("xElum1",     &xElum1, "xElum1/D");
     tree->Branch("yElum1",     &yElum1, "yElum1/D");
     tree->Branch("rhoElum1", &rhoElum1, "rhoElum1/D");
   }
   
   double xElum2, yElum2, rhoElum2;
-  bool isAnyElum2 = false;
-  for( int i = 0; i < numTransfer; i++ ){
-    if( !listOfTransfer[i] ) continue;
-    isAnyElum2 |=  (helios[i].GetAuxGeometry().elumPos2 != 0); 
-  }
-  if( isAnyElum2 ) {
+  if( aux.elumPos2 != 0 ) {
     tree->Branch("xElum2",     &xElum2, "xElum2/D");
     tree->Branch("yElum2",     &yElum2, "yElum2/D");
     tree->Branch("rhoElum2", &rhoElum2, "rhoElum2/D");
@@ -286,52 +295,31 @@ void Transfer(
   
   ///in case need other recoil detector. 
   double xRecoil1, yRecoil1, rhoRecoil1;
-  bool isAnyRecoil1 = false;
-  for( int i = 0; i < numTransfer; i++ ){
-    if( !listOfTransfer[i] ) continue;
-    isAnyRecoil1 |=  (helios[i].GetAuxGeometry().detPos1 != 0); 
-  }
-  if( isAnyRecoil1 != 0 ){
+  if( aux.detPos1 != 0 ){
     tree->Branch("xRecoil1",     &xRecoil1, "xRecoil1/D");
     tree->Branch("yRecoil1",     &yRecoil1, "yRecoil1/D");
     tree->Branch("rhoRecoil1", &rhoRecoil1, "rhoRecoil1/D");
   }
-
   double xRecoil2, yRecoil2, rhoRecoil2;
-  bool isAnyRecoil2 = false;
-  for( int i = 0; i < numTransfer; i++ ){
-    if( !listOfTransfer[i] ) continue;
-    isAnyRecoil2 |=  (helios[i].GetAuxGeometry().detPos2 != 0); 
-  }
-  if( isAnyRecoil2 != 0 ){
+  if( aux.detPos2 != 0 ){
     tree->Branch("xRecoil2",     &xRecoil2, "xRecoil2/D");
     tree->Branch("yRecoil2",     &yRecoil2, "yRecoil2/D");
     tree->Branch("rhoRecoil2", &rhoRecoil2, "rhoRecoil2/D");
   }
-
-  //======= list of reaction used.
-  TMacro listOfReaction;
-  for( int i = 0; i < numTransfer ; i++){
-    if( !listOfTransfer[i] ) continue;
-    listOfReaction.AddLine(Form("%2d | %s", i, transfer[i].GetReactionName_Latex().Data()));
-  }
-
-  listOfReaction.Write("ListOfReactions");
-  
   //======= function for e-z plot for ideal case
   printf("++++ generate functions\n");
   TObjArray * gList = new TObjArray();
-  gList->SetName("Constant thetaCM = 0 lines");
-  const int gxSize = numTransfer;
+  gList->SetName("Constant thetaCM lines");
+  const int gxSize = 50;
   TF1 ** gx = new TF1*[gxSize];
   TString name;
 
-  for( int i = 0; i < gxSize; i++){
-    double mb = transfer[i].GetMass_b();
-    double betaRect = transfer[i].GetReactionBeta();
-    double gamma = transfer[i].GetReactionGamma();
-    double slope = transfer[i].GetEZSlope(helios[0].GetBField()); /// MeV/mm
+  double mb = transfer.GetMass_b();
+  double betaRect = transfer.GetReactionBeta();
+  double gamma = transfer.GetReactionGamma();
+  double slope = transfer.GetEZSlope(helios.GetBField()); /// MeV/mm
 
+  for( int i = 0; i < gxSize; i++){
     name.Form("g%d", i);     
     gx[i] = new TF1(name, "([0]*TMath::Sqrt([1]+[2]*x*x)+[5]*x)/([3]) - [4]", -1000, 1000);      
     double thetacm = i * TMath::DegToRad();
@@ -350,96 +338,67 @@ void Transfer(
   gList->Write("EZ_thetaCM", TObject::kSingleKey);
   printf(" %d constant thetaCM functions\n", gxSize);
 
-  for( int i = 0; i < gxSize; i++){
-    delete gx[i];
-  }
-  delete [] gx;
-  delete gList;
-
   //--- cal modified f
-  int numEx = 0;
-  for( int i = 0; i < numTransfer; i++){
-    if( !listOfTransfer[i] ) continue;
-    numEx += transfer[i].GetExList()->ExList.size();
-  }
-
   TObjArray * fxList = new TObjArray();
   TGraph ** fx = new TGraph*[numEx];
   std::vector<double> px, py;
   int countfx = 0;
-
-  count = 0;
-  for( int i = 0; i < numTransfer; i++ ){
-    if( !listOfTransfer[i] ) continue;
-    double mb = transfer[i].GetMass_b();
-    double betaRect = transfer[i].GetReactionBeta();
-    double gamma = transfer[i].GetReactionGamma();
-    double slope = transfer[i].GetEZSlope(helios[0].GetBField()); /// MeV/mm
-
-    for( size_t j = 0 ; j < transfer[i].GetExList()->ExList.size(); j++){
-      double Ex = transfer[i].GetExList()->ExList[j].Ex;
-      double kbCM = transfer[i].CalkCM(Ex);
-      double a = helios[i].GetDetRadius();
-      double q = TMath::Sqrt(mb*mb + kbCM * kbCM );
-      px.clear();
-      py.clear();
-      countfx = 0;
-      for(int i = 0; i < 100; i++){
-        double thetacm = TMath::Pi()/TMath::Log(100) * (TMath::Log(100) - TMath::Log(100-i)) ;//using log scale, for more point in small angle.
-        double temp = TMath::TwoPi() * slope / betaRect / kbCM * a / TMath::Sin(thetacm); 
-        double pxTemp = betaRect /slope * (gamma * betaRect * q - gamma * kbCM * TMath::Cos(thetacm)) * (1 - TMath::ASin(temp)/TMath::TwoPi()) ;
-        double pyTemp = gamma * q - mb - gamma * betaRect * kbCM * TMath::Cos(thetacm);   
-        if( TMath::IsNaN(pxTemp) || TMath::IsNaN(pyTemp) ) continue;
-        px.push_back(pxTemp);
-        py.push_back(pyTemp);
-        countfx ++;
-      }
-
-      fx[count] = new TGraph(countfx, &px[0], &py[0]);
-      name.Form("fx%d_%ld", i, j);
-      fx[count]->SetName(name);
-      fx[count]->SetLineColor(4);
-      fxList->Add(fx[count]);
-      printf(",");
-      count ++;
+  for( int j = 0 ; j < numEx; j++){
+    double a = helios.GetDetRadius();
+    double q = TMath::Sqrt(mb*mb + kbCM[j] * kbCM[j] );
+    px.clear();
+    py.clear();
+    countfx = 0;
+    for(int i = 0; i < 100; i++){
+      double thetacm = TMath::Pi()/TMath::Log(100) * (TMath::Log(100) - TMath::Log(100-i)) ;//using log scale, for more point in small angle.
+      double temp = TMath::TwoPi() * slope / betaRect / kbCM[j] * a / TMath::Sin(thetacm); 
+      double pxTemp = betaRect /slope * (gamma * betaRect * q - gamma * kbCM[j] * TMath::Cos(thetacm)) * (1 - TMath::ASin(temp)/TMath::TwoPi()) ;
+      double pyTemp = gamma * q - mb - gamma * betaRect * kbCM[j] * TMath::Cos(thetacm);   
+      if( TMath::IsNaN(pxTemp) || TMath::IsNaN(pyTemp) ) continue;
+      px.push_back(pxTemp);
+      py.push_back(pyTemp);
+      countfx ++;
     }
+
+    fx[j] = new TGraph(countfx, &px[0], &py[0]);
+    name.Form("fx%d", j);
+    fx[j]->SetName(name);
+    fx[j]->SetLineColor(4);
+    fxList->Add(fx[j]);
+    printf(",");
   }
   fxList->Write("EZCurve", TObject::kSingleKey);
-  printf(" %d (%d) e-z finite-size detector functions\n", numEx, count);
+  printf(" %d e-z finite-size detector functions\n", numEx);
 
-  for( int i = 0 ; i < numEx; i++) delete fx[i];
-  delete [] fx;
-  delete fxList;
+  //--- cal modified thetaCM vs z
+  TObjArray * txList = new TObjArray();
+  TGraph ** tx = new TGraph*[numEx];
+  for( int j = 0 ; j < numEx; j++){
+    double a = helios.GetDetRadius();
+    double q = TMath::Sqrt(mb*mb + kbCM[j] * kbCM[j] );
+    px.clear();
+    py.clear();
+    countfx = 0;
+    for(int i = 0; i < 100; i++){
+      double thetacm = (i + 8.) * TMath::DegToRad();
+      double temp = TMath::TwoPi() * slope / betaRect / kbCM[j] * a / TMath::Sin(thetacm); 
+      double pxTemp = betaRect /slope * (gamma * betaRect * q - gamma * kbCM[j] * TMath::Cos(thetacm)) * (1 - TMath::ASin(temp)/TMath::TwoPi());
+      double pyTemp = thetacm * TMath::RadToDeg();   
+      if( TMath::IsNaN(pxTemp) || TMath::IsNaN(pyTemp) ) continue;
+      px.push_back(pxTemp);
+      py.push_back(pyTemp);
+      countfx ++;
+    }
 
-  // //--- cal modified thetaCM vs z
-  // TObjArray * txList = new TObjArray();
-  // TGraph ** tx = new TGraph*[numEx];
-  // for( int j = 0 ; j < numEx; j++){
-  //   double a = helios.GetDetRadius();
-  //   double q = TMath::Sqrt(mb*mb + kbCM[j] * kbCM[j] );
-  //   px.clear();
-  //   py.clear();
-  //   countfx = 0;
-  //   for(int i = 0; i < 100; i++){
-  //     double thetacm = (i + 8.) * TMath::DegToRad();
-  //     double temp = TMath::TwoPi() * slope / betaRect / kbCM[j] * a / TMath::Sin(thetacm); 
-  //     double pxTemp = betaRect /slope * (gamma * betaRect * q - gamma * kbCM[j] * TMath::Cos(thetacm)) * (1 - TMath::ASin(temp)/TMath::TwoPi());
-  //     double pyTemp = thetacm * TMath::RadToDeg();   
-  //     if( TMath::IsNaN(pxTemp) || TMath::IsNaN(pyTemp) ) continue;
-  //     px.push_back(pxTemp);
-  //     py.push_back(pyTemp);
-  //     countfx ++;
-  //   }
-
-  //   tx[j] = new TGraph(countfx, &px[0], &py[0]);
-  //   name.Form("tx%d", j);
-  //   tx[j]->SetName(name);
-  //   tx[j]->SetLineColor(4);
-  //   txList->Add(tx[j]);
-  //   printf("*");
-  // }
-  // txList->Write("thetaCM_Z", TObject::kSingleKey);
-  // printf(" %d thetaCM-z for finite-size detector functions\n", numEx);
+    tx[j] = new TGraph(countfx, &px[0], &py[0]);
+    name.Form("tx%d", j);
+    tx[j]->SetName(name);
+    tx[j]->SetLineColor(4);
+    txList->Add(tx[j]);
+    printf("*");
+  }
+  txList->Write("thetaCM_Z", TObject::kSingleKey);
+  printf(" %d thetaCM-z for finite-size detector functions\n", numEx);
   
   //========timer
   TBenchmark clock;
@@ -449,7 +408,7 @@ void Transfer(
   shown = false;
   
   //change the number of event into human easy-to-read form
-  int numEvent = reactionConfig.numEvents;
+  int numEvent = reactConfig.numEvents;
   int digitLen = TMath::Floor(TMath::Log10(numEvent));
   TString numEventStr;
   if( 3 <= digitLen && digitLen < 6 ){
@@ -461,40 +420,38 @@ void Transfer(
   }
   printf("\e[32m#################################### generating %s events \e[0m\n", numEventStr.Data());
 
-  double KEA = reactionConfig.beamEnergy;
-  double theta = reactionConfig.beamTheta;
+  double KEA = reactConfig.beamEnergy;
+  double theta = reactConfig.beamTheta;
   double  phi = 0.0;
-  
-  TF1 * angDist = nullptr;
-
+      
   //*====================================================== calculate event
-  count = 0;
+  int count = 0;
   for( int i = 0; i < numEvent; i++){
     bool redoFlag = true;
-    if( !reactionConfig.isRedo ) redoFlag = false;
+    if( !reactConfig.isRedo ) redoFlag = false;
     do{
-
-      rID = gRandom->Integer( numTransfer );
-      if( !listOfTransfer[rID] ) continue;
       
       //==== Set Ex of B
-      ExID = transfer[rID].GetRandomExID();
-      double sigma = transfer[rID].GetExList()->ExList[ExID].sigma;
-      Ex = transfer[rID].GetExList()->ExList[ExID].Ex + gRandom->Gaus(0, sigma);
-
-      transfer[rID].SetExB(Ex);
+      if( numEx == 1 ) {
+        ExID = 0;
+        Ex = exList.ExList[0].Ex + (exList.ExList[0].sigma == 0 ? 0 : gRandom->Gaus(0, exList.ExList[0].sigma));
+      }else{
+        ExID = exDist->GetRandom();
+        Ex = exList.ExList[ExID].Ex + (exList.ExList[ExID].sigma == 0 ? 0 : gRandom->Gaus(0, exList.ExList[ExID].sigma));
+      }
+      transfer.SetExB(Ex);
   
       //==== Set incident beam
-      if( reactionConfig.beamEnergySigma != 0 ){
-        KEA = gRandom->Gaus(reactionConfig.beamEnergy, reactionConfig.beamEnergySigma);
+      if( reactConfig.beamEnergySigma != 0 ){
+        KEA = gRandom->Gaus(reactConfig.beamEnergy, reactConfig.beamEnergySigma);
       }
-      if( reactionConfig.beamThetaSigma != 0 ){
-        theta = gRandom->Gaus(reactionConfig.beamTheta, reactionConfig.beamThetaSigma);
+      if( reactConfig.beamThetaSigma != 0 ){
+        theta = gRandom->Gaus(reactConfig.beamTheta, reactConfig.beamThetaSigma);
       }
   
       //==== for taregt scattering
-      transfer[rID].SetIncidentEnergyAngle(KEA, theta, 0.);
-      transfer[rID].CalReactionConstant();
+      transfer.SetIncidentEnergyAngle(KEA, theta, 0.);
+      transfer.CalReactionConstant();
 
       // TLorentzVector PA = transfer.GetPA();            
       //depth = 0;
@@ -511,8 +468,8 @@ void Transfer(
 
       //==== Calculate thetaCM, phiCM
       if( distFile->IsOpen()){
-        angDist = (TF1 *) distList->At(ExID);
-        thetaCM = angDist->GetRandom() / 180. * TMath::Pi();
+        dist = (TF1 *) distList->At(ExID);
+        thetaCM = dist->GetRandom() / 180. * TMath::Pi();
       }else{
         thetaCM = TMath::ACos(2 * gRandom->Rndm() - 1) ; 
       }
@@ -520,9 +477,9 @@ void Transfer(
       double phiCM = TMath::TwoPi() * gRandom->Rndm(); 
 
       //==== Calculate reaction
-      transfer[rID].Event(thetaCM, phiCM);
-      TLorentzVector Pb = transfer[rID].GetPb();
-      TLorentzVector PB = transfer[rID].GetPB();
+      transfer.Event(thetaCM, phiCM);
+      TLorentzVector Pb = transfer.GetPb();
+      TLorentzVector PB = transfer.GetPB();
 
       // //==== Calculate energy loss of scattered and recoil in target
       // if( isTargetScattering ){
@@ -541,14 +498,14 @@ void Transfer(
 
     //======= Decay of particle-B
     int decayID = 0;
-    if( transfer[rID].GetRecoil().isDecay){
+    if( recoil.isDecay){
       
-      decayID = decay[rID].CalDecay(PB, Ex, 0, phiCM + TMath::Pi()/2); // decay to ground state
+      decayID = decay.CalDecay(PB, Ex, 0, phiCM + TMath::Pi()/2); // decay to ground state
       if( decayID == 1 ){
-        PB = decay[rID].GetDaugther_D();
+        PB = decay.GetDaugther_D();
         //decayTheta = decay.GetAngleChange();
-        decayTheta = decay[rID].GetThetaCM();
-        PB.SetUniqueID(transfer[rID].GetRecoil().decayZ);
+        decayTheta = decay.GetThetaCM();
+        PB.SetUniqueID(recoil.decayZ);
       }else{
         decayTheta = TMath::QuietNaN();
       }
@@ -571,19 +528,19 @@ void Transfer(
     
     if( Tb > 0  || TB > 0 ){
 
-      helios[rID].CalArrayHit(Pb);
-      helios[rID].CalRecoilHit(PB);
+      helios.CalArrayHit(Pb);
+      helios.CalRecoilHit(PB);
       hit = 2;
-      while( hit > 1 ){  hit = helios[rID].CheckDetAcceptance(); } /// while hit > 1, goto next loop;
+      while( hit > 1 ){  hit = helios.CheckDetAcceptance(); } /// while hit > 1, goto next loop;
       
-      trajectory orb_b = helios[rID].GetTrajectory_b();
-      trajectory orb_B = helios[rID].GetTrajectory_B();
+      trajectory orb_b = helios.GetTrajectory_b();
+      trajectory orb_B = helios.GetTrajectory_B();
       
-      e = helios[rID].GetEnergy() + gRandom->Gaus(0, helios[rID].GetArrayGeometry().eSigma );
+      e = helios.GetEnergy() + gRandom->Gaus(0, array.eSigma );
 
-      double ranX = gRandom->Gaus(0, helios[rID].GetArrayGeometry().zSigma);
+      double ranX = gRandom->Gaus(0, array.zSigma);
       z = orb_b.z + ranX;
-      detX = helios[rID].GetDetX() + ranX;
+      detX = helios.GetDetX() + ranX;
  
       z0 = orb_b.z0;
       t = orb_b.t;
@@ -596,18 +553,17 @@ void Transfer(
       xArray = orb_b.x;
       yArray = orb_b.y;
       
+
       //ELUM
-      double elumPos1 = helios[rID].GetAuxGeometry().elumPos1;
-      if( elumPos1 != 0 ){
-        xElum1   = helios[rID].GetXPos(elumPos1);
-        yElum1   = helios[rID].GetYPos(elumPos1);
-        rhoElum1 = helios[rID].GetR   (elumPos1);
+      if( aux.elumPos1 != 0 ){
+        xElum1   = helios.GetXPos(aux.elumPos1);
+        yElum1   = helios.GetYPos(aux.elumPos1);
+        rhoElum1 = helios.GetR(aux.elumPos1);
       }
-      double elumPos2 = helios[rID].GetAuxGeometry().elumPos2;
-      if( elumPos2 ){
-        xElum2   = helios[rID].GetXPos(elumPos2);
-        yElum2   = helios[rID].GetYPos(elumPos2);
-        rhoElum2 = helios[rID].GetR   (elumPos2);
+      if( aux.elumPos2 != 0 ){
+        xElum2   = helios.GetXPos(aux.elumPos2);
+        yElum2   = helios.GetYPos(aux.elumPos2);
+        rhoElum2 = helios.GetR(aux.elumPos2);
       }
 
       //Recoil
@@ -618,20 +574,18 @@ void Transfer(
       rhoB = orb_B.rho;
 
       //other recoil detectors
-      double recoilPos1 = helios[rID].GetAuxGeometry().detPos1;
-      if ( recoilPos1 != 0 ){
-        xRecoil1   = helios[rID].GetRecoilXPos(recoilPos1);
-        yRecoil1   = helios[rID].GetRecoilYPos(recoilPos1);
-        rhoRecoil1 = helios[rID].GetRecoilR   (recoilPos1);
+      if ( aux.detPos1 != 0 ){
+        xRecoil1   = helios.GetRecoilXPos(aux.detPos1);
+        yRecoil1   = helios.GetRecoilYPos(aux.detPos1);
+        rhoRecoil1 = helios.GetRecoilR(aux.detPos1);
       }
-      double recoilPos2 = helios[rID].GetAuxGeometry().detPos2;
-      if ( recoilPos2 != 0 ){
-        xRecoil2   = helios[rID].GetRecoilXPos(recoilPos2);
-        yRecoil2   = helios[rID].GetRecoilYPos(recoilPos2);
-        rhoRecoil2 = helios[rID].GetRecoilR   (recoilPos2);
+      if ( aux.detPos2 != 0 ){
+        xRecoil2   = helios.GetRecoilXPos(aux.detPos2);
+        yRecoil2   = helios.GetRecoilYPos(aux.detPos2);
+        rhoRecoil2 = helios.GetRecoilR(aux.detPos2);
       }
       
-      std::pair<double,double> ExThetaCM = transfer[rID].CalExThetaCM(e, z, helios[rID].GetBField(), helios[rID].GetDetRadius());
+      std::pair<double,double> ExThetaCM = transfer.CalExThetaCM(e, z, helios.GetBField(), helios.GetDetRadius());
       ExCal = ExThetaCM.first;
       thetaCMCal = ExThetaCM.second;
 
@@ -639,15 +593,15 @@ void Transfer(
       thetaCM = thetaCM * TMath::RadToDeg();
       
       //if decay, get the light decay particle on the recoil;
-      if( transfer[rID].GetRecoil().isDecay ){
+      if( recoil.isDecay ){
         if( decayID == 1 ){
-          TLorentzVector Pd = decay[rID].GetDaugther_d();
+          TLorentzVector Pd = decay.GetDaugther_d();
           
           Td = Pd.E() - Pd.M();
           
-          helios[rID].CalRecoilHit(Pd);
+          helios.CalRecoilHit(Pd);
           
-          trajectory orb_d = helios[rID].GetTrajectory_B();
+          trajectory orb_d = helios.GetTrajectory_B();
           rhoRecoil_d = orb_d.R;
           xRecoil_d = orb_d.x;
           yRecoil_d = orb_d.y;
@@ -665,7 +619,7 @@ void Transfer(
 
     if( hit == 1)  count ++;
 
-    if( reactionConfig.isRedo ){
+    if( reactConfig.isRedo ){
       if( hit == 1) {
         redoFlag = false;
       }else{
@@ -701,20 +655,10 @@ void Transfer(
   saveFile->Close();
   
   distFile->Close();
-  delete angDist;
+  delete exDist;
 
   printf("=============== done. saved as %s. count(hit==1) : %d\n", saveFileName.Data(), count);
   //gROOT->ProcessLine(".q");
-
-  delete [] transfer;
-  delete [] decay;
-  delete [] helios;
-
-  distFile->Close();
-  delete distFile;
-  delete distList;
-  delete dwbaExList;
-  delete dwbaReactList;
 
   return;
 
@@ -727,45 +671,52 @@ int main (int argc, char *argv[]) {
   printf("==========     Simulate Transfer reaction in HELIOS    ==========\n");
   printf("=================================================================\n");
   
-  if(argc == 2 || argc > 5) { 
-    printf("Usage: ./Transfer [1] [2] [3] [4]\n");
+  if(argc == 2 || argc > 7) { 
+    printf("Usage: ./Transfer [1] [2] [3] [4] [5] [6]\n");
     printf("       default file name \n");
     printf("   [1] reactionConfig.txt (input) reaction Setting \n");
     printf("   [2] detectorGeo.txt    (input) detector Setting \n");
-    printf("   [3] DWBA.root          (input) thetaCM distribution from DWBA \n");  
-    printf("   [4] transfer.root      (output) rootFile name for output \n");
+    printf("   [3] ID                 (input) detector & reaction ID (default = 0 ) \n");
+    printf("   [4] DWBA.root          (input) thetaCM distribution from DWBA \n");
+    printf("   [5] transfer.root      (output) rootFile name for output \n");
+    printf("   [6] plot               (input) will it plot stuffs [1/0] \n");
 
     printf("------------------------------------------------------\n");
     return 0 ; 
   }
 
-  std::string  basicConfig = "reactionConfig.txt";
-  std::string   detGeoFile = "detectorGeo.txt";
+  std::string       basicConfig = "reactionConfig.txt";
+  std::string  heliosDetGeoFile = "detectorGeo.txt";
+  int                   ID = 0;
   TString      ptolemyRoot = "DWBA.root"; // when no file, use isotropic distribution of thetaCM
-  TString     saveFileName = "transfer.root";
+  TString     saveFileName; // format based on ID;
   bool           isPlot = false;
    
   if( argc >= 2) basicConfig = argv[1];  
-  if( argc >= 3) detGeoFile = argv[2];  
-  if( argc >= 4) ptolemyRoot = argv[3];
-  if( argc >= 5) saveFileName = argv[4];
-  
-  Transfer( basicConfig, detGeoFile, ptolemyRoot, saveFileName);
+  if( argc >= 3) heliosDetGeoFile = argv[2];  
+  if( argc >= 4) ID = atoi(argv[3]);  
+  if( argc >= 5) ptolemyRoot = argv[4];
+  if( argc >= 6) saveFileName = argv[5];
+  if( argc >= 7) isPlot = atoi(argv[7]);
+
+  saveFileName = Form("transfer_%d.root", ID);
+
+  Transfer( basicConfig, heliosDetGeoFile, ID, ptolemyRoot, saveFileName);
 
   //run Armory/Check_Simulation
-  // if( isPlot ){
-  //   std::ifstream file_in;
-  //   file_in.open("../Cleopatra/Check_Simulation.C", std::ios::in);
-  //   if( file_in){
-  //     printf("---- running ../Cleopatra/Check_Simulation.C on %s \n", saveFileName.Data());
-  //     TString cmd;
-  //     cmd.Form("root -l '../Cleopatra/Check_Simulation.C(\"%s\")'", saveFileName.Data());
+  if( isPlot ){
+    std::ifstream file_in;
+    file_in.open("../Cleopatra/Check_Simulation.C", std::ios::in);
+    if( file_in){
+      printf("---- running ../Cleopatra/Check_Simulation.C on %s \n", saveFileName.Data());
+      TString cmd;
+      cmd.Form("root -l '../Cleopatra/Check_Simulation.C(\"%s\")'", saveFileName.Data());
       
-  //     system(cmd.Data());
-  //   }else{
-  //     printf("cannot find ../Cleopatra/Check_Simulation.C \n");
-  //   }
-  // }
+      system(cmd.Data());
+    }else{
+      printf("cannot find ../Cleopatra/Check_Simulation.C \n");
+    }
+  }
   
 }
 

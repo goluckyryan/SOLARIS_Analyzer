@@ -77,7 +77,7 @@ class HELIOS{
 public:
 
   HELIOS();
-  HELIOS(std::string filename, unsigned short ID);
+  HELIOS(std::string detGeoFile, unsigned short ID);
   ~HELIOS();
   
   void SetCoincidentWithRecoil(bool TorF){ this->isCoincidentWithRecoil = TorF;}
@@ -176,9 +176,9 @@ HELIOS::HELIOS(){
   Clear();
 }
 
-HELIOS::HELIOS(std::string filename, unsigned short ID){
+HELIOS::HELIOS(std::string detGeoFile, unsigned short ID){
   Clear();
-  SetDetectorGeometry(filename, ID);
+  SetDetectorGeometry(detGeoFile, ID);
 }
 
 HELIOS::~HELIOS(){

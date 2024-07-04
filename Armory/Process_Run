@@ -34,7 +34,7 @@ fi;
 
 RUN=$1
 runNum=$1
-EventBld=2
+EventBld=1
 nWorker=1
 TraceMethod=0
 isMonitor=1

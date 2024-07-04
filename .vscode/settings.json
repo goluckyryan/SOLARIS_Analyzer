@@ -130,7 +130,8 @@
     "httpaccess.C": "cpp",
     "httpcontrol.C": "cpp",
     "SimTransfer2.C": "cpp",
-    "haha.C": "cpp"
+    "haha.C": "cpp",
+    "SimTransfer_2.C": "cpp"
   },
 
   "better-comments.multilineComments": true,

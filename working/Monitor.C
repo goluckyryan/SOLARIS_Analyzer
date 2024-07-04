@@ -177,7 +177,8 @@ void Monitor::Begin(TTree *tree){
   printf("###########################################################\n");
   
   //===================================================== loading parameter
-  corr->LoadDetGeoAndReactionConfigFile();
+  
+  // corr->LoadDetGeoAndReactionConfigFile();
   corr->LoadXNCorr();
   corr->LoadXFXN2ECorr();
   corr->LoadXScaleCorr();
