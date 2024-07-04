@@ -77,9 +77,14 @@ int main (int argc, char *argv[]) { //TODO add angle range
   InFileCreator( readFile, ptolemyInFileName, angMin, angMax, angStep);
   
   //================= run ptolemy
-  std::string ptolemyOutFileName = ptolemyInFileName + ".out";
+  std::string ptolemyOutFileName = argv[1];
+  ptolemyOutFileName += ".out";
   std::ostringstream commandStream;
-  commandStream << "../Cleopatra/ptolemy <" << ptolemyInFileName << " " << ptolemyOutFileName;
+  #if defined(__linux__)
+    commandStream << "../Cleopatra/ptolemy <" << ptolemyInFileName << "> " << ptolemyOutFileName;
+  #elif defined(__APPLE__) && defined(__MACH__)
+    commandStream << "../Cleopatra/ptolemy_mac <" << ptolemyInFileName << "> " << ptolemyOutFileName;
+  #endif
   std::string command = commandStream.str();
 
   printf("=================== Run Ptolemy\n");

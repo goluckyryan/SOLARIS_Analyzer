@@ -168,7 +168,8 @@ Decay::Decay(){
   dTheta = TMath::QuietNaN();
   isMotherSet = false;
   
-  f1 = new TF1("f1", "(1+ROOT::Math::legendre(2,x))/2.", -1, 1);
+  // f1 = new TF1("f1", "(1+ROOT::Math::legendre(2,x))/2.", -1, 1); //need to compile ROOT with -Dmathmore=ON
+  f1 = new TF1("f1", "sin(x)", -1, 1);
 }
 
 Decay::~Decay(){

@@ -19,8 +19,6 @@
 #include "ClassTransfer.h"
 #include "ClassHelios.h"
 
-
-
 void PrintEZPlotPara(TransferReaction tran, HELIOS helios){
 
   printf("==================================== E-Z plot slope\n");
@@ -33,7 +31,6 @@ void PrintEZPlotPara(TransferReaction tran, HELIOS helios){
   printf("                       e-z slope : %f MeV/mm\n", slope);   
   // double intercept = q/gamma - mb; // MeV
   // printf("    e-z intercept (ground state) : %f MeV\n", intercept); 
-
 }
 
 void Transfer(
@@ -110,7 +107,8 @@ void Transfer(
 
     int numEx = dwbaExList->GetListOfLines()->GetSize() - 1 ;
     
-    for( int i = 0; i < numTransfer; i++){ transfer[i].GetExList()->Clear(); }
+    // for( int i = 0; i < numTransfer; i++){ transfer[i].GetExList()->Clear(); }
+    ExcitedEnergies dwbaExTemp[numTransfer];
 
     for( int i = 1; i <= numEx ; i++){
       //Check DWBA reaction is same as transfer setting
@@ -123,8 +121,20 @@ void Transfer(
           dwbaExList_Used.AddLine(temp.c_str());
           if( temp[0] == '/' ) continue;
           std::vector<std::string> tempStr = AnalysisLib::SplitStr(temp, " ");
-          transfer[j].GetExList()->Add( atof(tempStr[0].c_str()), atof(tempStr[1].c_str()), 1.0, 0.00);
+          // transfer[j].GetExList()->Add( atof(tempStr[0].c_str()), atof(tempStr[1].c_str()), 1.0, 0.00);
+          dwbaExTemp[j].Add( atof(tempStr[0].c_str()), atof(tempStr[1].c_str()), 1.0, 0.00);
         }
+      }
+    }
+
+    for( int i = 0; i < numTransfer; i++ ){
+      if( dwbaExTemp[i].ExList.size() > 0 ) {
+        transfer[i].GetExList()->Clear();
+        for( size_t j = 0 ; dwbaExTemp[i].ExList.size(); j ++ ){
+          transfer[i].GetExList()->Add( dwbaExTemp[i].ExList[j].Ex, dwbaExTemp[i].ExList[j].xsec, 1.0, 0.00);
+        }
+      }else{
+        printf("Cannot match %s with DWBA, use Reaction Ex List\n", transfer[i].GetReactionName().Data());
       }
     }
 

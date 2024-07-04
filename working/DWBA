@@ -45,6 +45,6 @@
 #36Ar(d,a)34Cl     0        4L=2     3+           0.000   8MeV/u    As    # (d,a) reaction
 
 
-32Si(d,p)33Si      0        1s1/2    1/2+         0.000   10MeV/u     AK
-32Si(d,p)33Si      0        0d5/2    5/2+         0.197   10MeV/u     AK
-32Si(d,3He)31Al    0        0d5/2    5/2+         0.000   10MeV/u     Ax
+30Si(d,p)31Si      0        1s1/2    1/2+         0.000   10MeV/u     AK
+# 32Si(d,p)33Si      0        0d5/2    5/2+         0.197   10MeV/u     AK
+# 32Si(d,3He)31Al    0        0d5/2    5/2+         0.000   10MeV/u     Ax
