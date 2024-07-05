@@ -28,7 +28,7 @@ Out      //detector_facing_Out_or_In
 294.0
 
 #===============2nd_Array + Recoil
-false    //is_this_array_exist_or_use_for_Simulation
+true    //is_this_array_exist_or_use_for_Simulation
 1000     //recoil_position_+_for_downstream_[mm]
 10.0     //inner_radius_of_recoil_detector_[mm]
 40.2     //outter_radius_of_recoil_detector_[mm]

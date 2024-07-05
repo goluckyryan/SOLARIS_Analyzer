@@ -3,6 +3,7 @@
     "detectorGeo.txt": "shellscript",
     "reactionConfig.txt": "shellscript",
     "DWBA": "shellscript",
+    "SimChecker_Config.txt": "cpp",
     "*.C": "cpp"
   },
   
@@ -19,10 +20,10 @@
     },
     {
       "tag": "?",
-      "color": "#0076FF",
+      "color": "#1FE0CB",
       "strikethrough": false,
       "backgroundColor": "transparent",
-      "bold": false,
+      "bold": true,
       "italic": false
     },
     {

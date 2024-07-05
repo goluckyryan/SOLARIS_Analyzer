@@ -10,6 +10,7 @@
 #include "TLorentzVector.h"
 #include "TMath.h"
 #include "TF1.h"
+#include "TMacro.h"
 
 //=======================================================
 //#######################################################
@@ -25,6 +26,7 @@ public:
   TransferReaction(){Inititization();};
   TransferReaction(ReactionConfig config, unsigned short ID = 0);
   TransferReaction(std::string configFile, unsigned short ID = 0);
+  TransferReaction(TMacro configMarco, unsigned short ID = 0);
   TransferReaction(int beamA,   int beamZ,
                    int targetA, int targetZ,
                    int recoilA, int recoilZ, float beamEnergy_AMeV);
@@ -38,6 +40,7 @@ public:
   void SetIncidentEnergyAngle(double KEA, double theta, double phi);
 
   void SetReactionFromFile(std::string configFile, unsigned short ID = 0);
+  void SetReactionFromTMacro(TMacro configMacro, unsigned short ID = 0);
   void SetReactionSimple(int beamA, int beamZ,
                          int targetA, int targetZ,
                          int recoilA, int recoilZ, float beamEnergy_AMeV);
@@ -154,6 +157,11 @@ TransferReaction::TransferReaction(ReactionConfig config, unsigned short ID){
 TransferReaction::TransferReaction(std::string configFile, unsigned short ID){
   Inititization();
   SetReactionFromFile(configFile, ID);
+}
+
+TransferReaction::TransferReaction(TMacro configMarco, unsigned short ID){
+  Inititization();
+  SetReactionFromTMacro(configMarco, ID);
 }
 
 TransferReaction::TransferReaction(int beamA, int beamZ,
@@ -300,6 +308,36 @@ void TransferReaction::SetReactionFromFile(std::string configFile, unsigned shor
 
   }else{     
     printf("cannot read file %s.\n", configFile.c_str());
+    isReady = false;
+  }
+
+}
+
+void TransferReaction::SetReactionFromTMacro(TMacro configMacro, unsigned short ID){
+
+  if( config.LoadReactionConfig(&configMacro) ){
+
+    SetA(config.beamA, config.beamZ);
+    Seta(config.targetA, config.targetZ);
+
+    SetExA(config.beamEx);
+
+    if( ID > config.recoil.size() ){
+      printf("Reaction Config only has %zu recoil settings. input is %u. Abort.\n", config.recoil.size(), ID);
+      return;
+    }
+
+    recoil = config.recoil[ID];
+    exList = config.exList[ID];
+
+    Setb(recoil.lightA, recoil.lightZ);
+    SetB(recoil.heavyA, recoil.heavyZ);
+    SetIncidentEnergyAngle(config.beamEnergy, 0, 0);
+
+    CalReactionConstant();
+
+  }else{     
+    printf("cannot read TMacro %s.\n", configMacro.GetName());
     isReady = false;
   }
 
