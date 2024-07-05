@@ -110,22 +110,23 @@ void Transfer(
 
     int numEx = dwbaExList->GetListOfLines()->GetSize() - 1 ;
     
-    // for( int i = 0; i < numTransfer; i++){ transfer[i].GetExList()->Clear(); }
     ExcitedEnergies dwbaExTemp[numTransfer];
 
     for( int i = 1; i <= numEx ; i++){
-      //Check DWBA reaction is same as transfer setting
       std::string reactionName = dwbaReactList->GetListOfLines()->At(i-1)->GetName();
-
+      printf(" %d | Checking %s from DWBA \n", i, reactionName.c_str());
       for( int j = 0; j < numTransfer; j++){
+        //Check DWBA reaction is same as transfer setting
         if( reactionName.find( transfer[j].GetReactionName().Data() ) != std::string::npos) {
+          printf("    >>> found %s in %s\n", transfer[j].GetReactionName().Data(), basicConfig.c_str());
           std::string temp = dwbaExList->GetListOfLines()->At(i)->GetName();
           dwbaReactList_Used.AddLine((reactionName + " | " + std::to_string(j)).c_str());
           dwbaExList_Used.AddLine(temp.c_str());
           if( temp[0] == '/' ) continue;
           std::vector<std::string> tempStr = AnalysisLib::SplitStr(temp, " ");
-          // transfer[j].GetExList()->Add( atof(tempStr[0].c_str()), atof(tempStr[1].c_str()), 1.0, 0.00);
           dwbaExTemp[j].Add( atof(tempStr[0].c_str()), atof(tempStr[1].c_str()), 1.0, 0.00);
+        }else{
+          printf("    XXX Not found\n");
         }
       }
     }
@@ -133,7 +134,7 @@ void Transfer(
     for( int i = 0; i < numTransfer; i++ ){
       if( dwbaExTemp[i].ExList.size() > 0 ) {
         transfer[i].GetExList()->Clear();
-        for( size_t j = 0 ; dwbaExTemp[i].ExList.size(); j ++ ){
+        for( size_t j = 0 ; j < dwbaExTemp[i].ExList.size(); j ++ ){
           transfer[i].GetExList()->Add( dwbaExTemp[i].ExList[j].Ex, dwbaExTemp[i].ExList[j].xsec, 1.0, 0.00);
         }
         useDWBA[i] = true;
