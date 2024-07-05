@@ -3,7 +3,7 @@ CFLAG = -O2
 
 depend = ClassTransfer.h ClassHelios.h ClassIsotope.h ClassDecay.h constant.h potentials.h
 
-ALL = Isotope InFileCreator ExtractXSec ExtractXSecFromText PlotTGraphTObjArray Cleopatra FindThetaCM SimTransfer SimTransfer_single SimAlpha
+ALL = Isotope InFileCreator ExtractXSec ExtractXSecFromText PlotTGraphTObjArray Cleopatra FindThetaCM SimTransfer SimAlpha
 
 all: $(ALL)
 

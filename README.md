@@ -14,9 +14,35 @@ Analysis
 ├── root_data // symbolic link to converted root file, created by SetUpNewExp  
 └── working // working directory, depends on experiment.
 
+# SOLARIS.sh
+
+this batch shell script adds few enviroment variables and functions. Add the Armory and Cleopatra into the system PATH.
+
+```sh
+>source SOLARIS.sh
+```
+
+# Event Builder
+
+Please download the SOLARIS_DAQ, under the Aux directory, make, and link the EventBuilder to Armory.
+
+The reason for having EventBuilder in the DAQ code is the Hit.h is original from the DAQ code.
+
 # ROOT issue
 
 We are still using TProof for parallel calculation. TProof is not pre-compiled since 6.32+. And 6.30 only precompiled for Ubuntu 22.04. So, for system using Ubuntu 24.04, user must precompiled to root in order to work.
+
+## Compilation
+
+We can manual download the git repository of the root following the instruction. in the cmake 
+
+```sh
+root_install="/opt/root_v6.32.00_compiled"
+root_src="root_src"
+root_build="root_build"
+cmake -DCMAKE_INSTALL_PREFIX=$root_install $root_src -Dproof=ON -Dmathmore=ON
+sudo cmake --build . --target install -j <number_of_threads>
+```
 
 # Analysis & Simulation
 
@@ -26,28 +52,30 @@ All class headers are started with Class*.h
 
 The classes **DetGeo**** and **ReactionConfig** are fundamental for loading the detectorGeo.txt and reactionConfig.txt. 
 
-Both txt file support empty lines, and up to 2 settings. The reason for that is for dual-array configuration. It has potentail to extend and include more settings. But it is two now, one for upstream array (reaction) and downstream array (reaction).
+Both txt file support empty lines, can have multiple settings. The reason for that is for many-array configuration. 
 
-The **TransferReaction** class is only use one of the reaction from the reactionConfig.txt. 
+The **TransferReaction** class is only use one of the reaction from the reactionConfig.txt. This class generates the TLorentzVector for ligh and heavy recoils.
 
 ```C++
   TransferReaction::SetReactionFromFile("reactionConfig.txt", ID); // ID = 0 or 1
 ```
-Same for the **Helios** class
+Same for the **Helios** class, **Helios** class use the detectorGeo.txt. It takes TLorentzVector and calculate does it be detected by the array or recoil detector.
 
 ```C++
   HELIOS::SetDetectorGeometry("detectorGeo.txt", ID); // ID = 0 or 1
 ```
 
+## Simulation
 
-# Event Builder
+Simply run
+```sh
+>SimTransfer
+```
 
-The EventBuilder is at the armory. It depends on the Hit.h and SolReader.h.
+it will digest the detectorGeo.txt, reactionConfig.txt, if DWBA.root exist, find the reactions. 
 
-## Hit.h
+* it does not have TargetScattering (yet)
+* for multiple reactions, it will randomly use any and disregard the total Xsec of different reactions. The Xsec only takes effect within same reaction.
+* the decay of heavy recoil only have isotropic decay.
 
-The Hit class stores a hit (or a data block)
 
-## SolReader.h
-
-The SolReader class read the sol file. It can be loaded in CERN ROOT alone. 

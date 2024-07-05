@@ -97,6 +97,7 @@ void Transfer(
   TMacro dwbaReactList_Used;
 
   bool useDWBA[numTransfer];
+  for( int i = 0; i < numTransfer; i++ ) useDWBA[i] = false;
   
   if( distFile->IsOpen() ) {
     printf("\e[32m#################################### Load DWBA input : %s  \e[0m\n", ptolemyRoot.Data());
@@ -182,7 +183,21 @@ void Transfer(
     dwbaReactList_Used.Write("DWBA_ReactionList", 1);
   }
 
-  
+  TMacro allExList;
+  allExList.AddLine("#---Ex   relative_xsec   SF   sigma_in_MeV");
+  TMacro exIDReactIDList; //list of all ex and corresponding Reaction ID
+  exIDReactIDList.AddLine("#-- ExID  ReactionID");
+  for( int i = 0; i < numTransfer; i++){
+    std::vector<EnergyLevel> tempExList = transfer[i].GetExList()->ExList;
+    for( size_t j = 0; j < tempExList.size(); j++){
+      allExList.AddLine(Form("%9.5f     %9.5f  %3.1f  %5.3f", tempExList[j].Ex, tempExList[j].xsec, tempExList[j].SF, tempExList[j].sigma));
+      exIDReactIDList.AddLine(Form("%ld   %d", j, i));
+    }
+  }
+
+  allExList.Write("AllExList");
+  exIDReactIDList.Write("ExID_ReactID_List");
+
   TMacro hitMeaning;
   hitMeaning.AddLine("======================= meaning of Hit\n"); 
   for( int code = -15 ; code <= 1; code ++ ){
@@ -372,7 +387,7 @@ void Transfer(
   delete [] gx;
   delete gList;
 
-  //--- cal modified f
+  //--- cal E-Z curve with finite detector correction
   int numEx = 0;
   for( int i = 0; i < numTransfer; i++){
     if( !listOfTransfer[i] ) continue;
