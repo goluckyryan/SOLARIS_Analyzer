@@ -29,7 +29,7 @@
             "name": "WinLinux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/home/ryan/Downloads/root/include/**"
+                "/home/ryan/root_v6.30.06/include/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

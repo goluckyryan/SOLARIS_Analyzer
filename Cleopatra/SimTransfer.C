@@ -95,10 +95,13 @@ void Transfer(
 
   TMacro dwbaExList_Used;
   TMacro dwbaReactList_Used;
+
+  bool useDWBA[numTransfer];
   
   if( distFile->IsOpen() ) {
     printf("\e[32m#################################### Load DWBA input : %s  \e[0m\n", ptolemyRoot.Data());
-    printf("--------- Found DWBA thetaCM distributions. Use the ExList from DWBA.\n"); 
+    printf("--------- Found DWBA thetaCM distributions.\n"); 
+    printf("          Checking DWBA matches withe %s.\n",  basicConfig.c_str()); 
 
     distList = (TObjArray *) distFile->FindObjectAny("thetaCM_TF1"); // the function List
     dwbaExList = (TMacro *) distFile->FindObjectAny("ExList");   
@@ -133,8 +136,10 @@ void Transfer(
         for( size_t j = 0 ; dwbaExTemp[i].ExList.size(); j ++ ){
           transfer[i].GetExList()->Add( dwbaExTemp[i].ExList[j].Ex, dwbaExTemp[i].ExList[j].xsec, 1.0, 0.00);
         }
+        useDWBA[i] = true;
       }else{
         printf("Cannot match %s with DWBA, use Reaction Ex List\n", transfer[i].GetReactionName().Data());
+        useDWBA[i] = false;
       }
     }
 
@@ -520,7 +525,7 @@ void Transfer(
       // }
 
       //==== Calculate thetaCM, phiCM
-      if( distFile->IsOpen()){
+      if( distFile->IsOpen() && useDWBA[rID] ){
         angDist = (TF1 *) distList->At(ExID);
         thetaCM = angDist->GetRandom() / 180. * TMath::Pi();
       }else{
