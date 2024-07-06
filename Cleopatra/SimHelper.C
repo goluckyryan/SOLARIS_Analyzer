@@ -19,7 +19,7 @@
 #include "../Cleopatra/PlotTGraphTObjArray.h"
 #include "../Armory/AutoFit.C"
 #include "../Armory/AnalysisLib.h"
-#include "../Cleopatra/Check_Simulation.C"
+#include "../Cleopatra/SimChecker.C"
 
 #include <iostream>
 #include <stdexcept>
@@ -43,8 +43,6 @@ private:
   TGTextEdit * editor;
   
   TString fileName;
-
-  TGComboBox * detGeoSelector;
   
   TGLabel * fileLabel;
   TGLabel * statusLabel;
@@ -86,7 +84,7 @@ MyMainFrame::MyMainFrame(const TGWindow *p,UInt_t w,UInt_t h) {
    TGVerticalFrame *hframe1 = new TGVerticalFrame(fMain,600,600 );
    hframe->AddFrame(hframe1);
    
-   TGVerticalFrame *hframe2 = new TGVerticalFrame(fMain,600,800 );
+   TGVerticalFrame *hframe2 = new TGVerticalFrame(fMain,600,1000 );
    hframe->AddFrame(hframe2,new TGLayoutHints( kLHintsExpandX | kLHintsExpandY, 2,2,2,2));
 
    fileName = "../working/detectorGeo.txt";
@@ -146,15 +144,7 @@ MyMainFrame::MyMainFrame(const TGWindow *p,UInt_t w,UInt_t h) {
       openRec->Connect("Clicked()","MyMainFrame",this, "OpenFile(=1)");
       simFrame->AddFrame(openRec,new  TGLayoutHints(kLHintsRight, 5,5,3,4));
 
-      detGeoSelector = new TGComboBox(simFrame);
-      detGeoSelector->SetHeight(20);
-      detGeoSelector->SetWidth(150);
-      detGeoSelector->AddEntry("Array 1", 0);
-      detGeoSelector->AddEntry("Array 2", 1);
-      detGeoSelector->Select(0);
-      simFrame->AddFrame(detGeoSelector, new TGLayoutHints(kLHintsRight, 5, 5, 3, 4));
-
-      withDWBA = new TGCheckButton(simFrame, "Sim with DWBA\n+DWBA.root\n+DWBA.Ex.txt");
+      withDWBA = new TGCheckButton(simFrame, "Sim with DWBA");
       withDWBA->SetWidth(140);
       withDWBA->ChangeOptions(kFixedSize );
       simFrame->AddFrame(withDWBA, new  TGLayoutHints(kLHintsRight, 5,5,3,4));
@@ -372,7 +362,7 @@ void MyMainFrame::OpenFile(int ID){
   if ( ID == 6 ) fileName = "../working/DWBA.out";
   if ( ID == 7 ) fileName = "../working/DWBA.Xsec.txt";    
 
-  if ( ID == 4 ) fileName = "../working/Check_Simulation_Config.txt";
+  if ( ID == 4 ) fileName = "../working/SimChecker_Config.txt";
   if ( ID == 8 ) fileName = isoFileName;
   
   //test if file exist
@@ -496,17 +486,17 @@ void MyMainFrame::Command(int ID) {
 
     statusLabel->SetText("Running simulation.......");
     
-    Transfer( basicConfig, heliosDetGeoFile, detGeoSelector->GetSelected(), ptolemyRoot, saveFileName);
+    Transfer( basicConfig, heliosDetGeoFile, ptolemyRoot, saveFileName);
     
     statusLabel->SetText("Plotting simulation.......");
 
-    Check_Simulation("transfer.root");
+    SimChecker("transfer.root");
     
     statusLabel->SetText("Plotted Simulation result");
   }
 
   if( ID == 2 ){
-    Check_Simulation("transfer.root");
+    SimChecker("transfer.root");
     statusLabel->SetText(" Run Simulation first.");
   }
   
@@ -580,13 +570,14 @@ void MyMainFrame::Command(int ID) {
   
   if( ID == 5) {
      
-     TH1F * temp = (TH1F*) gROOT->FindObjectAny("hExCal");
+     //TODO fit all hExCal
+     TH1F * temp = (TH1F*) gROOT->FindObjectAny("hExCal0");
      
      if( temp != NULL ){
         AutoFit::fitAuto(temp, -1);
         statusLabel->SetText("Auto Fit hExCal");
      }else{
-        statusLabel->SetText("Cannot find historgram hExCal. Please Run Plot Simulation first.");        
+        statusLabel->SetText("Cannot find historgram hExCal0. Please Run Plot Simulation first.");        
      }
       
      //gROOT->ProcessLine("fitAuto(hExCal, -1)");
@@ -602,7 +593,7 @@ MyMainFrame::~MyMainFrame() {
 }
 
 
-void Simulation_Helper() {
+void SimHelper() {
 
-   new MyMainFrame(gClient->GetRoot(),800,600);
+   new MyMainFrame(gClient->GetRoot(),800,1000);
 }
