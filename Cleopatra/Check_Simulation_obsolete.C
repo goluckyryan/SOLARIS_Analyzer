@@ -145,7 +145,7 @@ void Check_Simulation(TString filename = "transfer.root",
 
   printf("=================================\n");
   
-  int numDet = array.nDet * array.mDet ;
+  int numDet = array.colDet * array.rowDet ;
 
   double zRange[3] = {400, -1000, 1000}; /// zRange[0] = nBin
   zRange[1] = array.zMin - 50;

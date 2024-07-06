@@ -98,7 +98,7 @@ void knockout(){
    bool sethelios1 = helios1.SetDetectorGeometry(heliosDetGeoFile);
    bool sethelios2 = helios2.SetDetectorGeometry(heliosDetGeoFile);
    if( sethelios1 && sethelios2 ) {
-		int mDet = helios1.GetNumberOfDetectorsInSamePos();
+		int rowDet = helios1.GetNumberOfDetectorsInSamePos();
 		printf("========== energy resol.: %f MeV\n", eSigma);
 		printf("=========== pos-Z resol.: %f mm \n", zSigma); 
 	}else{

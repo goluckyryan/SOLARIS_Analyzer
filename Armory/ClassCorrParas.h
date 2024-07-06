@@ -1,56 +1,6 @@
 #ifndef Parameters_H
 #define Parameters_H
 
-// #include "ClassDetGeo.h"
-// #include "ClassReactionConfig.h"
-
-// DetGeo detGeo;
-// ReactionConfig reactionConfig1;
-// ReactionConfig reactionConfig2;
-
-// void LoadDetGeoAndReactionConfigFile(std::string detGeoFileName = "detectorGeo.txt", 
-//                                      std::string reactionConfigFileName1 = "reactionConfig1.txt", 
-//                                      std::string reactionConfigFileName2 = "reactionConfig2.txt"){
-//   printf("=====================================================\n");
-//   printf(" loading detector geometery : %s.", detGeoFileName.c_str());
-//   TMacro * haha = new TMacro();
-//   if( haha->ReadFile(detGeoFileName.c_str()) > 0 ) {
-//     detGeo = AnalysisLib::LoadDetectorGeo(haha);    
-//     printf("... done.\n");
-//     AnalysisLib::PrintDetGeo(detGeo);
-//   }else{
-//     printf("... fail\n");
-//   }
-//   delete haha;
-
-//   printf("=====================================================\n");
-//   printf(" loading reaction1 config : %s.", reactionConfigFileName1.c_str());
-//   TMacro * kaka = new TMacro();
-//   if( kaka->ReadFile(reactionConfigFileName1.c_str()) > 0 ) {
-//     reactionConfig1  = AnalysisLib::LoadReactionConfig(kaka);
-//     printf("..... done.\n");
-//     AnalysisLib::PrintReactionConfig(reactionConfig1);
-//   }else{
-//     printf("..... fail\n");
-//   }
-//   delete kaka;
-
-//   if( detGeo.use2ndArray){
-//     printf("=====================================================\n");
-//     printf(" loading reaction2 config : %s.", reactionConfigFileName2.c_str());
-//     TMacro * jaja = new TMacro();
-//     if( jaja->ReadFile(reactionConfigFileName2.c_str()) > 0 ) {
-//       reactionConfig2  = AnalysisLib::LoadReactionConfig(kaka);
-//       printf("..... done.\n");
-//       AnalysisLib::PrintReactionConfig(reactionConfig2);
-//     }else{
-//       printf("..... fail\n");
-//     }
-//     delete jaja;
-//   }
-
-// }
-
 //************************************** Correction parameters;
 class CorrParas {
 

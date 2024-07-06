@@ -26,19 +26,21 @@ struct Array{
   double zSigma;         /// intrinsic position resolution mm  
   bool  detFaceOut;      ///detector_facing_Out_or_In
   std::vector<double> pos;  /// realtive position in meter
-  int nDet, mDet;      /// nDet = number of different pos, mDet, number of same pos
+  int colDet, rowDet;      /// colDet = number of different pos, rowDet, number of same pos
   std::vector<double> detPos; ///absolute position of detector
+  int numDet;  /// colDet * rowDet
 
   double zMin, zMax;
   
   void DeduceAbsolutePos(){
- 
-    nDet = pos.size();
+    
+    colDet = pos.size();
+    numDet = colDet * rowDet;
     detPos.clear();
     
-    for(int id = 0; id < nDet; id++){
+    for(int id = 0; id < colDet; id++){
       if( firstPos > 0 ) detPos.push_back(firstPos + pos[id]);
-      if( firstPos < 0 ) detPos.push_back(firstPos - pos[nDet - 1 - id]);
+      if( firstPos < 0 ) detPos.push_back(firstPos - pos[colDet - 1 - id]);
       // printf("%d | %f, %f \n", id, pos[id], detPos[id]);
     }
 
@@ -50,7 +52,7 @@ struct Array{
 
     printf("------------------------------- Array\n");
     
-    for(int i = 0; i < nDet ; i++){
+    for(int i = 0; i < colDet ; i++){
       if( firstPos > 0 ){
         printf("%d, %8.2f mm - %8.2f mm \n", i, detPos[i], detPos[i] + detLength);
       }else{
@@ -60,7 +62,7 @@ struct Array{
 
     printf("   Blocker Position: %8.2f mm \n", firstPos > 0 ? firstPos - blocker : firstPos + blocker );
     printf("     First Position: %8.2f mm \n", firstPos);
-    printf("     number of det : %d x %d (side x col) \n", mDet, nDet);
+    printf("     number of det : %d = %d x %d (side x col) \n", numDet, rowDet, colDet);
     printf("   detector facing : %s\n", detFaceOut ? "Out" : "In");
     printf("      energy resol.: %f MeV\n", eSigma);
     printf("       pos-Z resol.: %f mm \n", zSigma);
@@ -112,7 +114,7 @@ public:
   int BfieldSign ;    /// sign of B-field
   double bore;        /// bore , mm
 
-  unsigned short numEnableGeo;
+  unsigned short numGeo;
   double zMin, zMax;   /// total range span of all arrays
 
   bool LoadDetectorGeo(TString fileName, bool verbose = true);
@@ -124,6 +126,14 @@ public:
 
   void Print( bool printArray = false) ;
 
+  short GetArrayID(int id){
+    int detCount = 0;
+    for( int i = 0; i < numGeo; i ++ ){
+      detCount += array[i].numDet;
+      if( id < detCount ) return i;
+    }
+    return -1;
+  }
 
 private:
 
@@ -206,7 +216,7 @@ inline bool DetGeo::LoadDetectorGeo(TMacro * macro, bool verbose){
       if ( detLine == 14 ) array[ID].eSigma       = atof(str[0].c_str());
       if ( detLine == 15 ) array[ID].zSigma       = atof(str[0].c_str());
       if ( detLine == 16 ) array[ID].detFaceOut   = str[0] == "Out" ? true : false;
-      if ( detLine == 17 ) array[ID].mDet         = atoi(str[0].c_str());
+      if ( detLine == 17 ) array[ID].rowDet         = atoi(str[0].c_str());
       if ( detLine >= 18 ) array[ID].pos.push_back(atof(str[0].c_str()));
     }
 
@@ -215,12 +225,12 @@ inline bool DetGeo::LoadDetectorGeo(TMacro * macro, bool verbose){
 
   zMin =  99999;
   zMax = -99999;
-  numEnableGeo = 0;
+  numGeo = 0;
 
   for( int i = 0; i < detFlag; i ++ ){
     array[i].DeduceAbsolutePos();
     if (array[i].enable ) {
-      numEnableGeo ++;
+      numGeo ++;
       double zmax = TMath::Max(array[i].zMin, array[i].zMax);
       double zmin = TMath::Min(array[i].zMin, array[i].zMax);
       if( zmax > zMax ) zMax = zmax;

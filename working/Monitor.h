@@ -18,6 +18,8 @@
 #include "../Armory/ClassCorrParas.h"
 #include "../Cleopatra/ClassTransfer.h"
 
+#include "ClassMonPlotter.h"
+
 class Monitor : public TSelector {
 public :
    TTree          *fChain;   //!pointer to the analyzed TTree or TChain
@@ -66,6 +68,8 @@ public :
    DetGeo * detGeo; //!
    TransferReaction * transfer; //!
 
+   TString canvasTitle;
+   MonPlotter ** plotter; //!
 
    //==== global variable
    float * x, * z;
@@ -113,8 +117,12 @@ public :
       detGeo = new DetGeo();
       detGeo->LoadDetectorGeo("detectorGeo.txt");
       transfer = new TransferReaction();
-      transfer->SetReactionFromFile("reactionConfig1.txt");
+      transfer->SetReactionFromFile("reactionConfig.txt");
 
+      plotter = new MonPlotter *[detGeo->numGeo];
+      for( int i = 0; i < detGeo->numGeo; i++ ){
+         plotter[i] = new Monitor(i, detGeo);
+      }
    }
    virtual ~Monitor() {
 
@@ -135,6 +143,11 @@ public :
       delete eCal;
 
       delete corr;
+
+      for( int i = 0; i < detGeo->numGeo; i++ ) delete [] plotter[i];
+      delete plotter;
+      delete detGeo;
+      delete transfer;
 
    }
    virtual Int_t   Version() const { return 2; }
@@ -177,8 +190,8 @@ public :
    void PlotRDT(int id, bool isRaw);
    //void PlotCRDTPolar();
 
-   template<typename T> void CreateListOfHist1D(T ** &histList, int size, const char * namePrefix, const char * TitleForm, int binX, float xMin, float xMax);
-   template<typename T> void CreateListOfHist2D(T ** &histList, int size, const char * namePrefix, const char * TitleForm, int binX, float xMin, float xMax, int binY, float yMin, float yMax);
+   template<typename T> void CreateListOfHist1D(T ** &histList, int startIndex, int size, const char * namePrefix, const char * TitleForm, int binX, float xMin, float xMax);
+   template<typename T> void CreateListOfHist2D(T ** &histList, int startIndex, int size, const char * namePrefix, const char * TitleForm, int binX, float xMin, float xMax, int binY, float yMin, float yMax);
 
    ClassDef(Monitor,0);
 };
@@ -274,6 +287,7 @@ void Monitor::SlaveTerminate(){
 }
 
 template<typename T> void Monitor::CreateListOfHist1D(T ** &histList, 
+                                                    int startIndex,
                                                     int size, 
                                                     const char * namePrefix, 
                                                     const char * TitleForm, 
@@ -281,10 +295,11 @@ template<typename T> void Monitor::CreateListOfHist1D(T ** &histList,
 
    //printf(" Making %d of %s.\n", size, namePrefix);
    histList = new T * [size];
-   for(int i = 0; i < size; i++) histList[i] = new T(Form("%s%d", namePrefix, i), Form(TitleForm, i), binX, xMin, xMax);  
+   for(int i = startIndex; i < startIndex + size; i++) histList[i] = new T(Form("%s%d", namePrefix, i), Form(TitleForm, i), binX, xMin, xMax);  
 }
 
 template<typename T> void Monitor::CreateListOfHist2D(T ** &histList, 
+                                                    int startIndex, 
                                                     int size, 
                                                     const char * namePrefix, 
                                                     const char * TitleForm, 
@@ -293,7 +308,7 @@ template<typename T> void Monitor::CreateListOfHist2D(T ** &histList,
 
    //printf(" Making %d of %s.\n", size, namePrefix);
    histList = new T * [size];
-   for(int i = 0; i < size; i++) histList[i] = new T(Form("%s%d", namePrefix, i), Form(TitleForm, i), binX, xMin, xMax, binY, yMin, yMax);   
+   for(int i = startIndex; i < startIndex + size; i++) histList[i] = new T(Form("%s%d", namePrefix, i), Form(TitleForm, i), binX, xMin, xMax, binY, yMin, yMax);   
 }
 
 /*###########################################################

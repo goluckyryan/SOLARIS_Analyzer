@@ -95,7 +95,7 @@ public:
   int CalRecoilHit(TLorentzVector PB);  
   void CalTrajectoryPara(TLorentzVector P, bool isLightRecoil);
   
-  int GetNumberOfDetectorsInSamePos(){return array.mDet;}
+  int GetNumberOfDetectorsInSamePos(){return array.rowDet;}
   double GetEnergy()const {return e;}
   double GetDetX()  const {return detX;} // position in each detector, range from -1, 1
   
@@ -328,15 +328,15 @@ int HELIOS::CheckDetAcceptance(){
   
   // -4, -5 ==== when zPos further the range of whole array, more loop would not save
   if( array.firstPos < 0 && orbitb.z < array.detPos[0] - array.detLength )            { acceptanceCode = -4; return acceptanceCode;}
-  if( array.firstPos > 0 && orbitb.z > array.detPos[array.nDet-1] + array.detLength ) { acceptanceCode = -5; return acceptanceCode;} 
+  if( array.firstPos > 0 && orbitb.z > array.detPos[array.colDet-1] + array.detLength ) { acceptanceCode = -5; return acceptanceCode;} 
 
   // -6 ======== Hit on blacker
   if( array.blocker != 0 && array.firstPos > 0 && array.detPos[0] - array.blocker  < orbitb.z && orbitb.z < array.detPos[0] ) {acceptanceCode = -6; return acceptanceCode;} 
-  if( array.blocker != 0 && array.firstPos < 0 && array.detPos[array.nDet-1]  < orbitb.z && orbitb.z < array.detPos[array.nDet-1] + array.blocker ) { acceptanceCode = -6; return acceptanceCode;} 
+  if( array.blocker != 0 && array.firstPos < 0 && array.detPos[array.colDet-1]  < orbitb.z && orbitb.z < array.detPos[array.colDet-1] + array.blocker ) { acceptanceCode = -6; return acceptanceCode;} 
 
   // 2 ======  when zPos less then the nearest position, more loop may hit
   int increaseLoopFlag = 0;
-  if( array.firstPos < 0 && array.detPos[array.nDet-1] < orbitb.z ) increaseLoopFlag = 2; 
+  if( array.firstPos < 0 && array.detPos[array.colDet-1] < orbitb.z ) increaseLoopFlag = 2; 
   if( array.firstPos > 0 && array.detPos[0] > orbitb.z ) increaseLoopFlag = 2; 
   if (increaseLoopFlag == 2 ) {
     orbitb.z += orbitb.z0;
@@ -349,7 +349,7 @@ int HELIOS::CheckDetAcceptance(){
    
   // 1 ======= check hit array z- position
   if( array.firstPos < 0 ){
-    for( int i = 0; i < array.nDet; i++){
+    for( int i = 0; i < array.colDet; i++){
       if( array.detPos[i] - array.detLength <= orbitb.z && orbitb.z <= array.detPos[i]) {
         orbitb.detID = i;
         detX = ( orbitb.z - (array.detPos[i] + array.detLength/2 ))/ array.detLength * 2 ;// range from -1 , 1 
@@ -358,7 +358,7 @@ int HELIOS::CheckDetAcceptance(){
       }
     }      
   }else{
-    for( int i = 0; i < array.nDet ; i++){
+    for( int i = 0; i < array.colDet ; i++){
       if( array.detPos[i] <= orbitb.z && orbitb.z <= array.detPos[i] + array.detLength)  {
         ///printf(" %d | %f < z = %f < %f \n", i,  array.detPos[i], orbitb.z, array.detPos[i]+length); 
         orbitb.detID = i;
@@ -372,11 +372,11 @@ int HELIOS::CheckDetAcceptance(){
    
   // -7 ======== check hit array gap
   if( array.firstPos < 0 ){
-    for( int i = 0; i < array.nDet-1 ; i++){
+    for( int i = 0; i < array.colDet-1 ; i++){
         if( array.detPos[i] < orbitb.z && orbitb.z < array.detPos[i+1] - array.detLength ) { acceptanceCode = -7; return acceptanceCode; }//increaseLoopFlag = 3; 
     }      
   }else{
-    for( int i = 0; i < array.nDet-1 ; i++){
+    for( int i = 0; i < array.colDet-1 ; i++){
         if( array.detPos[i] + array.detLength < orbitb.z && orbitb.z < array.detPos[i+1]  ) { acceptanceCode = -7; return acceptanceCode; }//increaseLoopFlag = 3;
     }
   }
@@ -445,11 +445,11 @@ int HELIOS::CalArrayHit(TLorentzVector Pb, bool debug){
    std::vector<double> zPossible;
    std::vector<int> dID; //detRowID
    
-   int iStart = ( detGeo.BfieldSign == 1 ? 0 : -array.mDet );
-   int iEnd = ( detGeo.BfieldSign == 1 ? 2 * array.mDet : array.mDet );   
+   int iStart = ( detGeo.BfieldSign == 1 ? 0 : -array.rowDet );
+   int iEnd = ( detGeo.BfieldSign == 1 ? 2 * array.rowDet : array.rowDet );   
    for( int i = iStart; i < iEnd ; i++){
       
-      double phiD = TMath::TwoPi()/array.mDet * i ;
+      double phiD = TMath::TwoPi()/array.rowDet * i ;
       double dphi = orbitb.phi - phiD;
       double aEff = array.detPerpDist - (xOff * TMath::Cos(phiD) + yOff * TMath::Sin(phiD)); 
       double hahaha = asin( aEff/ orbitb.rho - detGeo.BfieldSign * sin(dphi));
@@ -491,7 +491,7 @@ int HELIOS::CalArrayHit(TLorentzVector Pb, bool debug){
          orbitb.detRowID = (12+dID[i])%4;
          orbitb.t = orbitb.t0 * orbitb.effLoop;
          
-         double phiD = TMath::TwoPi()/array.mDet * dID[i] ;
+         double phiD = TMath::TwoPi()/array.rowDet * dID[i] ;
          double dphi = orbitb.phi - phiD ;
          
          if( debug ) {
