@@ -3,7 +3,7 @@
     "detectorGeo.txt": "shellscript",
     "reactionConfig.txt": "shellscript",
     "DWBA": "shellscript",
-    "SimChecker_Config.txt": "cpp",
+    "SimChecker_Config.txt": "fsharp",
     "*.C": "cpp"
   },
   

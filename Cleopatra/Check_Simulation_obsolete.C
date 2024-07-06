@@ -252,7 +252,6 @@ void Check_Simulation(TString filename = "transfer.root",
    
   for( int i = 1; i <= Div[0]*Div[1] ; i++){
     cCheck->cd(i);
-    cCheck->cd(i)->SetGrid();
 
     if( canvas[i-1] == pThetaCM ) {
       cCheck->cd(i)->SetGrid(0,0);
@@ -633,23 +632,24 @@ vector<double> doubleConvertor(vector<TString> arr){
 
 plotID StringToPlotID(TString str){
    
-  if( str == "pEZ") return plotID::pEZ;                      ///0
-  if( str == "pRecoilXY") return plotID::pRecoilXY;                /// 1
-  if( str == "pRecoilXY1" ) return plotID::pRecoilXY1;       /// 2
-  if( str == "pRecoilXY2" ) return plotID::pRecoilXY2;       /// 3
-  if( str == "pRecoilRZ" ) return plotID::pRecoilRZ;         /// 4
-  if( str == "pRecoilRTR" ) return plotID::pRecoilRTR;       /// 5
-  if( str == "pTDiffZ" ) return plotID::pTDiffZ;             /// 6
-  if( str == "pThetaCM" ) return plotID::pThetaCM;           /// 7
-  if( str == "pThetaCM_Z" ) return plotID::pThetaCM_Z;       /// 8
-  if( str == "pExCal" ) return plotID::pExCal;               /// 9
-  if( str == "pRecoilRThetaCM" ) return plotID::pRecoilRThetaCM;   /// 10
-  if( str == "pArrayXY" ) return plotID::pArrayXY;           /// 11
-  if( str == "pInfo" ) return plotID::pInfo;                 /// 12
+  if( str == "pEZ") return plotID::pEZ;                      /// 0
+  if( str == "pRecoilXY") return plotID::pRecoilXY;          /// 1
+  if( str == "pThetaCM" ) return plotID::pThetaCM;           /// 2
+  if( str == "pExCal" ) return plotID::pExCal;               /// 2
+  if( str == "pArrayXY" ) return plotID::pArrayXY;           /// 3
+  if( str == "pInfo" ) return plotID::pInfo;                 /// 4
+  if( str == "pElum1XY" ) return plotID::pElum1XY;           /// 5
+  if( str == "pRecoilXY1" ) return plotID::pRecoilXY1;       /// 6
+  if( str == "pRecoilXY2" ) return plotID::pRecoilXY2;       /// 7
+  if( str == "pTDiffZ" ) return plotID::pTDiffZ;             /// 8
+  if( str == "pRecoilRThetaCM" ) return plotID::pRecoilRThetaCM;   /// 9
+  if( str == "pRecoilRZ" ) return plotID::pRecoilRZ;         /// 10
+  if( str == "pEElum1R" ) return plotID::pEElum1R;           /// 11
+  if( str == "pRecoilRTR" ) return plotID::pRecoilRTR;       /// 12
+  if( str == "pThetaCM_Z" ) return plotID::pThetaCM_Z;       /// 13
+  if( str == "pElum1RThetaCM" ) return plotID::pElum1RThetaCM;    /// 14
+
   if( str == "pHitID" ) return plotID::pHitID;               /// 13
-  if( str == "pElum1XY" ) return plotID::pElum1XY;           /// 14
-  if( str == "pEElum1R" ) return plotID::pEElum1R;           /// 14
-  if( str == "pElum1RThetaCM" ) return plotID::pElum1RThetaCM;    /// 15
   if( str == "pEmpty" ) return plotID::pEmpty ;              /// 16
   
   return plotID::pEmpty;

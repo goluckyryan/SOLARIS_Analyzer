@@ -758,13 +758,14 @@ int main (int argc, char *argv[]) {
   printf("==========     Simulate Transfer reaction in HELIOS    ==========\n");
   printf("=================================================================\n");
   
-  if(argc == 2 || argc > 5 ) { 
-    printf("Usage: ./Transfer [1] [2] [3] [4]\n");
+  if(argc == 2 || argc > 6 ) { 
+    printf("Usage: ./Transfer [1] [2] [3] [4] [5]\n");
     printf("       default file name \n");
     printf("   [1] reactionConfig.txt (input) reaction Setting \n");
     printf("   [2] detectorGeo.txt    (input) detector Setting \n");
     printf("   [3] DWBA.root          (input) thetaCM distribution from DWBA \n");  
     printf("   [4] transfer.root      (output) rootFile name for output \n");
+    printf("   [5] 1                  (input) 0 = no plot, 1 = plot \n");
 
     printf("-----------------------------------------------------------------\n");
     printf(" When DWBA.root provided.\n");
@@ -784,23 +785,26 @@ int main (int argc, char *argv[]) {
   if( argc >= 3) detGeoFile = argv[2];  
   if( argc >= 4) ptolemyRoot = argv[3];
   if( argc >= 5) saveFileName = argv[4];
+  if( argc >= 6) isPlot = atoi(argv[5]);
   
   Transfer( basicConfig, detGeoFile, ptolemyRoot, saveFileName);
 
-  //run Armory/Check_Simulation
-  // if( isPlot ){
-  //   std::ifstream file_in;
-  //   file_in.open("../Cleopatra/Check_Simulation.C", std::ios::in);
-  //   if( file_in){
-  //     printf("---- running ../Cleopatra/Check_Simulation.C on %s \n", saveFileName.Data());
-  //     TString cmd;
-  //     cmd.Form("root -l '../Cleopatra/Check_Simulation.C(\"%s\")'", saveFileName.Data());
+  //run Cleopatra/SimChecker.C
+  if( isPlot ){
+    std::ifstream file_in;
+    file_in.open("../Cleopatra/SimChecker.C", std::ios::in);
+    if( file_in){
+      printf("---- running ../Cleopatra/SimChecker.C on %s \n", saveFileName.Data());
+      TString cmd;
+      cmd.Form("root -l '../Cleopatra/SimChecker.C(\"%s\")'", saveFileName.Data());
       
-  //     system(cmd.Data());
-  //   }else{
-  //     printf("cannot find ../Cleopatra/Check_Simulation.C \n");
-  //   }
-  // }
+      system(cmd.Data());
+    }else{
+      printf("cannot find ../Cleopatra/SimChecker.C \n");
+    }
+  }
+
+  return 0;
   
 }
 
