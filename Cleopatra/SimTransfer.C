@@ -779,7 +779,7 @@ int main (int argc, char *argv[]) {
   std::string   detGeoFile = "detectorGeo.txt";
   TString      ptolemyRoot = "DWBA.root"; // when no file, use isotropic distribution of thetaCM
   TString     saveFileName = "transfer.root";
-  bool           isPlot = false;
+  bool           isPlot = true;
    
   if( argc >= 2) basicConfig = argv[1];  
   if( argc >= 3) detGeoFile = argv[2];  
