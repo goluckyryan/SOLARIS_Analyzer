@@ -317,12 +317,6 @@ Bool_t Monitor::Process(Long64_t entry){
     }
     if (skipFlag ) continue;
 
-    //@==================== Basic gate
-    if( TMath::IsNaN(e[id]) ) continue ; 
-    ///if( ring[id] < -100 || ring[id] > 100 ) continue; 
-    ///if( ring[id] > 300 ) continue; 
-    if( TMath::IsNaN(xn[id]) &&  TMath::IsNaN(xf[id]) ) continue ; 
-
     //@==================== Calibrations go here
     if( corr->xnCorr.size() >= id && corr->xfxneCorr.size() >= id ) xnCal[id] = xn[id] * corr->xnCorr[id] * corr->xfxneCorr[id][1] + corr->xfxneCorr[id][0];
     if( corr->xfxneCorr.size() >= id )                              xfCal[id] = xf[id] * corr->xfxneCorr[id][1] + corr->xfxneCorr[id][0];

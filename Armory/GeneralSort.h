@@ -182,7 +182,7 @@ void GeneralSort::SetUpTree(){
   newSaveTree->SetDirectory(saveFile);
   newSaveTree->AutoSave();
 
-  newSaveTree->Branch( "evID", &evID, "EventID/l"); // simply copy
+  newSaveTree->Branch( "evID", &evID, "evID/l"); // simply copy
 
   eE = new Float_t * [mapping::nDetType];
   eT = new ULong64_t * [mapping::nDetType];
@@ -198,7 +198,7 @@ void GeneralSort::SetUpTree(){
     }
 
     newSaveTree->Branch(  mapping::detTypeName[i].c_str(),        eE[i], Form("%s[%d]/F", mapping::detTypeName[i].c_str(), mapping::detNum[i]));
-    newSaveTree->Branch( (mapping::detTypeName[i]+"_t").c_str(),  eT[i], Form("%s_Timestamp[%d]/l", mapping::detTypeName[i].c_str(), mapping::detNum[i]));
+    newSaveTree->Branch( (mapping::detTypeName[i]+"_t").c_str(),  eT[i], Form("%s_t[%d]/l", mapping::detTypeName[i].c_str(), mapping::detNum[i]));
   }
 
 

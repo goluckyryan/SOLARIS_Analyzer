@@ -88,9 +88,11 @@ else
   echo -e "$CYAN############### Only in SOLARIS MAC can donwload data. skip.$NC"
 fi
 
-echo -e "$YELLOW=============================================$NC"
-tail -10 ${rawDataPath}/RunTimeStamp.dat
-echo -e "$YELLOW=============================================$NC"
+if [ -z ${rawDataPath}/RunTimeStamp.dat ]; then
+    echo -e "$YELLOW=============================================$NC"
+    tail -10 ${rawDataPath}/RunTimeStamp.dat
+    echo -e "$YELLOW=============================================$NC"
+fi
 
 count=`ls -1 ${rawDataPath}/${expName}_${RUN}_*.sol 2>/dev/null | wc -l`
 echo -e "========================= Number of Files : ${count}${YELLOW}"

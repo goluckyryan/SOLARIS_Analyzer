@@ -300,6 +300,12 @@ void MonPlotter::Plot(){
 
   for( int i = 0; i < numPad; i++ ){
     canvas->cd(i+1);
+    switch (i){
+      case 0: he_ID->Draw("colz");break;
+      case 1: hxf_ID->Draw("colz");break;
+      case 2: hxn_ID->Draw("colz");break;
+      default:break;
+    }
   }
 
 }
