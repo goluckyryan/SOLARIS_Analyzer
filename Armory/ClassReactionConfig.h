@@ -263,9 +263,9 @@ inline void ReactionConfig::Print(int ID, bool withEx) const{
   }
   
   printf("================================= Number of recoil reactions : %zu\n", recoil.size());
-  for( size_t i = 0; i < recoil.size(); i ++ ){
+  for( int i = 0; i < (int)recoil.size(); i ++ ){
     if( ID == i || ID < 0  ){
-      printf("------------------------------------------ Recoil-%zu\n", i); 
+      printf("------------------------------------------ Recoil-%d\n", i); 
       recoil[i].Print();
       if( withEx ) exList[i].Print();
     }

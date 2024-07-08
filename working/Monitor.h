@@ -121,7 +121,7 @@ public :
 
       plotter = new MonPlotter *[detGeo->numGeo];
       for( int i = 0; i < detGeo->numGeo; i++ ){
-         plotter[i] = new Monitor(i, detGeo);
+         plotter[i] = new MonPlotter(i, detGeo);
       }
    }
    virtual ~Monitor() {
@@ -167,31 +167,13 @@ public :
    TString fCanvasTitle;
    void SetCanvasTitle(TString title) {fCanvasTitle = title;}
    TString GetCanvasTitle() const {return fCanvasTitle;}
-
-   void SetStartStopTimes(std::vector<ULong64_t> t1, std::vector<ULong64_t> t2) {
-      startTime = t1;
-      endTime = t2;
-
-      timeRangeInMin[0] = startTime[0] * tick2min;
-      timeRangeInMin[1] = endTime[0] * tick2min;
-      for( int i = 1; i < (int) endTime.size(); i++) timeRangeInMin[1] +=  ((endTime[i] - startTime[i]) * tick2min);  
-
-      double duration = timeRangeInMin[1] - timeRangeInMin[0];
-
-      timeRangeInMin[0] = TMath::Floor( timeRangeInMin[0] - duration * 0.1);
-      timeRangeInMin[1] = TMath::Ceil( timeRangeInMin[1] + duration * 0.1);
-
-   }
    
-   void Draw2DHist(TH2F * hist);
-   
-   void PlotEZ(bool isRaw);
-   void PlotTDiff(bool isGated, bool isLog);
-   void PlotRDT(int id, bool isRaw);
+   // void Draw2DHist(TH2F * hist);
+   // void PlotEZ(bool isRaw);
+   // void PlotTDiff(bool isGated, bool isLog);
+   // void PlotRDT(int id, bool isRaw);
    //void PlotCRDTPolar();
 
-   template<typename T> void CreateListOfHist1D(T ** &histList, int startIndex, int size, const char * namePrefix, const char * TitleForm, int binX, float xMin, float xMax);
-   template<typename T> void CreateListOfHist2D(T ** &histList, int startIndex, int size, const char * namePrefix, const char * TitleForm, int binX, float xMin, float xMax, int binY, float yMin, float yMax);
 
    ClassDef(Monitor,0);
 };
@@ -268,14 +250,14 @@ Bool_t Monitor::Notify(){
    return kTRUE;
 }
 
-void DrawLine(TH1 * hist, double pos){
+// void DrawLine(TH1 * hist, double pos){
    
-   double yMax = hist->GetMaximum();
-   TLine * line = new TLine(pos, 0, pos, yMax);
-   line->SetLineColor(2);
-   line->Draw("");
+//    double yMax = hist->GetMaximum();
+//    TLine * line = new TLine(pos, 0, pos, yMax);
+//    line->SetLineColor(2);
+//    line->Draw("");
    
-}
+// }
 void Monitor::SlaveBegin(TTree * /*tree*/){
    /// not use, if use, place in Monitor.C
    TString option = GetOption();
@@ -286,56 +268,32 @@ void Monitor::SlaveTerminate(){
   /// not use, if use, place in Monitor.C
 }
 
-template<typename T> void Monitor::CreateListOfHist1D(T ** &histList, 
-                                                    int startIndex,
-                                                    int size, 
-                                                    const char * namePrefix, 
-                                                    const char * TitleForm, 
-                                                    int binX, float xMin, float xMax){
-
-   //printf(" Making %d of %s.\n", size, namePrefix);
-   histList = new T * [size];
-   for(int i = startIndex; i < startIndex + size; i++) histList[i] = new T(Form("%s%d", namePrefix, i), Form(TitleForm, i), binX, xMin, xMax);  
-}
-
-template<typename T> void Monitor::CreateListOfHist2D(T ** &histList, 
-                                                    int startIndex, 
-                                                    int size, 
-                                                    const char * namePrefix, 
-                                                    const char * TitleForm, 
-                                                    int binX, float xMin, float xMax,
-                                                    int binY, float yMin, float yMax){
-
-   //printf(" Making %d of %s.\n", size, namePrefix);
-   histList = new T * [size];
-   for(int i = startIndex; i < startIndex + size; i++) histList[i] = new T(Form("%s%d", namePrefix, i), Form(TitleForm, i), binX, xMin, xMax, binY, yMin, yMax);   
-}
 
 /*###########################################################
  * Plotting Function
 ###########################################################*/
 
-void DrawBox(TH1* hist, double x1, double x2, Color_t color, float alpha){
+// void DrawBox(TH1* hist, double x1, double x2, Color_t color, float alpha){
 
-   double yMax = hist->GetMaximum();
-   TBox * box = new TBox (x1, 0, x2, yMax);
-   box->SetFillColorAlpha(color, alpha);
-   box->Draw();
+//    double yMax = hist->GetMaximum();
+//    TBox * box = new TBox (x1, 0, x2, yMax);
+//    box->SetFillColorAlpha(color, alpha);
+//    box->Draw();
 
-}
+// }
 
-void Monitor::Draw2DHist(TH2F * hist){
+// void Monitor::Draw2DHist(TH2F * hist){
    
-   if( hist->Integral() < 3000 ){
-      hist->SetMarkerStyle(20);
-      hist->SetMarkerSize(0.3);
-      hist->Draw("");
-   }else{
-      hist->Draw("colz"); 
-   }
-}
+//    if( hist->Integral() < 3000 ){
+//       hist->SetMarkerStyle(20);
+//       hist->SetMarkerSize(0.3);
+//       hist->Draw("");
+//    }else{
+//       hist->Draw("colz"); 
+//    }
+// }
 
-
+/*
 void Monitor::PlotEZ(bool isRaw){
    padID++; cCanvas->cd(padID);
 
@@ -429,5 +387,6 @@ void Monitor::PlotRDT(int id, bool isRaw){
 //  cCanvas->cd(padID)->DrawFrame(-50, -50, 50, 50);
 //  hcrdtPolar->Draw("same colz pol");
 //}
+*/
 
 #endif // #ifdef Monitor_cxx
