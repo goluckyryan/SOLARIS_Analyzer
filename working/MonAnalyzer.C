@@ -24,7 +24,7 @@
 
 #include "vector"
 //^############################################ User setting
-int rawEnergyRange[2] = {   100,    60000};       /// share with e, xf, xn
+int rawEnergyRange[2] = {     0,    3000};       /// share with e, xf, xn
 int    energyRange[2] = {     0,      10};       /// in the E-Z plot
 int     rdtDERange[2] = {     0,      80}; 
 int      rdtERange[2] = {     0,      80};
@@ -36,11 +36,11 @@ double     exRange[3] = {  100,    -2,     10};  /// bin [keV], low[MeV], high[M
 //---Gate
 bool isTimeGateOn     = true;
 int timeGate[2]       = {-20, 12};             /// min, max, 1 ch = 10 ns
-double eCalCut[2]     = {0.5, 50};             /// lower & higher limit for eCal
+double eCalCut[2]     = {0.5, 20};             /// lower & higher limit for eCal
 double xGate          = 0.9;                  ///cut out the edge
 double thetaCMGate    = 10;                    /// deg
 
-std::vector<int> skipDetID = {11, 16, 23} ;//{2,  11, 17}
+std::vector<int> skipDetID = {11} ;
 
 TString rdtCutFile1 = "";
 TString rdtCutFile2 = "";
@@ -58,7 +58,8 @@ void MonAnalyzer(){
   printf("#####################################################################\n");
 
   TChain *chain = new TChain("gen_tree");
-  chain->Add("../root_data/gen_run043.root");
+  //chain->Add("../root_data/gen_run043.root");
+  chain->Add("../root_data/trace_run029.root");
 
   TObjArray * fileList = chain->GetListOfFiles();
   printf("\033[0;31m========================================== Number of Files : %2d\n",fileList->GetEntries());
@@ -85,30 +86,36 @@ void MonAnalyzer(){
 
   //*==========================================
   ULong64_t NumEntries = chain->GetEntries();
-  CorrParas * corr = new CorrParas;
-  corr->LoadAllCorrections();
-  corr->CheckCorrParasSize(mapping::NARRAY, mapping::NRDT);
 
   DetGeo * detGeo = new DetGeo("detectorGeo.txt");
   // TransferReaction * transfer = new TransferReaction("reactionConfig.txt");
-
   numGeo = detGeo->numGeo;
   printf("================== num. of Arrays : %d\n", numGeo);
+
+  int numTotArray = 0;
+  detGeo->Print(1);
+  for( size_t i = 0; i < detGeo->array.size(); i++ ){
+    if( detGeo->array[i].enable ) numTotArray += detGeo->array[i].numDet;
+  } 
+
+  CorrParas * corr = new CorrParas;
+  corr->LoadAllCorrections();
+  corr->CheckCorrParasSize(numTotArray, mapping::NRDT);
 
   plotter = new MonPlotter *[numGeo];
   for( int i = 0; i < numGeo; i++ ) {
     plotter[i] = new MonPlotter(i, detGeo, mapping::NRDT);
-    plotter[i]->SetUpCanvas("haha", 500, 3, 2);
+    plotter[i]->SetUpCanvas("haha", 500, 3, 2); //TODO canvaseTitle
     plotter[i]->SetUpHistograms(rawEnergyRange, energyRange, exRange, thetaCMRange, rdtDERange, rdtERange);
   }
 
   //TODO make the data class. 
-  double eCal[mapping::NARRAY];
-  double xfCal[mapping::NARRAY];
-  double xnCal[mapping::NARRAY];
-  double x[mapping::NARRAY];
-  double xCal[mapping::NARRAY];
-  double z[mapping::NARRAY];
+  std::vector<double>eCal  (numTotArray);
+  std::vector<double>xfCal (numTotArray);
+  std::vector<double>xnCal (numTotArray);
+  std::vector<double>x     (numTotArray);
+  std::vector<double>xCal  (numTotArray);
+  std::vector<double>z     (numTotArray);
 
   //^###########################################################
   //^ * Process
@@ -120,30 +127,24 @@ void MonAnalyzer(){
 
   while (reader.Next()) {
 
-    // printf("%llu | %llu | %lu\n", processedEntries, *evID, e.GetSize());
-
     //*============================================= Array;
     int arrayMulti[numGeo] ; //array multiplicity, when any  is calculated. 
-    int zMulti[numGeo] ; //array multiplicity, when z is calculated. 
-    for( int i = 0; i < numGeo; i++ ) {
-      arrayMulti[i] = 0;
-      zMulti[i] = 0;
-    }
+    for( int i = 0; i < numGeo; i++ )  arrayMulti[i] = 0;
 
-    for( int id = 0; id < e.GetSize() ; id++ ){
+    for( int id = 0; id < (int) e.GetSize() ; id++ ){
       short aID = detGeo->GetArrayID(id);
       if( aID < 0 ) continue; 
 
       //@================== Filling raw data
+      plotter[aID]->he_ID->Fill(id, e[id]);
+      plotter[aID]->hxf_ID->Fill(id, xf[id]);
+      plotter[aID]->hxn_ID->Fill(id, xn[id]);
+
       plotter[aID]->he[id]->Fill(e[id]);
       plotter[aID]->hxf[id]->Fill(xf[id]);
       plotter[aID]->hxn[id]->Fill(xn[id]);
       plotter[aID]->hxf_xn[id]->Fill(xf[id],xn[id]);
-      plotter[aID]->he_xs[id]->Fill(xf[id]+xn[id], e[id]);
-      
-      plotter[aID]->he_ID->Fill(id, e[id]);
-      plotter[aID]->hxf_ID->Fill(id, xf[id]);
-      plotter[aID]->hxn_ID->Fill(id, xn[id]);
+      plotter[aID]->he_xs[id]->Fill(xf[id]+xn[id], e[id]);      
 
       //@==================== Basic gate
       if( TMath::IsNaN(e[id]) ) continue ; 
@@ -185,8 +186,13 @@ void MonAnalyzer(){
       if  ( !TMath::IsNaN(xf[id]) &&  TMath::IsNaN(xn[id]) ) xCal[id] = xfCal[id]/ e[id];
       if  (  TMath::IsNaN(xf[id]) && !TMath::IsNaN(xn[id]) ) xCal[id] = 1.0 - xnCal[id]/ e[id];
       
+      //@=================== Fill in histogram
+      plotter[aID]->he_x[id]->Fill(x[id],e[id]);
+      plotter[aID]->hxfCal_xnCal[id]->Fill(xfCal[id],xnCal[id]);
+      plotter[aID]->he_xsCal[id]->Fill(e[id],xnCal[id] + xfCal[id]);
+      
       //@======= Scale xcal from (0,1)      
-      if( corr->xScale.size() >= id ) xCal[id] = (xCal[id]-0.5)/corr->xScale[id] + 0.5; /// if include this scale, need to also inclused in Cali_littleTree
+      if( corr->xScale.size() ) xCal[id] = (xCal[id]-0.5)/corr->xScale[id] + 0.5; /// if include this scale, need to also inclused in Cali_littleTree
       
       if( abs(xCal[id] - 0.5) > xGate/2. ) continue; 
 
@@ -200,11 +206,9 @@ void MonAnalyzer(){
         }
       }
 
-      //@===================== When z is calcualted.
-      zMulti[aID] ++;
-
-      //@=================== Array fill
-      plotter[aID]->he_x[id]->Fill(x[id],e[id]);
+      //@=================== Fill histogram
+      plotter[aID]->heCal[id]->Fill(eCal[id]);
+      plotter[aID]->heCal_ID->Fill(id, eCal[id]);
       plotter[aID]->heCal_z->Fill(z[id],eCal[id]);
 
       //@=================== Recoil Gate
@@ -343,25 +347,70 @@ void MonAnalyzer(){
     if( processedEntries > 1000 ) break;
   
   }//^############################################## End of Process
+  gStyle->SetOptStat("neiou");
+  gStyle->GetAttDate()->SetTextSize(0.02);
+  gStyle->SetOptDate(1);
+  gStyle->SetDateX(0);
+  gStyle->SetDateY(0);
+
+
+
 
   for( int i = 0; i < detGeo->numGeo ; i++){
     plotter[i]->Plot();
   }
 
   //^############################################### 
-
+  printf("------------------- List of Plots -------------------\n");
+  // printf("  newCanvas() - Create a new Canvas\n");
+  // printf("-----------------------------------------------------\n");
+  printf("        raw() - Raw data\n");
+  printf("        cal() - Calibrated data\n");
+  printf("-----------------------------------------------------\n");
+  printf("         ez() - Energy vs. Z\n");
+  // printf("    recoils() - Raw DE vs. E Recoil spectra\n");
+  //printf("       elum() - Luminosity Energy Spectra\n");
+  //printf("         ic() - Ionization Chamber Spectra\n");
+  // printf("-----------------------------------------------------\n");
+  // printf("  eCalVzRow() - Energy vs. Z for each row\n");
+  // printf("     excite() - Excitation Energy\n");
+  // printf("  ExThetaCM() - Ex vs ThetaCM\n");
+  // printf("    ExVxCal() - Ex vs X for all %d detectors\n", numDet);
+  // printf("-----------------------------------------------------\n");
+  // printf("   ShowFitMethod() - Shows various fitting methods \n");
+  // printf("   RDTCutCreator() - Create RDT Cuts [May need to edit]\n");
+  // printf("   Check_rdtGate() - Check RDT Cuts.  \n");
+  // printf("       readTrace() - read trace from gen_runXXX.root \n");
+  // printf("    readRawTrace() - read trace from runXXX.root \n");
+  // printf("         Check1D() - Count Integral within a range\n");
+  // printf("-----------------------------------------------------\n");
+  // printf("   %s\n", canvasTitle.Data());
+  printf("-----------------------------------------------------\n");
 
 }
 
 
 //%============================================= 
-void rawID(int arrayID = -1){
-
+void raw(bool isLog = false, int arrayID = -1){
   if( arrayID < 0 ){
-    for( int i = 0; i < numGeo; i++ ) plotter[i]->PlotRawID();
+    for( int i = 0; i < numGeo; i++ ) plotter[i]->PlotRaw(isLog);
   }else{
-    if( arrayID < numGeo) plotter[arrayID]->PlotRawID();
+    if( arrayID < numGeo) plotter[arrayID]->PlotRaw(isLog);
   }
-
 }
 
+void cal(int arrayID = -1){
+  if( arrayID < 0 ){
+    for( int i = 0; i < numGeo; i++ ) plotter[i]->PlotCal();
+  }else{
+    if( arrayID < numGeo) plotter[arrayID]->PlotCal();
+  }
+}
+
+void ez(int arrayID = -1){
+  if( arrayID < 0 ){
+    for( int i = 0; i < numGeo; i++ ) plotter[i]->PlotEZ();
+  }else{
+    if( arrayID < numGeo) plotter[arrayID]->PlotEZ();
+  }
+}

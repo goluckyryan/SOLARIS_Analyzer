@@ -9,6 +9,8 @@
 #include "TH1.h"
 #include "TH2.h"
 #include "TCanvas.h"
+#include "TLine.h"
+#include "TStyle.h"
 
 /******************************************************************
 * This is Plotter for Monitor.C. It contains
@@ -57,7 +59,10 @@ public:
 
   void Plot();
 
-  void PlotRawID();
+  void PlotRaw(bool isLog = false);
+  void PlotCal();
+  void PlotEZ();
+  // void PlotEx();
   
   TCanvas * canvas;
 
@@ -65,7 +70,7 @@ public:
   //======== raw data
   TH2F * he_ID, * hxf_ID, * hxn_ID; // vs ID
 
-  TH1I * hArrayMulti; 
+  TH1I * hArrayMulti;
 
   TH1F ** he, ** hxf, ** hxn; //basic data
   TH2F ** hxf_xn, ** he_xs; // correlation
@@ -75,6 +80,7 @@ public:
   TH2F ** hxfCal_xnCal; 
   TH2F ** he_xsCal; // raw e vs xf
   TH2F ** he_x; // raw e vs x
+  TH2F *  heCal_ID;
 
   //===== eCal V z
   TH2F  * heCal_z;
@@ -107,6 +113,7 @@ private:
   float recoilOutter;
   double zRange[2] ; // zMin, zMax
   
+  TString canvasTitle;
   TString suffix;
   int numPad;
 
@@ -145,11 +152,13 @@ MonPlotter::~MonPlotter(){
   delete hxn_ID;
   delete hArrayMulti;
 
+  delete heCal_ID;
+  delete heCal_zGC;
   delete heCal_z;
+
   delete hEx_ThetaCM;
   delete hExCut1;
   delete hExCut2;
-  delete heCal_zGC;
 
   delete hrdt_ID;
   
@@ -191,9 +200,10 @@ MonPlotter::~MonPlotter(){
 
 void MonPlotter::SetUpCanvas(TString title, int padSize, int divX, int divY){
 
-  canvas = new TCanvas("canavs" + suffix, title, 200 * aID, 200 * aID, divX * padSize, divY * padSize);
+  canvas = new TCanvas("canavs" + suffix, title, 500 * aID, 0, divX * padSize, divY * padSize);
   canvas->Divide(divX, divY);
   numPad = divX * divY;
+  canvasTitle = title;
 
 }
 
@@ -239,16 +249,16 @@ void MonPlotter::SetUpHistograms(int * rawEnergyRange, int * energyRange, double
   CreateListOfHist2D(hxf_xn, numDet, "hxf_xn", "Raw xf vs. xn (ch=%d);xf (channel);xn (channel)"     , 500, rawEnergyRange[0], rawEnergyRange[1], 500, rawEnergyRange[0], rawEnergyRange[1]);
   CreateListOfHist2D(he_xs,  numDet, "he_xs",  "Raw e vs xf+xn (ch=%d); xf+xn (channel); e (channel)", 500, rawEnergyRange[0], rawEnergyRange[1], 500, rawEnergyRange[0], rawEnergyRange[1]);
 
-  CreateListOfHist1D(heCal, numDet, "heCal",       "Corrected e (ch=%d); e (MeV); count", 2000,    energyRange[0],    energyRange[1]);
-
+  CreateListOfHist2D(he_x        , numDet, "he_x",     "Raw e vs x (ch=%d); x (mm); Raw e (channel)",  500, rawEnergyRange[0], rawEnergyRange[1], 500, -1, detLength +1);
   CreateListOfHist2D(hxfCal_xnCal, numDet, "hxfCal_xnCal", "Corrected XF vs. XN (ch=%d);XF (channel);XN (channel)",                         500,                 0, rawEnergyRange[1], 500,                 0, rawEnergyRange[1]);      
   CreateListOfHist2D(he_xsCal    , numDet, "he_xsCal",     "Raw e vs Corrected xf+xn (ch=%d); corrected xf+xn (channel); Raw e (channel)",  500, rawEnergyRange[0], rawEnergyRange[1], 500, rawEnergyRange[0], rawEnergyRange[1]);
   
-  CreateListOfHist2D(he_x        , numDet, "he_x",     "Raw e vs x (ch=%d); x (mm); Raw e (channel)",  500, rawEnergyRange[0], rawEnergyRange[1], 500, -1, detLength +1);
-
+  CreateListOfHist1D(heCal, numDet, "heCal",       "Corrected e (ch=%d); e (MeV); count", 2000,    energyRange[0],    energyRange[1]);
+  
   //====================== E-Z plot
-  heCal_z   = new TH2F("heCal_z" + suffix ,  "E vs. Z;Z (mm);E (MeV)"      , 400, zRange[0], zRange[1], 400, energyRange[0], energyRange[1]);
-  heCal_zGC = new TH2F("heCal_zGC" + suffix ,"E vs. Z gated;Z (mm);E (MeV)", 400, zRange[0], zRange[1], 400, energyRange[0], energyRange[1]);
+  heCal_ID  = new TH2F("heCal_ID" + suffix ,  "E vs. ID; ID;E (MeV)"       , numDet,         0,    numDet, 400, energyRange[0], energyRange[1]);
+  heCal_z   = new TH2F("heCal_z" + suffix ,  "E vs. Z;Z (mm);E (MeV)"      ,    400, zRange[0], zRange[1], 400, energyRange[0], energyRange[1]);
+  heCal_zGC = new TH2F("heCal_zGC" + suffix ,"E vs. Z gated;Z (mm);E (MeV)",    400, zRange[0], zRange[1], 400, energyRange[0], energyRange[1]);
 
   //===================== Recoil
   int rdtRange[2];
@@ -311,14 +321,115 @@ void MonPlotter::Plot(){
   }
 }
 
-void MonPlotter::PlotRawID(){
-  TCanvas * haha = new TCanvas("haha" + suffix, "Raw ID", 1200, 600);
-  haha->Divide(2,2);
+void MonPlotter::PlotRaw(bool isLog){
 
-  haha->cd(1); he_ID->Draw("colz");
-  haha->cd(2); hArrayMulti->Draw();
-  haha->cd(3); hxf_ID->Draw("colz");
-  haha->cd(4); hxn_ID->Draw("colz");
+  TCanvas * cRawID = new TCanvas("cRawID", Form("Raw e, Ring, xf, xn vs ID | %s", canvasTitle.Data()), 100 + 500 * aID, 100, 1200, 800);
+  cRawID->Clear(); cRawID->Divide(2,2);
+  cRawID->cd(1); he_ID->Draw("colz");
+  cRawID->cd(2); hArrayMulti->Draw();
+  cRawID->cd(3); hxf_ID->Draw("colz");
+  cRawID->cd(4); hxn_ID->Draw("colz");
+
+  int padSize = 200;
+  int canvasSize[2] = {padSize * colDet, padSize * rowDet};
+
+  TCanvas * cRawE = new TCanvas("cRawE" + suffix,Form("E raw | %s", canvasTitle.Data()), 200 + 500 * aID, 200, canvasSize[0], canvasSize[1]);
+  cRawE->Clear(); cRawE->Divide(colDet,rowDet);
+  for (Int_t i=0; i < numDet; i++) {
+    cRawE->cd(i+1); 
+    cRawE->cd(i+1)->SetGrid();
+    if( isLog ) cRawE->cd(i+1)->SetLogy();
+    he[i]->Draw("");
+  }
+
+  TCanvas *cRawXf = new TCanvas("cRawXf" + suffix,Form("Xf raw | %s", canvasTitle.Data()), 300 + 500 * aID, 300, canvasSize[0], canvasSize[1]);
+  cRawXf->Clear(); cRawXf->Divide(colDet,rowDet);
+  for (Int_t i=0; i<numDet; i++) {
+    cRawXf->cd(i+1); 
+    cRawXf->cd(i+1)->SetGrid();
+    if( isLog ) cRawXf->cd(i+1)->SetLogy();
+    hxf[i]->Draw("");
+  }
+
+  TCanvas *cRawXn = new TCanvas("cRawXn" + suffix,Form("Xn raw | %s", canvasTitle.Data()), 400 + 500 * aID, 400, canvasSize[0], canvasSize[1]);
+  cRawXn->Clear();cRawXn->Divide(colDet,rowDet);
+  for (Int_t i=0; i<numDet; i++) {
+    cRawXn->cd(i+1); 
+    cRawXn->cd(i+1)->SetGrid();
+    if( isLog ) cRawXn->cd(i+1)->SetLogy();
+    hxn[i]->Draw("");
+  }
+
+  TCanvas *cxfxn = new TCanvas("cxfxn" + suffix,Form("XF vs. XN | %s", canvasTitle.Data()), 500 + 500 * aID, 500, canvasSize[0], canvasSize[1]);
+  cxfxn->Clear(); cxfxn->Divide(colDet,rowDet);
+  for (Int_t i=0;i<numDet;i++) {
+    cxfxn->cd(i+1); 
+    cxfxn->cd(i+1)->SetGrid(); 
+    hxf_xn[i]->Draw("col");
+  }
+
+  TCanvas *cxfxne = new TCanvas("cxfxne" + suffix,Form("E - XF+XN | %s", canvasTitle.Data()), 600 + 500 * aID, 600, canvasSize[0], canvasSize[1]);
+  cxfxne->Clear(); cxfxne->Divide(colDet,rowDet);
+  TLine line(0,0, 4000, 4000); line.SetLineColor(2);
+  for (Int_t i=0;i<numDet;i++) {
+    cxfxne->cd(i+1); 
+    cxfxne->cd(i+1)->SetGrid(); 
+    he_xs[i]->Draw("col");
+    line.Draw("same");
+  }
+
+}
+
+void MonPlotter::PlotCal(){
+
+  int padSize = 200;
+  int canvasSize[2] = {padSize * colDet, padSize * rowDet};
+
+  TCanvas *ceVx = new TCanvas("ceVx" + suffix, Form("E vs. X = (xf-xn)/e | %s", canvasTitle.Data()), 100 + 500 * aID, 100, canvasSize[0], canvasSize[1]);
+  ceVx->Clear(); ceVx->Divide(colDet,rowDet);
+  for (Int_t i=0;i<numDet;i++) {
+    ceVx->cd(i+1); he_x[i]->Draw("col");
+  }
+
+  TCanvas *cxfxneC = new TCanvas("cxfxneC" + suffix,Form("Raw E - Corrected XF+XN | %s", canvasTitle.Data()), 200 + 500 * aID, 200, canvasSize[0], canvasSize[1]);
+  cxfxneC->Clear(); cxfxneC->Divide(colDet,rowDet);
+  TLine line(0,0, 4000, 4000); line.SetLineColor(2);
+  for (Int_t i=0;i<numDet;i++) {
+    cxfxneC->cd(i+1); 
+    cxfxneC->cd(i+1)->SetGrid(); 
+    he_xsCal[i]->Draw("col");
+    line.Draw("same");
+  }
+
+  TCanvas *cEC = new TCanvas("cEC" + suffix,Form("E corrected | %s", canvasTitle.Data()), 300 + 500 * aID, 300, canvasSize[0], canvasSize[1]);
+  cEC->Clear();cEC->Divide(colDet,rowDet);
+  for (Int_t i=0; i<numDet; i++) {
+    cEC->cd(i+1); 
+    cEC->cd(i+1)->SetGrid();
+    heCal[i]->Draw("");
+  }
+  
+  TCanvas *cEC2 = new TCanvas("cEC2" + suffix,Form("E corrected | %s", canvasTitle.Data()), 400 + 500 * aID, 400, canvasSize[0], canvasSize[1]);
+  cEC2->Clear();
+  heCal_ID->Draw("colz");
+
+  TCanvas *cxfxnC = new TCanvas("cxfxnC" + suffix,Form("XF vs XN corrected | %s", canvasTitle.Data()), 500 + 500 * aID, 500, canvasSize[0], canvasSize[1]);
+  cxfxnC->Clear(); cxfxnC->Divide(colDet,rowDet);
+  for (Int_t i=0;i<numDet;i++) {
+    cxfxnC->cd(i+1); 
+    cxfxnC->cd(i+1)->SetGrid(); 
+    hxfCal_xnCal[i]->Draw("col");
+  }
+
+}
+
+void MonPlotter::PlotEZ(){
+  TCanvas *cecalVz = new TCanvas("cevalVz",Form("ECALVZ : %s", canvasTitle.Data()),1000, 650);
+  cecalVz->Clear(); cecalVz->Divide(2,1);
+  gStyle->SetOptStat("neiou");
+  cecalVz->cd(1);heCal_z->Draw("col");
+  cecalVz->cd(2);heCal_zGC->Draw("col");
+
 }
 
 #endif

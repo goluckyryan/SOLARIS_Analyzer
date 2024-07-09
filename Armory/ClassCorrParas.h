@@ -26,31 +26,31 @@ public:
     LoadRDTCorr();
   }
 
-  void CheckCorrParasSize(int arraySize, int rdtSize){
+  void CheckCorrParasSize(size_t arraySize, size_t rdtSize){
     printf("------------ Check Correction parameter sizes\n");
 
     if( is_xn_OK && xnCorr.size() < arraySize ) {
-      printf("    xnCorr [%zu] < array size %d. Set     xnCorr[1..99] = 1.0 \n", xnCorr.size(), arraySize);
+      printf("    xnCorr [%zu] < array size %zu. Set     xnCorr[1..99] = 1.0 \n", xnCorr.size(), arraySize);
       for( int i = 0; i < defaultSize; i++ ) xnCorr.push_back(1.0);
       is_xn_OK = false;
     }
     if( is_xfxne_OK && xfxneCorr.size() < arraySize ) {
-      printf(" xfxneCorr [%zu] < array size %d. Set  xfxneCorr[1..99] = (0.0, 1.0) \n", xfxneCorr.size(), arraySize);
+      printf(" xfxneCorr [%zu] < array size %zu. Set  xfxneCorr[1..99] = (0.0, 1.0) \n", xfxneCorr.size(), arraySize);
       for( int i = 0; i < defaultSize; i++ ) xfxneCorr.push_back({0.0, 1.0});
       is_xScale_OK = false;
     }
     if( is_e_OK && eCorr.size() < arraySize ) {
-      printf("     eCorr [%zu] < array size %d. Set      eCorr[1..99] = (1.0, 0.0) \n", xnCorr.size(), arraySize);
+      printf("     eCorr [%zu] < array size %zu. Set      eCorr[1..99] = (1.0, 0.0) \n", xnCorr.size(), arraySize);
       for( int i = 0; i < defaultSize; i++ ) eCorr.push_back({1.0, 0.0});
       is_e_OK = false;
     }
     if( is_xScale_OK && xScale.size() < arraySize ) {
-      printf("    xScale [%zu] < array size %d. Set     xScale[1..99] = 1.0 \n", xScale.size(), arraySize);
+      printf("    xScale [%zu] < array size %zu. Set     xScale[1..99] = 1.0 \n", xScale.size(), arraySize);
       for( int i = 0; i < defaultSize; i++ ) xScale.push_back(1.0);
       is_xScale_OK = false;
     }
     if( is_rdt_OK && rdtCorr.size() < rdtSize ) {
-      printf("   rdtCorr [%zu] < array size %d. Set   rdtScale[1..99] = (0.0, 1.0) \n", rdtCorr.size(), arraySize);
+      printf("   rdtCorr [%zu] < array size %zu. Set   rdtScale[1..99] = (0.0, 1.0) \n", rdtCorr.size(), arraySize);
       for( int i = 0; i < defaultSize; i++ ) rdtCorr.push_back({0.0, 1.0});
       is_rdt_OK = false;
     }
@@ -79,7 +79,7 @@ public:
     if( file.is_open() ){
       float a;
       while( file >> a ) xnCorr.push_back(a);
-      printf(".......... done.\n");
+      printf(".......... done. size:%zu\n", xnCorr.size());
       is_xn_OK = true;
     }else{
       for( int i = 0; i < defaultSize; i++ ) xnCorr.push_back(1.0);
@@ -99,7 +99,7 @@ public:
     if( file.is_open() ){
       float a;
       while( file >> a ) xScale.push_back(a);  
-      printf("........ done.\n");
+      printf("........ done. size:%zu\n", xScale.size());
       is_xScale_OK = true;
     }else{
       for( int i = 0; i < defaultSize; i++ ) xScale.push_back(1.0);
@@ -119,7 +119,7 @@ public:
     if( file.is_open() ){
       float a, b;
       while( file >> a >> b) xfxneCorr.push_back({a, b});
-      printf("........ done.\n");
+      printf("........ done. size:%zu\n", xfxneCorr.size());
       is_xfxne_OK = true;
     }else{
       for( int i = 0; i < defaultSize; i++ ) xfxneCorr.push_back({0.0, 1.0});
@@ -139,7 +139,7 @@ public:
     if( file.is_open() ){
       float a, b;
       while( file >> a >> b) eCorr.push_back( {a, b} );  // 1/a1,  a0 , e' = e * a1 + a0
-      printf(".............. done.\n");
+      printf(".............. done. size:%zu\n", eCorr.size());
       is_e_OK = true;
     }else{
       for( int i = 0; i < defaultSize; i++ ) eCorr.push_back( {1.0, 0.0} );
@@ -159,7 +159,7 @@ public:
     if( file.is_open() ){
       float a, b;
       while( file >> a >> b) rdtCorr.push_back({a, b});
-      printf("............ done.\n");
+      printf("............ done. size:%zu\n", rdtCorr.size());
       is_rdt_OK = true;
     }else{
       for( int i = 0; i < defaultSize; i++ ) rdtCorr.push_back( {0.0, 1.0} );

@@ -124,7 +124,7 @@ public:
   std::vector<Array> array;
   std::vector<Auxillary> aux;
 
-  void Print( bool printArray = false) ;
+  void Print( int printArray = 0) ; // 0 = no print, -1 = print all, 1 = print only enabled
 
   short GetArrayID(int id){
     int detCount = 0;
@@ -244,7 +244,7 @@ inline bool DetGeo::LoadDetectorGeo(TMacro * macro, bool verbose){
 
 }
 
-inline void DetGeo::Print(bool printArray){
+inline void DetGeo::Print(int printArray){
 
   printf("#####################################################\n");
   printf("           B-field : %8.2f T, %s\n", Bfield, Bfield > 0 ? "out of plan" : "into plan");
@@ -253,8 +253,9 @@ inline void DetGeo::Print(bool printArray){
   
   printf("             z-Min : %8.2f mm\n", zMin);
   printf("             z-Max : %8.2f mm\n", zMax);
-  if( printArray  ) {
+  if( printArray != 0 ) {
     for( size_t i = 0; i < array.size() ; i++){
+      if( printArray > 0 && !array[i].enable ) continue;
       printf("================================= %zu-th Detector Info (%s)\n", i, array[i].enable ? "enabled" : "disabled");
       array[i].Print();
       aux[i].Print();

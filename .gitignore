@@ -15,6 +15,7 @@ root_data
 *.out
 *.txt
 *.csv
+*.dat
 
 Cleopatra/ExtractXSec
 Cleopatra/ExtractXSecFromText
