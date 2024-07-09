@@ -1,9 +1,18 @@
 #include "../Armory/ClassDetGeo.h"
 #include "../Armory/ClassReactionConfig.h"
+#include "../Armory/ClassCorrParas.h"
 #include "../Cleopatra/ClassHelios.h"
 #include "../Cleopatra/ClassTransfer.h"
 
 #include "ClassMonPlotter.h"
+#include "TFile.h"
+#include "TChain.h"
+#include "TH1F.h"
+#include "TTreeReader.h"
+#include "TTreeReaderValue.h"
+#include "TTreeReaderArray.h"
+#include "TClonesArray.h"
+#include "TGraph.h"
 
 void test(){
 
@@ -48,25 +57,48 @@ void test(){
   // delete helios;
   // delete transfer;root 
 
-  DetGeo dd("detectorGeo.txt");
-  MonPlotter * pp = new MonPlotter(0, &dd, 8);
+  // DetGeo dd("detectorGeo.txt");
+  // MonPlotter * pp = new MonPlotter(0, &dd, 8);
 
-  pp->SetUpCanvas("haha", 500, 3, 2);
+  // pp->SetUpCanvas("haha", 500, 3, 2);
 
-  int rawEnergyRange[2] = {   100,    4000};       /// share with e, xf, xn
-  int    energyRange[2] = {     0,      10};       /// in the E-Z plot
+  // int rawEnergyRange[2] = {   100,    4000};       /// share with e, xf, xn
+  // int    energyRange[2] = {     0,      10};       /// in the E-Z plot
 
-  int     rdtDERange[2] = {     0,      80}; 
-  int      rdtERange[2] = {     0,      80};
+  // int     rdtDERange[2] = {     0,      80}; 
+  // int      rdtERange[2] = {     0,      80};
 
-  double     exRange[3] = {  100,    -2,     10};  /// bin [keV], low[MeV], high[MeV]
-  int   thetaCMRange[2] = {0, 80};
+  // double     exRange[3] = {  100,    -2,     10};  /// bin [keV], low[MeV], high[MeV]
+  // int   thetaCMRange[2] = {0, 80};
 
-  pp->SetUpHistograms(rawEnergyRange, energyRange, exRange, thetaCMRange, rdtDERange, rdtERange);
+  // pp->SetUpHistograms(rawEnergyRange, energyRange, exRange, thetaCMRange, rdtDERange, rdtERange);
 
-  pp->Plot();
+  // pp->Plot();
 
-  delete pp;
+  // delete pp;
 
+  // TChain *chain = new TChain("gen_tree");
+  // chain->Add("../root_data/gen_run043.root");
+
+  // // chain->Print();
+
+  // TTreeReader reader(chain);
+
+  // TTreeReaderArray<TGraph>   trace = {reader, "trace"};
+
+  // ULong64_t processedEntries = 0;
+  // while (reader.Next()) {
+
+  //   printf("%llu | %lu \n", processedEntries, trace.GetSize());
+
+  //   for( int i = 0; i < trace.GetSize(); i++ ){
+  //     printf( "    %d|  %d\n", i, trace.At(i).GetN());
+  //   }
+
+  //   processedEntries ++;
+  //   if( processedEntries > 10 ) break;
+  // }
+
+  CorrParas * corr = new CorrParas();
 
 }

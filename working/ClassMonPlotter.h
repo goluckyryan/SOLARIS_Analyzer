@@ -53,9 +53,11 @@ public:
   ~MonPlotter();
 
   void SetUpCanvas(TString title, int padSize, int divX, int divY);
-
   void SetUpHistograms(int * rawEnergyRange, int * energyRange, double * exRange, int * thetaCMRange, int * rdtDERange, int * rdtERange);
+
   void Plot();
+
+  void PlotRawID();
   
   TCanvas * canvas;
 
@@ -301,13 +303,22 @@ void MonPlotter::Plot(){
   for( int i = 0; i < numPad; i++ ){
     canvas->cd(i+1);
     switch (i){
-      case 0: he_ID->Draw("colz");break;
-      case 1: hxf_ID->Draw("colz");break;
-      case 2: hxn_ID->Draw("colz");break;
+      case 0: heCal_z->Draw("colz");break;
+      case 1: heCal_zGC->Draw("colz");break;
+      // case 2: hxn_ID->Draw("colz");break;
       default:break;
     }
   }
+}
 
+void MonPlotter::PlotRawID(){
+  TCanvas * haha = new TCanvas("haha" + suffix, "Raw ID", 1200, 600);
+  haha->Divide(2,2);
+
+  haha->cd(1); he_ID->Draw("colz");
+  haha->cd(2); hArrayMulti->Draw();
+  haha->cd(3); hxf_ID->Draw("colz");
+  haha->cd(4); hxn_ID->Draw("colz");
 }
 
 #endif
