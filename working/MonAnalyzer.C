@@ -32,19 +32,20 @@ int   thetaCMRange[2] = {0, 80};
 
 double     exRange[3] = {  100,    -2,     10};  /// bin [keV], low[MeV], high[MeV]
 
+int  coinTimeRange[2] = { -200, 200};
 
 //---Gate
 bool isTimeGateOn     = true;
 int timeGate[2]       = {-20, 12};             /// min, max, 1 ch = 10 ns
 double eCalCut[2]     = {0.5, 20};             /// lower & higher limit for eCal
-double xGate          = 0.9;                  ///cut out the edge
+double xGate          = 0.9;                   ///cut out the edge
 double thetaCMGate    = 10;                    /// deg
 
 std::vector<int> skipDetID = {11} ;
 
-TString rdtCutFile1 = "";
-TString rdtCutFile2 = "";
-TString ezCutFile   = "";//"ezCut.root";
+std::vector<TString> rdtCutFile1 = {"", ""}; /// {reaction-0, reaction-1}, can add more for more reactions
+// TString rdtCutFile2 = "";
+// TString ezCutFile   = "";//"ezCut.root";
 
 //^############################################ end of user setting
 
@@ -84,20 +85,28 @@ void MonAnalyzer(){
   //TODO
   // TTreeReaderArray<TGraph>   array = {reader, "trace"};
 
-  //*==========================================
   ULong64_t NumEntries = chain->GetEntries();
 
+  //*==========================================
   DetGeo * detGeo = new DetGeo("detectorGeo.txt");
-  // TransferReaction * transfer = new TransferReaction("reactionConfig.txt");
   numGeo = detGeo->numGeo;
   printf("================== num. of Arrays : %d\n", numGeo);
-
   int numTotArray = 0;
   detGeo->Print(1);
   for( size_t i = 0; i < detGeo->array.size(); i++ ){
     if( detGeo->array[i].enable ) numTotArray += detGeo->array[i].numDet;
   } 
 
+  //*==========================================
+  TransferReaction * transfer = new TransferReaction[numGeo];
+  int tempCount = 0;
+  for( int i = 0; i < (int) detGeo->array.size() ; i++){
+    if( !detGeo->array[i].enable ) continue;
+    transfer[tempCount].SetReactionFromFile("reactionConfig.txt", i);
+    tempCount ++;
+  }
+
+  //*==========================================
   CorrParas * corr = new CorrParas;
   corr->LoadAllCorrections();
   corr->CheckCorrParasSize(numTotArray, mapping::NRDT);
@@ -106,7 +115,15 @@ void MonAnalyzer(){
   for( int i = 0; i < numGeo; i++ ) {
     plotter[i] = new MonPlotter(i, detGeo, mapping::NRDT);
     plotter[i]->SetUpCanvas("haha", 500, 3, 2); //TODO canvaseTitle
-    plotter[i]->SetUpHistograms(rawEnergyRange, energyRange, exRange, thetaCMRange, rdtDERange, rdtERange);
+    plotter[i]->SetUpHistograms(rawEnergyRange, energyRange, exRange, thetaCMRange, rdtDERange, rdtERange, coinTimeRange);
+  }
+
+  //*========================================== Load RDT Cuts
+  tempCount = 0;
+  for( int i = 0; i < (int) detGeo->array.size() ; i++){
+    if( !detGeo->array[i].enable ) continue;
+    plotter[tempCount]->LoadRDTGate(rdtCutFile1[i]);
+    tempCount ++;
   }
 
   //TODO make the data class. 
@@ -130,6 +147,7 @@ void MonAnalyzer(){
     //*============================================= Array;
     int arrayMulti[numGeo] ; //array multiplicity, when any  is calculated. 
     for( int i = 0; i < numGeo; i++ )  arrayMulti[i] = 0;
+    bool rdtgate1 = false;
 
     for( int id = 0; id < (int) e.GetSize() ; id++ ){
       short aID = detGeo->GetArrayID(id);
@@ -212,58 +230,57 @@ void MonAnalyzer(){
       plotter[aID]->heCal_z->Fill(z[id],eCal[id]);
 
       //@=================== Recoil Gate
-      // if( isRDTExist && (cutList1 || cutList2)){
-      //   for(int i = 0 ; i < cutList1->GetEntries() ; i++ ){
-      //     cutG = (TCutG *)cutList1->At(i) ;
-      //     if(cutG->IsInside(rdt[2*i],rdt[2*i+1])) {
-      //     // if(cutG->IsInside(rdt[2*i] + rdt[2*i+1],rdt[2*i+1])) {
-      //       rdtgate1= true;
-      //       break; /// only one is enough
-      //     }
-      //   }
+      if( plotter[aID]->cutList ){
+        for(int i = 0 ; i < cutList1->GetEntries() ; i++ ){
+          TCutG * cutG = (TCutG *)cutList1->At(i) ;
+          if(cutG->IsInside(rdt[2*i],rdt[2*i+1])) {
+            rdtgate1= true;
+            break; /// only one is enough
+          }
+        }
         
-      //   for(int i = 0 ; i < cutList2->GetEntries() ; i++ ){
-      //     cutG = (TCutG *)cutList2->At(i) ;
-      //     if(cutG->IsInside(rdt[2*i],rdt[2*i+1])) {
-      //     //if(cutG->IsInside(rdt[2*i]+ rdt[2*i+1],rdt[2*i+1])) {
-      //       rdtgate2= true;
-      //       break; /// only one is enough
-      //     }
-      //   }
+        // for(int i = 0 ; i < cutList2->GetEntries() ; i++ ){
+        //   cutG = (TCutG *)cutList2->At(i) ;
+        //   if(cutG->IsInside(rdt[2*i],rdt[2*i+1])) {
+        //   //if(cutG->IsInside(rdt[2*i]+ rdt[2*i+1],rdt[2*i+1])) {
+        //     rdtgate2= true;
+        //     break; /// only one is enough
+        //   }
+        // }
         
-      // }else{
-      //   rdtgate1 = true;
-      //   rdtgate2 = true;
-      // } 
+      }else{
+        rdtgate1 = true;
+        // rdtgate2 = true;
+      } 
     
       //@================ coincident with Recoil when z is calculated.
-      // if( !TMath::IsNaN(z[id]) ) { 
-      //   for( int j = 0; j < mapping::NRDT ; j++){
-      //     if( TMath::IsNaN(rdt[j]) ) continue; 
+      if( !TMath::IsNaN(z[id]) ) { 
+        for( int j = 0; j < mapping::NRDT ; j++){
+          if( TMath::IsNaN(rdt[j]) ) continue; 
     
-      //     int tdiff = rdt_t[j] - e_t[id];
+          int tdiff = rdt_t[j] - e_t[id];
     
-      //     if( j%2 == 1) {
-      //       htdiff->Fill(tdiff);
-      //       if((rdtgate1 || rdtgate2) && (eCalCut[1] > eCal[id] && eCal[id]>eCalCut[0])) {
-      //         htdiffg->Fill(tdiff);
-      //       }
-      //     }
+          if( j%2 == 1) {
+            plotter[aID]->htDiff->Fill(tdiff);
+            // if((rdtgate1 || rdtgate2) && (eCalCut[1] > eCal[id] && eCal[id]>eCalCut[0])) {
+            //   plotter[aID]->htdiffg->Fill(tdiff);
+            // }
+          }
 
-      //     hArrayRDTMatrix->Fill(id, j); 
+          // hArrayRDTMatrix->Fill(id, j); 
     
-      //     if( isTimeGateOn && timeGate[0] < tdiff && tdiff < timeGate[1] ) {
-      //       if(j % 2 == 0 ) hrdt2Dg[j/2]->Fill(rdt[j],rdt[j+1]); /// x=E, y=dE
-      //       ///if(j % 2 == 0 ) hrdt2Dg[j/2]->Fill(rdt[j+1],rdt[j]); /// x=dE, y=E
-      //       hArrayRDTMatrixG->Fill(id, j); 
-      //       ///if( rdtgate1) hArrayRDTMatrixG->Fill(id, j); 
+          // if( isTimeGateOn && timeGate[0] < tdiff && tdiff < timeGate[1] ) {
+          //   if(j % 2 == 0 ) hrdt2Dg[j/2]->Fill(rdt[j],rdt[j+1]); /// x=E, y=dE
+          //   ///if(j % 2 == 0 ) hrdt2Dg[j/2]->Fill(rdt[j+1],rdt[j]); /// x=dE, y=E
+          //   hArrayRDTMatrixG->Fill(id, j); 
+          //   ///if( rdtgate1) hArrayRDTMatrixG->Fill(id, j); 
             
-      //       hrdtg[j]->Fill(rdt[j]);
-      //       coinFlag = true;
+          //   hrdtg[j]->Fill(rdt[j]);
+          //   coinFlag = true;
             
-      //     }
-      //   }
-      // }
+          // }
+        }
+      }
       
       // if( !isTimeGateOn ) coinFlag = true;
 
@@ -283,56 +300,61 @@ void MonAnalyzer(){
       //   isGoodEventFlag = true;
       // }
 
-
     }//*====== end of array loop
 
     for( int i = 0 ; i < numGeo ; i++ ) plotter[i]->hArrayMulti->Fill(arrayMulti[i]);
     
-    //*********** RECOILS ***********************************************/    
-    // for( int i = 0; i < mapping::NRDT ; i++){
-    //   hrdtID->Fill(i, rdt[i]);
-    //   hrdt[i]->Fill(rdt[i]);
+    //*********** RECOILS ***********************************************/
+    //Fill both plotter
+    int recoilMulti = 0;
+    for( int j = 0; j < numGeo; j++ ){
+      for( int i = 0; i < mapping::NRDT ; i++){
+        plotter[j]->hrdt_ID->Fill(i, rdt[i]);
+        plotter[j]->hrdt[i]->Fill(rdt[i]);
+      
+        recoilMulti++; 
+        if( i % 2 == 0  ){            
+          plotter[j]->hrdt2D[i/2]->Fill(rdt[i],rdt[i+1]); //E-dE
+        }
+      }
+
+      plotter[j]->hrdtMulti->Fill(recoilMulti);
+    }
     
-    //   if( i % 2 == 0  ){            
-    //     recoilMulti++; // when both dE and E are hit
-    //     hrdt2D[i/2]->Fill(rdt[i],rdt[i+1]); //E-dE
-    //   }
-    // }
 
     //@*********** Ex and thetaCM ****************************************/ 
-    // for(Int_t id = 0; id < mapping::NARRAY ; id++){
+    for(Int_t id = 0; id < numTotArray ; id++){
         
-    //   if( TMath::IsNaN(e[id]) ) continue ; 
-    //   if( TMath::IsNaN(z[id]) ) continue ;
-    //   if( eCal[id] <  eCalCut[0] ) continue ;
-    //   if( eCal[id] >  eCalCut[1] ) continue ;
+      if( TMath::IsNaN(e[id]) ) continue ; 
+      if( TMath::IsNaN(z[id]) ) continue ;
+      if( eCal[id] <  eCalCut[0] ) continue ;
+      if( eCal[id] >  eCalCut[1] ) continue ;
 
-    //   short aID = detGeo->GetArrayID(id);
-    //   if( aID < 0 ) continue;
+      short aID = detGeo->GetArrayID(id);
+      if( aID < 0 ) continue;
 
-    //   std::pair<double, double> ExThetaCM = transfer->CalExThetaCM(eCal[id], z[id], detGeo->Bfield, detGeo->array[aID].detPerpDist);
-    //   double Ex = ExThetaCM.first;
-    //   double thetaCM = ExThetaCM.second;
+      std::pair<double, double> ExThetaCM = transfer[aID].CalExThetaCM(eCal[id], z[id], detGeo->Bfield, detGeo->array[aID].detPerpDist);
+      double Ex = ExThetaCM.first;
+      double thetaCM = ExThetaCM.second;
       
-    //   if( thetaCM > thetaCMGate ) {
+      if( thetaCM > thetaCMGate ) {
 
-    //     plotter[aID]->hEx->Fill(Ex);
-    //     plotter[aID]->hExThetaCM->Fill(thetaCM, Ex);
+        plotter[aID]->hEx->Fill(Ex);
+        plotter[aID]->hExi[id]->Fill(Ex);
+        plotter[aID]->hEx_xCal[id]->Fill(xCal[id], Ex);
+        plotter[aID]->hEx_ThetaCM->Fill(thetaCM, Ex);
         
-    //     // if( rdtgate1 ) {
-    //     //   plotter[arrayID]->hExCut1->Fill(Ex);
-    //     //   plotter[arrayID]->hExThetaCM->Fill(thetaCM, Ex);
-    //     // }
-    //     // if( rdtgate2 ) {
-    //     //   plotter[arrayID]->hExCut2->Fill(Ex);
-    //     //   plotter[arrayID]->hExThetaCM->Fill(thetaCM, Ex);
-    //     // }
-        
-    //     plotter[arrayID]->hExi[id]->Fill(Ex);
-    //     plotter[arrayID]->hExVxCal[id]->Fill(xCal[id], Ex);
-          
-    //   }
-    // }
+        // if( rdtgate1 ) {
+        //   plotter[arrayID]->hExCut1->Fill(Ex);
+        //   plotter[arrayID]->hExThetaCM->Fill(thetaCM, Ex);
+        // }
+        // if( rdtgate2 ) {
+        //   plotter[arrayID]->hExCut2->Fill(Ex);
+        //   plotter[arrayID]->hExThetaCM->Fill(thetaCM, Ex);
+        // }
+           
+      }
+    }
 
     //*============================================ Progress Bar
     processedEntries ++;
@@ -353,9 +375,7 @@ void MonAnalyzer(){
   gStyle->SetDateX(0);
   gStyle->SetDateY(0);
 
-
-
-
+  //TODO, an easy method to config plotter::Plot()
   for( int i = 0; i < detGeo->numGeo ; i++){
     plotter[i]->Plot();
   }
@@ -368,12 +388,12 @@ void MonAnalyzer(){
   printf("        cal() - Calibrated data\n");
   printf("-----------------------------------------------------\n");
   printf("         ez() - Energy vs. Z\n");
+  printf("     excite() - Excitation Energy\n");
   // printf("    recoils() - Raw DE vs. E Recoil spectra\n");
   //printf("       elum() - Luminosity Energy Spectra\n");
   //printf("         ic() - Ionization Chamber Spectra\n");
   // printf("-----------------------------------------------------\n");
   // printf("  eCalVzRow() - Energy vs. Z for each row\n");
-  // printf("     excite() - Excitation Energy\n");
   // printf("  ExThetaCM() - Ex vs ThetaCM\n");
   // printf("    ExVxCal() - Ex vs X for all %d detectors\n", numDet);
   // printf("-----------------------------------------------------\n");
@@ -388,7 +408,6 @@ void MonAnalyzer(){
   printf("-----------------------------------------------------\n");
 
 }
-
 
 //%============================================= 
 void raw(bool isLog = false, int arrayID = -1){
@@ -412,5 +431,13 @@ void ez(int arrayID = -1){
     for( int i = 0; i < numGeo; i++ ) plotter[i]->PlotEZ();
   }else{
     if( arrayID < numGeo) plotter[arrayID]->PlotEZ();
+  }
+}
+
+void excited(int arrayID = -1){
+  if( arrayID < 0 ){
+    for( int i = 0; i < numGeo; i++ ) plotter[i]->PlotEx();
+  }else{
+    if( arrayID < numGeo) plotter[arrayID]->PlotEx();
   }
 }

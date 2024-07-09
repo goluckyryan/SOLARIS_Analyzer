@@ -55,14 +55,22 @@ public:
   ~MonPlotter();
 
   void SetUpCanvas(TString title, int padSize, int divX, int divY);
-  void SetUpHistograms(int * rawEnergyRange, int * energyRange, double * exRange, int * thetaCMRange, int * rdtDERange, int * rdtERange);
+  void SetUpHistograms(int * rawEnergyRange, 
+                       int * energyRange, 
+                       double * exRange, 
+                       int * thetaCMRange, 
+                       int * rdtDERange, 
+                       int * rdtERange,
+                       int * coinTimeRange);
+
+  void LoadRDTGate(TString rdtCutFile);
 
   void Plot();
 
   void PlotRaw(bool isLog = false);
   void PlotCal();
   void PlotEZ();
-  // void PlotEx();
+  void PlotEx();
   
   TCanvas * canvas;
 
@@ -90,8 +98,14 @@ public:
   TH2F * hrdt_ID;
   TH1F ** hrdt; // single recoil
 
+  TH1I * hrdtMulti;
+
   TH2F ** hrdt2D;
-  TH2F ** hrdt2Dg;
+  TH2F ** hrdt2Dg; // gated
+
+  //====== tDiff 
+  TH1F * htDiff;
+  TH1F * htDiffg;
 
   //====== Ex data
   TH1F  * hEx;
@@ -103,6 +117,9 @@ public:
 
   TH2F * hEx_ThetaCM;
   //=======================
+
+  //======= Recoil Cut
+  TObjArray * cutList;
 
 private:
 
@@ -138,6 +155,7 @@ MonPlotter::MonPlotter(unsigned short arrayID, DetGeo * detGeo, int numRDT){
   zRange[1] = detGeo->array[aID].zMax + 50;
 
   canvas = nullptr;
+  cutList = nullptr;
 
 }
 
@@ -161,6 +179,10 @@ MonPlotter::~MonPlotter(){
   delete hExCut2;
 
   delete hrdt_ID;
+  delete hrdtMulti;
+
+  delete htDiff;
+  delete htDiffg;
   
   for( int i = 0; i < numDet ; i++ ){
     delete he[i];
@@ -195,6 +217,9 @@ MonPlotter::~MonPlotter(){
   delete [] hrdt;
   delete [] hrdt2D;
   delete [] hrdt2Dg;
+
+  delete cutG; 
+  delete cutList;
 
 }
 
@@ -234,7 +259,13 @@ template<typename T> void MonPlotter::CreateListOfHist2D(T ** &histList,
   }
 }
 
-void MonPlotter::SetUpHistograms(int * rawEnergyRange, int * energyRange, double * exRange, int * thetaCMRange, int * rdtDERange, int * rdtERange){
+void MonPlotter::SetUpHistograms(int * rawEnergyRange, 
+                                 int * energyRange, 
+                                 double * exRange, 
+                                 int * thetaCMRange, 
+                                 int * rdtDERange, 
+                                 int * rdtERange,
+                                 int * coinTimeRange){
 
   he_ID  = new TH2F("he_ID"  + suffix, "Raw e vs array ID; Array ID; Raw e",    numDet, 0, numDet,  200, rawEnergyRange[0], rawEnergyRange[1]);
   hxf_ID = new TH2F("hxf_ID" + suffix, "Raw xf vs array ID; Array ID; Raw xf",  numDet, 0, numDet,  200, rawEnergyRange[0], rawEnergyRange[1]);
@@ -267,6 +298,8 @@ void MonPlotter::SetUpHistograms(int * rawEnergyRange, int * energyRange, double
 
   hrdt_ID = new TH2F("hrdt_ID" + suffix, "Raw RDT vs ID; ID; Raw RDT", numRDT, 0, numRDT, 400, rdtRange[0], rdtRange[1]);
 
+  hrdtMulti = new TH1I("hrdtMulti" + suffix, "RDT Multiplicity", numRDT, 0, numRDT);
+
   hrdt  = new TH1F * [numRDT];
   hrdt2D    = new TH2F * [numRDT/2];
   hrdt2Dg   = new TH2F * [numRDT/2];
@@ -282,6 +315,11 @@ void MonPlotter::SetUpHistograms(int * rawEnergyRange, int * energyRange, double
       hrdt2Dg[tempID]   = new TH2F(Form("hrdt2Dg%d",tempID),   Form("Gated Raw Recoil DE vs Eres (dE=%d, E=%d); Eres (channel); DE (channel)",i+1, i),  500, rdtERange[0], rdtERange[1],500,rdtDERange[0], rdtDERange[1]);
     }
   }
+
+  //===================== tDiff = array_t - rdt_t
+  htDiff  = new TH1F("htDiff" + suffix,  "tDiff = e_t - rdt_t",         (coinTimeRange[1]-coinTimeRange[0]), coinTimeRange[0], coinTimeRange[1]);
+  htDiffg = new TH1F("htDiffg" + suffix, "tDiff = e_t - rdt_t (gated)", (coinTimeRange[1]-coinTimeRange[0]), coinTimeRange[0], coinTimeRange[1]);
+  htDiffg->SetLineColor(2);
 
   //===================== energy spectrum
   hEx = new TH1F("hEx" + suffix, Form("excitation spectrum w/ goodFlag; Ex [MeV] ; Count / %4.0f keV", exRange[0]), (int) (exRange[2]-exRange[1])/exRange[0]*1000, exRange[1], exRange[2]);
@@ -309,17 +347,47 @@ void MonPlotter::SetUpHistograms(int * rawEnergyRange, int * energyRange, double
 }
 
 void MonPlotter::Plot(){
-
-  for( int i = 0; i < numPad; i++ ){
-    canvas->cd(i+1);
+  for( int i = 1; i <= numPad; i++ ){
+    canvas->cd(i);
     switch (i){
-      case 0: heCal_z->Draw("colz");break;
-      case 1: heCal_zGC->Draw("colz");break;
-      // case 2: hxn_ID->Draw("colz");break;
+      case 1: heCal_z->Draw("colz");break;
+      case 2: heCal_zGC->Draw("colz");break;
+      case 3: htDiff->Draw("");break;
+      case 4: hEx->Draw("colz");break;
       default:break;
     }
   }
 }
+
+void MonPlotter::LoadRDTGate(TString rdtCutFile){
+
+  if( rdtCutFile == "" ) return ;
+
+  TFile * fCut = new TFile(rdtCutFile);
+  bool isCutFileOpen = fCut->IsOpen();
+  if(!isCutFileOpen) {
+    printf( "Failed to open rdt-cutfile 1 : %s\n" , fileName.Data());
+  }else{
+    cutList = (TObjArray *) fCut->FindObjectAny("cutList");
+
+    if( cutList ){
+      int numCut = cutList->GetEntries();
+      printf("=========== found %d cutG in %s \n", numCut, fCut->GetName());
+
+      for(int i = 0; i < numCut ; i++){
+        printf("cut name : %s , VarX: %s, VarY: %s, numPoints: %d \n",
+          cutList->At(i)->GetName(),
+          ((TCutG*)cutList->At(i))->GetVarX(),
+          ((TCutG*)cutList->At(i))->GetVarY(),
+          ((TCutG*)cutList->At(i))->GetN()
+        );
+      }
+    }
+  }
+
+}
+
+//^####################################################### 
 
 void MonPlotter::PlotRaw(bool isLog){
 
@@ -424,11 +492,43 @@ void MonPlotter::PlotCal(){
 }
 
 void MonPlotter::PlotEZ(){
-  TCanvas *cecalVz = new TCanvas("cevalVz",Form("ECALVZ : %s", canvasTitle.Data()),1000, 650);
+  TCanvas *cecalVz = new TCanvas("cevalVz" + suffix,Form("ECALVZ : %s", canvasTitle.Data()),1000, 650);
   cecalVz->Clear(); cecalVz->Divide(2,1);
   gStyle->SetOptStat("neiou");
   cecalVz->cd(1);heCal_z->Draw("col");
   cecalVz->cd(2);heCal_zGC->Draw("col");
+
+}
+
+void MonPlotter::PlotEx(){
+
+  TCanvas *cex = new TCanvas("cex" + suffix,Form("EX : %s", canvasTitle.Data()),0, 0, 1000,650);
+  cex->Clear();
+  gStyle->SetOptStat("neiou");
+  hEx->Draw("");
+  
+  TCanvas *cexI = new TCanvas("cexI" + suffix,Form("EX : %s", canvasTitle.Data()),500, 0, 1600,1000);
+  cexI->Clear();cexI->Divide(colDet,rowDet);
+  gStyle->SetOptStat("neiou");
+  for( int i = 0; i < numDet; i++){
+    cexI->cd(i+1); 
+    hExi[i]->Draw("");
+  }
+
+  TCanvas *cExThetaCM = new TCanvas("cExThetaCM" + suffix,Form("EX - ThetaCM | %s", canvasTitle.Data()), 500, 500, 650,650);
+  cExThetaCM->Clear();
+  gStyle->SetOptStat("neiou");
+  hEx_ThetaCM->Draw("colz");
+
+  TCanvas *cExVxCal = new TCanvas("cExVxCal" + suffix,Form("EX | %s", canvasTitle.Data()),200, 200, 1600,1000);
+  cExVxCal->Clear();
+  gStyle->SetOptStat("neiou");
+  cExVxCal->Divide(colDet,rowDet);
+  for( int i = 0; i < numDet; i++){
+    cExVxCal->cd(i+1); 
+    hEx_xCal[i]->SetMarkerStyle(7);
+    hEx_xCal[i]->Draw();
+  }
 
 }
 
