@@ -24,6 +24,9 @@ if [ $# -eq 0 ] || [ $1 == "-help"  ]; then
   echo "                                              =  2 WS fit"  
   echo "                                              =  3 trapezoid(not implemented)"  
   echo "                                  e.g. 208 = WS trace with 8 workers"  
+  
+  #======== change Monitor to Action. 
+
   echo "       Monitor = 2/1/0         || 1 = single run,  2 = using the list in ChainMonitors.C"
   echo ""
   echo "       * negative option = force."
@@ -51,12 +54,8 @@ fi
 
 nWorker=$((nWorker % 100 ));
 
-if [ "$RUN" == "lastRun" ]; then
-  RUN=$runID
-fi
-
-RUN=${RUN##*(0)} #remove zero
-RUN=$(printf '%03d' $RUN) ##add back the zero
+runNum=${RUN#0} #remove zero
+RUN=$(printf '%03d' $runNum) ##add back the zero
 
 ################################### Setting display
 echo "#################################################"
@@ -92,7 +91,7 @@ fi
 if [ $isMonitor -eq 0 ]; then
   echo -e "${LRED}>>>>>>>>>>>>>>>>>>>>> Monitor Skipped by user. ${NC}"
 elif [  $isMonitor -eq 1 ]; then
-  root -l "ChainMonitors.C($RUN)"
+  root -l "ChainMonitors.C($runNum)"
 elif [  $isMonitor -eq 2 ]; then
   root -l "ChainMonitors.C"
 fi

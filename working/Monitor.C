@@ -51,17 +51,12 @@ std::vector<TString> rdtCutFile1 = {"", ""}; /// {reaction-0, reaction-1}, can a
 
 MonPlotter ** plotter = nullptr;
 int numGeo = 1;
-TChain *gen_tree = nullptr;
 
-void MonAnalyzer(){
+void Monitor(TChain *gen_tree){
 
   printf("#####################################################################\n");
-  printf("#######################      MonAnalyzer.C    #######################\n");
+  printf("#######################        Monitor.C      #######################\n");
   printf("#####################################################################\n");
-
-  gen_tree = new TChain("gen_tree");
-  //gen_tree->Add("../root_data/gen_run043.root");
-  gen_tree->Add("../root_data/trace_run033.root");
 
   TObjArray * fileList = gen_tree->GetListOfFiles();
   printf("\033[0;31m========================================== Number of Files : %2d\n",fileList->GetEntries());
@@ -71,7 +66,44 @@ void MonAnalyzer(){
   printf("///////////////////////////////////////////////////////////////////\n");
   printf("            Total Number of entries : %llu \n", gen_tree->GetEntries());
   printf("///////////////////////////////////////////////////////////////////\n");
+  
+  if( gen_tree->GetEntries() == 0 ) {
+    printf("========= no events. Abort.\n");
+    return;
+  }
 
+  double totDuration = 0;
+  std::vector<ULong64_t> startTime;
+  std::vector<ULong64_t> stopTime;
+  std::vector<int> runList;
+  
+  for( int i = 0; i < fileList->GetEntries(); i++){
+    TString fileName = fileList->At(i)->GetTitle();
+    TFile file(fileName);
+    TMacro * timeStamp = (TMacro*) file.FindObjectAny("timeStamp");
+    //timeStamp->Print();
+
+    TString haha = timeStamp->GetListOfLines()->At(0)->GetName();
+    ULong64_t t1 = haha.Atoll();
+
+    haha = timeStamp->GetListOfLines()->At(1)->GetName();
+    ULong64_t t2  = haha.Atoll();
+
+    haha = timeStamp->GetListOfLines()->At(2)->GetName();
+    int RunID =  haha.Atoi();
+
+    totDuration += (t2-t1)*8./1e9;
+    startTime.push_back(t1);
+    stopTime.push_back(t2);
+    runList.push_back(RunID);
+  }
+
+  //======== format CanvasTitle
+  std::sort(runList.begin(), runList.end());
+  TString title = "Run:" +  AnalysisLib::create_range_string(runList);
+  title += Form(" | %.0f min", totDuration/60.) ;
+
+  //*===========================================================
   TTreeReader reader(gen_tree);
 
   TTreeReaderValue<ULong64_t>  evID = {reader, "evID"};
@@ -115,7 +147,7 @@ void MonAnalyzer(){
   plotter = new MonPlotter *[numGeo];
   for( int i = 0; i < numGeo; i++ ) {
     plotter[i] = new MonPlotter(i, detGeo, mapping::NRDT);
-    plotter[i]->SetUpCanvas("haha", 500, 3, 2); //TODO canvaseTitle
+    plotter[i]->SetUpCanvas(title, 500, 3, 2);
     plotter[i]->SetUpHistograms(rawEnergyRange, energyRange, exRange, thetaCMRange, rdtDERange, rdtERange, coinTimeRange);
   }
 
@@ -398,15 +430,11 @@ void MonAnalyzer(){
   printf("        raw() - Raw data\n");
   printf("        cal() - Calibrated data\n");
   printf("        rdt() - Raw RDT data\n");
+  //printf("       elum() - Luminosity Energy Spectra\n");
   printf("-----------------------------------------------------\n");
   printf("         ez() - Energy vs. Z\n");
   printf("-----------------------------------------------------\n");
   printf("     excite() - Excitation Energy\n");
-  //printf("       elum() - Luminosity Energy Spectra\n");
-  //printf("         ic() - Ionization Chamber Spectra\n");
-  // printf("  eCalVzRow() - Energy vs. Z for each row\n");
-  // printf("  ExThetaCM() - Ex vs ThetaCM\n");
-  // printf("    ExVxCal() - Ex vs X for all %d detectors\n", numDet);
   // printf("-----------------------------------------------------\n");
   // printf("   ShowFitMethod() - Shows various fitting methods \n");
   // printf("   RDTCutCreator() - Create RDT Cuts [May need to edit]\n");
@@ -414,8 +442,8 @@ void MonAnalyzer(){
   // printf("       readTrace() - read trace from gen_runXXX.root \n");
   // printf("    readRawTrace() - read trace from runXXX.root \n");
   // printf("         Check1D() - Count Integral within a range\n");
-  // printf("-----------------------------------------------------\n");
-  // printf("   %s\n", canvasTitle.Data());
+  printf("-----------------------------------------------------\n");
+  printf("   %s\n", title.Data());
   printf("-----------------------------------------------------\n");
 
 }

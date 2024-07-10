@@ -339,6 +339,31 @@ std::vector<std::vector<double>> FindMatchingPair(std::vector<double> enX, std::
    
 }
 
+std::string create_range_string(const std::vector<int>& nums) {
+  std::string range_str;
+  int lastNum = nums[0];
+  int rangeStart = lastNum;
+  for (int i = 1; i < (int) nums.size(); i++) {
+    if (nums[i] == lastNum + 1) {
+      lastNum = nums[i];
+    } else {
+      if (rangeStart == lastNum) {
+        range_str += std::to_string(rangeStart) + "_";
+      } else {
+          range_str += std::to_string(rangeStart) + "-" + std::to_string(lastNum) + "_";
+      }
+      rangeStart = lastNum = nums[i];
+    }
+  }
+  // Add the last range
+  if (rangeStart == lastNum) {
+    range_str += std::to_string(rangeStart);
+  } else {
+    range_str += std::to_string(rangeStart) + "-" + std::to_string(lastNum);
+  }
+  return range_str;
+}
+
 
 }
 

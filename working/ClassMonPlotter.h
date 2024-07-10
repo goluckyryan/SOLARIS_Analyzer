@@ -347,6 +347,7 @@ void MonPlotter::SetUpHistograms(int * rawEnergyRange,
 
 }
 
+//^####################################################### Plot
 void MonPlotter::Plot(){
 
   //TODO a more user-friendly way. 
@@ -367,6 +368,7 @@ void MonPlotter::Plot(){
   }
 }
 
+//^####################################################### 
 void MonPlotter::LoadRDTGate(TString rdtCutFile){
 
   if( rdtCutFile == "" ) return ;
