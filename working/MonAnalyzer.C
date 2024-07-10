@@ -28,7 +28,7 @@ int rawEnergyRange[2] = {     0,    3000};       /// share with e, xf, xn
 int    energyRange[2] = {     0,      10};       /// in the E-Z plot
 int     rdtDERange[2] = {     0,      80}; 
 int      rdtERange[2] = {     0,      80};
-int   thetaCMRange[2] = {0, 80};
+int   thetaCMRange[2] = {     0,      50};       /// deg
 
 double     exRange[3] = {  100,    -2,     10};  /// bin [keV], low[MeV], high[MeV]
 
@@ -51,6 +51,7 @@ std::vector<TString> rdtCutFile1 = {"", ""}; /// {reaction-0, reaction-1}, can a
 
 MonPlotter ** plotter = nullptr;
 int numGeo = 1;
+TChain *gen_tree = nullptr;
 
 void MonAnalyzer(){
 
@@ -58,20 +59,20 @@ void MonAnalyzer(){
   printf("#######################      MonAnalyzer.C    #######################\n");
   printf("#####################################################################\n");
 
-  TChain *chain = new TChain("gen_tree");
-  //chain->Add("../root_data/gen_run043.root");
-  chain->Add("../root_data/trace_run029.root");
+  gen_tree = new TChain("gen_tree");
+  //gen_tree->Add("../root_data/gen_run043.root");
+  gen_tree->Add("../root_data/trace_run033.root");
 
-  TObjArray * fileList = chain->GetListOfFiles();
+  TObjArray * fileList = gen_tree->GetListOfFiles();
   printf("\033[0;31m========================================== Number of Files : %2d\n",fileList->GetEntries());
   fileList->Print();
   printf("========================================== Number of Files : %2d\033[0m\n",fileList->GetEntries());
 
   printf("///////////////////////////////////////////////////////////////////\n");
-  printf("            Total Number of entries : %llu \n", chain->GetEntries());
+  printf("            Total Number of entries : %llu \n", gen_tree->GetEntries());
   printf("///////////////////////////////////////////////////////////////////\n");
 
-  TTreeReader reader(chain);
+  TTreeReader reader(gen_tree);
 
   TTreeReaderValue<ULong64_t>  evID = {reader, "evID"};
   TTreeReaderArray<Float_t>     e   = {reader, "e"};
@@ -85,7 +86,7 @@ void MonAnalyzer(){
   //TODO
   // TTreeReaderArray<TGraph>   array = {reader, "trace"};
 
-  ULong64_t NumEntries = chain->GetEntries();
+  ULong64_t NumEntries = gen_tree->GetEntries();
 
   //*==========================================
   DetGeo * detGeo = new DetGeo("detectorGeo.txt");
@@ -134,9 +135,13 @@ void MonAnalyzer(){
   std::vector<double>xCal  (numTotArray);
   std::vector<double>z     (numTotArray);
 
+
   //^###########################################################
   //^ * Process
   //^###########################################################
+  printf("############################################### Processing...\n");
+  fflush(stdout); // flush out any printf
+
   ULong64_t processedEntries = 0;
   float Frac = 0.1;
   TStopwatch StpWatch;
@@ -148,6 +153,9 @@ void MonAnalyzer(){
     int arrayMulti[numGeo] ; //array multiplicity, when any  is calculated. 
     for( int i = 0; i < numGeo; i++ )  arrayMulti[i] = 0;
     bool rdtgate1 = false;
+    // bool rdtgate2 = false;
+    bool coinFlag = false;
+    bool isGoodEventFlag = false;
 
     for( int id = 0; id < (int) e.GetSize() ; id++ ){
       short aID = detGeo->GetArrayID(id);
@@ -180,11 +188,12 @@ void MonAnalyzer(){
 
       //@==================== When e, xn, or xf is valid.
       arrayMulti[aID] ++;
+      // printf("%8llu | %d, %f %f %f | \n", processedEntries, id, e[id], xn[id], xf[id] );
 
       //@==================== Calibrations go here
-      if( corr->xnCorr.size()  && corr->xfxneCorr.size() ) xnCal[id] = xn[id] * corr->xnCorr[id] * corr->xfxneCorr[id][1] + corr->xfxneCorr[id][0];
-      if( corr->xfxneCorr.size()  )                        xfCal[id] = xf[id] * corr->xfxneCorr[id][1] + corr->xfxneCorr[id][0];
-      if( corr->eCorr.size() )                             eCal[id]  = e[id] / corr->eCorr[id][0] + corr->eCorr[id][1];
+      xnCal[id] = xn[id] * corr->xnCorr[id] * corr->xfxneCorr[id][1] + corr->xfxneCorr[id][0];
+      xfCal[id] = xf[id] * corr->xfxneCorr[id][1] + corr->xfxneCorr[id][0];
+      eCal[id]  = e[id] / corr->eCorr[id][0] + corr->eCorr[id][1];
 
       if( eCal[id] < eCalCut[0] ||  eCalCut[1] < eCal[id] ) continue;
 
@@ -193,7 +202,7 @@ void MonAnalyzer(){
       plotter[aID]->hxfCal_xnCal[id]->Fill(xfCal[id], xnCal[id]);
       plotter[aID]->he_xsCal[id]->Fill(xnCal[id] + xfCal[id], e[id]);
 
-      //@===================== calculate X
+      //@===================== calculate X (0,1)
       if( (xf[id] > 0 || !TMath::IsNaN(xf[id])) && ( xn[id] > 0 || !TMath::IsNaN(xn[id])) ) {
         ///x[id] = 0.5*((xf[id]-xn[id]) / (xf[id]+xn[id]))+0.5;
         x[id] = 0.5*((xf[id]-xn[id]) / e[id])+0.5;
@@ -205,12 +214,12 @@ void MonAnalyzer(){
       if  (  TMath::IsNaN(xf[id]) && !TMath::IsNaN(xn[id]) ) xCal[id] = 1.0 - xnCal[id]/ e[id];
       
       //@=================== Fill in histogram
-      plotter[aID]->he_x[id]->Fill(x[id],e[id]);
+      plotter[aID]->he_x[id]->Fill(e[id], x[id]);
       plotter[aID]->hxfCal_xnCal[id]->Fill(xfCal[id],xnCal[id]);
       plotter[aID]->he_xsCal[id]->Fill(e[id],xnCal[id] + xfCal[id]);
       
       //@======= Scale xcal from (0,1)      
-      if( corr->xScale.size() ) xCal[id] = (xCal[id]-0.5)/corr->xScale[id] + 0.5; /// if include this scale, need to also inclused in Cali_littleTree
+      xCal[id] = (xCal[id]-0.5)/corr->xScale[id] + 0.5; /// if include this scale, need to also inclused in Cali_littleTree
       
       if( abs(xCal[id] - 0.5) > xGate/2. ) continue; 
 
@@ -231,10 +240,10 @@ void MonAnalyzer(){
 
       //@=================== Recoil Gate
       if( plotter[aID]->cutList ){
-        for(int i = 0 ; i < cutList1->GetEntries() ; i++ ){
-          TCutG * cutG = (TCutG *)cutList1->At(i) ;
+        for(int i = 0 ; i < plotter[aID]->cutList->GetEntries() ; i++ ){
+          TCutG * cutG = (TCutG *)plotter[aID]->cutList->At(i) ;
           if(cutG->IsInside(rdt[2*i],rdt[2*i+1])) {
-            rdtgate1= true;
+            rdtgate1 = true;
             break; /// only one is enough
           }
         }
@@ -263,26 +272,27 @@ void MonAnalyzer(){
           if( j%2 == 1) {
             plotter[aID]->htDiff->Fill(tdiff);
             // if((rdtgate1 || rdtgate2) && (eCalCut[1] > eCal[id] && eCal[id]>eCalCut[0])) {
-            //   plotter[aID]->htdiffg->Fill(tdiff);
-            // }
+            if((rdtgate1 ) && (eCalCut[1] > eCal[id] && eCal[id]>eCalCut[0])) {
+              plotter[aID]->htDiffg->Fill(tdiff);
+            }
           }
 
           // hArrayRDTMatrix->Fill(id, j); 
     
-          // if( isTimeGateOn && timeGate[0] < tdiff && tdiff < timeGate[1] ) {
-          //   if(j % 2 == 0 ) hrdt2Dg[j/2]->Fill(rdt[j],rdt[j+1]); /// x=E, y=dE
-          //   ///if(j % 2 == 0 ) hrdt2Dg[j/2]->Fill(rdt[j+1],rdt[j]); /// x=dE, y=E
-          //   hArrayRDTMatrixG->Fill(id, j); 
-          //   ///if( rdtgate1) hArrayRDTMatrixG->Fill(id, j); 
+          if( isTimeGateOn && timeGate[0] < tdiff && tdiff < timeGate[1] ) {
+            if(j % 2 == 0 ) plotter[aID]->hrdt2Dg[j/2]->Fill(rdt[j],rdt[j+1]); /// x=E, y=dE
+            ///if(j % 2 == 0 ) hrdt2Dg[j/2]->Fill(rdt[j+1],rdt[j]); /// x=dE, y=E
+            // hArrayRDTMatrixG->Fill(id, j); 
+            ///if( rdtgate1) hArrayRDTMatrixG->Fill(id, j); 
             
-          //   hrdtg[j]->Fill(rdt[j]);
-          //   coinFlag = true;
+            // plotter[aID]->hrdtg[j]->Fill(rdt[j]);
+            coinFlag = true;
             
-          // }
+          }
         }
       }
       
-      // if( !isTimeGateOn ) coinFlag = true;
+      if( !isTimeGateOn ) coinFlag = true;
 
       //@================ E-Z gate
       // if( EZCut ) { 
@@ -290,15 +300,14 @@ void MonAnalyzer(){
       // }else{
       //   ezGate = true;
       // }
-      
+
+      //@================ is Good Event ?
       // if( coinFlag && (rdtgate1 || rdtgate2) && ezGate){ 
-      //   plotter[arrayID]->heCalVzGC->Fill( z[id] , eCal[id] );
+      if( coinFlag && rdtgate1){ 
+        plotter[aID]->heCal_zGC->Fill( z[id] , eCal[id] );
       
-      //   heCalVxCalG[id]->Fill(xCal[id]*detGeo->array[arrayID].detLength, eCal[id]);
-    
-      //   multiEZ ++;
-      //   isGoodEventFlag = true;
-      // }
+        isGoodEventFlag = true;
+      }
 
     }//*====== end of array loop
 
@@ -321,8 +330,9 @@ void MonAnalyzer(){
       plotter[j]->hrdtMulti->Fill(recoilMulti);
     }
     
-
     //@*********** Ex and thetaCM ****************************************/ 
+    if( !isGoodEventFlag ) continue;
+    
     for(Int_t id = 0; id < numTotArray ; id++){
         
       if( TMath::IsNaN(e[id]) ) continue ; 
@@ -363,10 +373,11 @@ void MonAnalyzer(){
       int len = msg.Sizeof();
       printf(" %3.0f%% (%*llu/%llu k) processed in %6.1f sec | expect %6.1f sec\n",
                 Frac*100, len, processedEntries/1000,NumEntries/1000,StpWatch.RealTime(), StpWatch.RealTime()/Frac);
+      fflush(stdout);
       StpWatch.Start(kFALSE);
       Frac += 0.1;
     }
-    if( processedEntries > 1000 ) break;
+    // if( processedEntries > 1000 ) break;
   
   }//^############################################## End of Process
   gStyle->SetOptStat("neiou");
@@ -386,13 +397,13 @@ void MonAnalyzer(){
   // printf("-----------------------------------------------------\n");
   printf("        raw() - Raw data\n");
   printf("        cal() - Calibrated data\n");
+  printf("        rdt() - Raw RDT data\n");
   printf("-----------------------------------------------------\n");
   printf("         ez() - Energy vs. Z\n");
+  printf("-----------------------------------------------------\n");
   printf("     excite() - Excitation Energy\n");
-  // printf("    recoils() - Raw DE vs. E Recoil spectra\n");
   //printf("       elum() - Luminosity Energy Spectra\n");
   //printf("         ic() - Ionization Chamber Spectra\n");
-  // printf("-----------------------------------------------------\n");
   // printf("  eCalVzRow() - Energy vs. Z for each row\n");
   // printf("  ExThetaCM() - Ex vs ThetaCM\n");
   // printf("    ExVxCal() - Ex vs X for all %d detectors\n", numDet);
@@ -424,6 +435,10 @@ void cal(int arrayID = -1){
   }else{
     if( arrayID < numGeo) plotter[arrayID]->PlotCal();
   }
+}
+
+void rdt(bool isLog = false){
+  plotter[0]->PlotRDT(isLog);
 }
 
 void ez(int arrayID = -1){

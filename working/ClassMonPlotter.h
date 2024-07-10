@@ -72,6 +72,8 @@ public:
   void PlotEZ();
   void PlotEx();
   
+  void PlotRDT(bool isLog = false);
+
   TCanvas * canvas;
 
   //====================== Histograms
@@ -148,7 +150,7 @@ MonPlotter::MonPlotter(unsigned short arrayID, DetGeo * detGeo, int numRDT){
 
   suffix = Form("_%d", arrayID);
 
-  this->numRDT = numDet;
+  this->numRDT = numRDT;
   recoilOutter = detGeo->aux[aID].outerRadius;
 
   zRange[0] = detGeo->array[aID].zMin - 50;
@@ -218,7 +220,6 @@ MonPlotter::~MonPlotter(){
   delete [] hrdt2D;
   delete [] hrdt2Dg;
 
-  delete cutG; 
   delete cutList;
 
 }
@@ -271,7 +272,7 @@ void MonPlotter::SetUpHistograms(int * rawEnergyRange,
   hxf_ID = new TH2F("hxf_ID" + suffix, "Raw xf vs array ID; Array ID; Raw xf",  numDet, 0, numDet,  200, rawEnergyRange[0], rawEnergyRange[1]);
   hxn_ID = new TH2F("hxn_ID" + suffix, "Raw xn vs array ID; Array ID; Raw xn",  numDet, 0, numDet,  200, rawEnergyRange[0], rawEnergyRange[1]);
 
-  hArrayMulti = new TH1I("hArrayMulti", "Array Multiplicity", numDet, 0, numDet);
+  hArrayMulti = new TH1I("hArrayMulti", "Array Multiplicity ( e and (xf or xn) )", numDet, 0, numDet);
 
   CreateListOfHist1D(he,   numDet, "he",  "Raw e (ch=%d); e (channel); count",            200, rawEnergyRange[0], rawEnergyRange[1]);
   CreateListOfHist1D(hxf,  numDet, "hxf", "Raw xf (ch=%d); e (channel); count",           200, rawEnergyRange[0], rawEnergyRange[1]);
@@ -280,7 +281,7 @@ void MonPlotter::SetUpHistograms(int * rawEnergyRange,
   CreateListOfHist2D(hxf_xn, numDet, "hxf_xn", "Raw xf vs. xn (ch=%d);xf (channel);xn (channel)"     , 500, rawEnergyRange[0], rawEnergyRange[1], 500, rawEnergyRange[0], rawEnergyRange[1]);
   CreateListOfHist2D(he_xs,  numDet, "he_xs",  "Raw e vs xf+xn (ch=%d); xf+xn (channel); e (channel)", 500, rawEnergyRange[0], rawEnergyRange[1], 500, rawEnergyRange[0], rawEnergyRange[1]);
 
-  CreateListOfHist2D(he_x        , numDet, "he_x",     "Raw e vs x (ch=%d); x (mm); Raw e (channel)",  500, rawEnergyRange[0], rawEnergyRange[1], 500, -1, detLength +1);
+  CreateListOfHist2D(he_x        , numDet, "he_x",     "Raw e vs x (ch=%d); x (mm); Raw e (channel)",  500, rawEnergyRange[0], rawEnergyRange[1], 500, -0.5, 1.5);
   CreateListOfHist2D(hxfCal_xnCal, numDet, "hxfCal_xnCal", "Corrected XF vs. XN (ch=%d);XF (channel);XN (channel)",                         500,                 0, rawEnergyRange[1], 500,                 0, rawEnergyRange[1]);      
   CreateListOfHist2D(he_xsCal    , numDet, "he_xsCal",     "Raw e vs Corrected xf+xn (ch=%d); corrected xf+xn (channel); Raw e (channel)",  500, rawEnergyRange[0], rawEnergyRange[1], 500, rawEnergyRange[0], rawEnergyRange[1]);
   
@@ -347,12 +348,19 @@ void MonPlotter::SetUpHistograms(int * rawEnergyRange,
 }
 
 void MonPlotter::Plot(){
+
+  //TODO a more user-friendly way. 
+  //TODO display text on the plot. 
+
   for( int i = 1; i <= numPad; i++ ){
     canvas->cd(i);
     switch (i){
       case 1: heCal_z->Draw("colz");break;
       case 2: heCal_zGC->Draw("colz");break;
-      case 3: htDiff->Draw("");break;
+      case 3: {
+        htDiff->Draw("");
+        htDiffg->Draw("same");
+      }break;
       case 4: hEx->Draw("colz");break;
       default:break;
     }
@@ -366,7 +374,7 @@ void MonPlotter::LoadRDTGate(TString rdtCutFile){
   TFile * fCut = new TFile(rdtCutFile);
   bool isCutFileOpen = fCut->IsOpen();
   if(!isCutFileOpen) {
-    printf( "Failed to open rdt-cutfile 1 : %s\n" , fileName.Data());
+    printf( "Failed to open rdt-cutfile 1 : %s\n" , rdtCutFile.Data());
   }else{
     cutList = (TObjArray *) fCut->FindObjectAny("cutList");
 
@@ -461,12 +469,13 @@ void MonPlotter::PlotCal(){
 
   TCanvas *cxfxneC = new TCanvas("cxfxneC" + suffix,Form("Raw E - Corrected XF+XN | %s", canvasTitle.Data()), 200 + 500 * aID, 200, canvasSize[0], canvasSize[1]);
   cxfxneC->Clear(); cxfxneC->Divide(colDet,rowDet);
-  TLine line(0,0, 4000, 4000); line.SetLineColor(2);
+  TLine * line = new TLine(0,0, 4000, 4000); 
+  line->SetLineColor(2);
   for (Int_t i=0;i<numDet;i++) {
     cxfxneC->cd(i+1); 
     cxfxneC->cd(i+1)->SetGrid(); 
     he_xsCal[i]->Draw("col");
-    line.Draw("same");
+    line->Draw("same");
   }
 
   TCanvas *cEC = new TCanvas("cEC" + suffix,Form("E corrected | %s", canvasTitle.Data()), 300 + 500 * aID, 300, canvasSize[0], canvasSize[1]);
@@ -502,25 +511,7 @@ void MonPlotter::PlotEZ(){
 
 void MonPlotter::PlotEx(){
 
-  TCanvas *cex = new TCanvas("cex" + suffix,Form("EX : %s", canvasTitle.Data()),0, 0, 1000,650);
-  cex->Clear();
-  gStyle->SetOptStat("neiou");
-  hEx->Draw("");
-  
-  TCanvas *cexI = new TCanvas("cexI" + suffix,Form("EX : %s", canvasTitle.Data()),500, 0, 1600,1000);
-  cexI->Clear();cexI->Divide(colDet,rowDet);
-  gStyle->SetOptStat("neiou");
-  for( int i = 0; i < numDet; i++){
-    cexI->cd(i+1); 
-    hExi[i]->Draw("");
-  }
-
-  TCanvas *cExThetaCM = new TCanvas("cExThetaCM" + suffix,Form("EX - ThetaCM | %s", canvasTitle.Data()), 500, 500, 650,650);
-  cExThetaCM->Clear();
-  gStyle->SetOptStat("neiou");
-  hEx_ThetaCM->Draw("colz");
-
-  TCanvas *cExVxCal = new TCanvas("cExVxCal" + suffix,Form("EX | %s", canvasTitle.Data()),200, 200, 1600,1000);
+  TCanvas *cExVxCal = new TCanvas("cExVxCal" + suffix,Form("EX | %s", canvasTitle.Data()), 200 + 1000 * aID, 200, 1600,1000);
   cExVxCal->Clear();
   gStyle->SetOptStat("neiou");
   cExVxCal->Divide(colDet,rowDet);
@@ -528,6 +519,48 @@ void MonPlotter::PlotEx(){
     cExVxCal->cd(i+1); 
     hEx_xCal[i]->SetMarkerStyle(7);
     hEx_xCal[i]->Draw();
+  }
+  
+  TCanvas *cexI = new TCanvas("cexI" + suffix,Form("EX : %s", canvasTitle.Data()),300 + 1000 * aID, 300, 1600,1000);
+  cexI->Clear();cexI->Divide(colDet,rowDet);
+  gStyle->SetOptStat("neiou");
+  for( int i = 0; i < numDet; i++){
+    cexI->cd(i+1); 
+    hExi[i]->Draw("");
+  }
+
+  TCanvas *cExThetaCM = new TCanvas("cExThetaCM" + suffix,Form("EX - ThetaCM | %s", canvasTitle.Data()), 400 + 1000 * aID, 400, 650,650);
+  cExThetaCM->Clear();
+  gStyle->SetOptStat("neiou");
+  hEx_ThetaCM->Draw("colz");
+
+  TCanvas *cex = new TCanvas("cex" + suffix,Form("EX : %s", canvasTitle.Data()), 500 + 1000 * aID, 500, 1000,650);
+  cex->Clear();
+  gStyle->SetOptStat("neiou");
+  hEx->Draw("");
+
+}
+
+void MonPlotter::PlotRDT(bool isLog){
+
+  TCanvas *crdt = new TCanvas("crdt" + suffix,Form("raw RDT | %s", canvasTitle.Data()), 1000, 0, 1000,1000);
+  crdt->Clear();crdt->Divide(numRDT/4,2);
+
+  for( int i = 0; i < numRDT/2; i++){
+    if( isLog ) crdt->cd(i+1)->SetLogz(); crdt->cd(i+1); hrdt2D[i]->Draw("col");  
+  }
+  
+  TCanvas *crdtID = new TCanvas("crdtID" + suffix,Form("raw RDT ID | %s", canvasTitle.Data()),1100,1100, 500, 500);
+  crdtID->Clear();
+  if( isLog ) crdtID->SetLogz(); 
+  hrdt_ID->Draw("colz");
+  
+  TCanvas *crdtS = new TCanvas("crdtS" + suffix,Form("raw RDT | %s", canvasTitle.Data()),1200, 1200, 1000, 1000);
+  crdtS->Clear(); crdtS->Divide(2,numRDT/2);
+  for( int i = 0; i < numRDT; i ++){
+    crdtS->cd(i+1);
+    if( isLog ) crdtS->cd(i+1)->SetLogy(); 
+    hrdt[i]->Draw("");
   }
 
 }
