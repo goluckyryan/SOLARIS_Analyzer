@@ -1,0 +1,30 @@
+//enum plotID { pEZ,               /// 0
+//              pRecoilXY,         /// 1
+//              pThetaCM,          /// 2
+//              pExCal,            /// 3
+//              pArrayXY,          /// 4
+//              pInfo,             /// 5
+//              pElum1XY,          /// 6
+//              pRecoilXY1,        /// 7
+//              pRecoilXY2,        /// 8
+//              pTDiffZ,           /// 9
+//              pRecoilRThetaCM,   /// 10
+//              pRecoilRZ,         /// 11
+//              pEElum1R,          /// 12
+//              pRecoilRTR,        /// 13
+//              pThetaCM_Z,        /// 14
+//              pElum1RThetaCM,    /// 15 
+//              pEmpty };          /// 16
+//============================================== User Config
+//*============================ Canvas Setting, take the shape of the Canvas
+     pEZ,    pExCal, pArrayXY, pTDiffZ 
+pThetaCM, pRecoilXY,    pInfo, pThetaCM_Z
+//^============================= Gate Setting
+hit == 1 && loop <= 1 && thetaCM > 10
+//@============================= Other Settings
+elum_Max : 60  //mm
+thetaCM_Max : 50 //deg 
+//#============================== example of gate
+hit == 1 && loop <= 1 && thetaCM > 10 && detRowID == 0
+hit == 1 && loop <= 1
+15 < rhoElum1 && rhoElum1 < 50 && rhoElum2 > 60
