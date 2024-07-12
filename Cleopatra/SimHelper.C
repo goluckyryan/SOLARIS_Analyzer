@@ -362,7 +362,7 @@ void MyMainFrame::OpenFile(int ID){
   if ( ID == 6 ) fileName = "../working/DWBA.out";
   if ( ID == 7 ) fileName = "../working/DWBA.Xsec.txt";    
 
-  if ( ID == 4 ) fileName = "../working/SimChecker_Config.txt";
+  if ( ID == 4 ) fileName = "../working/SimCheckerConfig.txt";
   if ( ID == 8 ) fileName = isoFileName;
   
   //test if file exist

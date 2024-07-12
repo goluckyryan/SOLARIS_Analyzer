@@ -28,7 +28,7 @@
 plotID StringToPlotID(TString str);
 
 void SimChecker(TString filename = "transfer.root",
-                TString configFile = "../working/SimChecker_Config.txt",
+                TString configFile = "../working/SimCheckerConfig.txt",
                 Int_t padSize = 500,
                 bool outputCanvas = false){
 
