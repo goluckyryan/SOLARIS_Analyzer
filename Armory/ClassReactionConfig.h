@@ -12,9 +12,11 @@
 #include "TMacro.h"
 
 #include "AnalysisLib.h"
+#include "../Cleopatra/ClassIsotope.h"
 
 struct Recoil {
 
+  Isotope light;
   unsigned short lightA, lightZ; 
   unsigned short heavyA, heavyZ; 
 
@@ -86,6 +88,7 @@ public:
   ReactionConfig(TMacro * macro){ LoadReactionConfig(macro);}
   ~ReactionConfig(){}
 
+  Isotope beam;
   unsigned short beamA, beamZ;       
   float beamEx;             ///excitation_energy_of_A[MeV]
   float beamEnergy;         ///MeV/u
@@ -95,6 +98,7 @@ public:
   float beamX;              ///x_offset_of_Beam_in_mm
   float beamY;              ///y_offset_of_Beam_in_mm
 
+  Isotope target;
   unsigned short targetA, targetZ;     
   bool isTargetScattering;  ///isTargetScattering
   float targetDensity;      ///target_density_in_g/cm3
@@ -191,41 +195,48 @@ inline bool ReactionConfig::LoadReactionConfig(TMacro * macro){
     }
 
     if( recoilFlag == 0 ){
-      if( recoilLine == 0 ) beamA           = atoi(str[0].c_str());
-      if( recoilLine == 1 ) beamZ           = atoi(str[0].c_str());
-      if( recoilLine == 2 ) beamEx          = atoi(str[0].c_str());
+      if( recoilLine == 0 ) {
+        beam.SetIsoByName(str[0]);
+        beamA = beam.A;
+        beamZ = beam.Z;
+      }
+      if( recoilLine == 1 ) beamEx          = atoi(str[0].c_str());
+      if( recoilLine == 2 ) beamEnergy      = atof(str[0].c_str());
+      if( recoilLine == 3 ) beamEnergySigma = atof(str[0].c_str());
+      if( recoilLine == 4 ) beamTheta       = atof(str[0].c_str());
+      if( recoilLine == 5 ) beamThetaSigma  = atof(str[0].c_str());
+      if( recoilLine == 6 ) beamX = atof(str[0].c_str());
+      if( recoilLine == 7 ) beamY = atof(str[0].c_str());
 
-      if( recoilLine == 3 ) beamEnergy      = atof(str[0].c_str());
-      if( recoilLine == 4 ) beamEnergySigma = atof(str[0].c_str());
-      if( recoilLine == 5 ) beamTheta       = atof(str[0].c_str());
-      if( recoilLine == 6 ) beamThetaSigma  = atof(str[0].c_str());
-      if( recoilLine == 7 ) beamX = atof(str[0].c_str());
-      if( recoilLine == 8 ) beamY = atof(str[0].c_str());
+      if( recoilLine ==  8 ) {
+        target.SetIsoByName(str[0]);
+        targetA = target.A;
+        targetZ = target.Z;
+      }
+      if( recoilLine == 10 ) isTargetScattering    = str[0].compare("true")  == 0 ? true: false;
+      if( recoilLine == 11 ) targetDensity         = atof(str[0].c_str());
+      if( recoilLine == 12 ) targetThickness       = atof(str[0].c_str());
+      if( recoilLine == 13 ) beamStoppingPowerFile = str[0];
 
-      if( recoilLine ==  9 ) targetA         = atoi(str[0].c_str());
-      if( recoilLine == 10 ) targetZ         = atoi(str[0].c_str());
-
-      if( recoilLine == 11 ) isTargetScattering    = str[0].compare("true")  == 0 ? true: false;
-      if( recoilLine == 12 ) targetDensity         = atof(str[0].c_str());
-      if( recoilLine == 13 ) targetThickness       = atof(str[0].c_str());
-      if( recoilLine == 14 ) beamStoppingPowerFile = str[0];
-
-      if( recoilLine == 15 ) numEvents = atoi(str[0].c_str());
-      if( recoilLine == 16 ) isRedo    = str[0].compare("true" ) == 0 ? true : false;
+      if( recoilLine == 14 ) numEvents = atoi(str[0].c_str());
+      if( recoilLine == 15 ) isRedo    = str[0].compare("true" ) == 0 ? true : false;
     }
 
     if( recoilFlag > 0 ){
 
       unsigned ID = recoilFlag - 1;
-      if( recoilLine == 0 ) recoil[ID].lightA  = atoi(str[0].c_str());
-      if( recoilLine == 1 ) recoil[ID].lightZ  = atoi(str[0].c_str());
-      if( recoilLine == 2 ) recoil[ID].lightStoppingPowerFile = str[0];
-      if( recoilLine == 3 ) recoil[ID].heavyStoppingPowerFile = str[0];
-      if( recoilLine == 4 ) recoil[ID].isDecay = str[0].compare("true")  == 0 ? true : false;
-      if( recoilLine == 5 ) recoil[ID].decayA  = atoi(str[0].c_str());
-      if( recoilLine == 6 ) recoil[ID].decayZ  = atoi(str[0].c_str());
+      if( recoilLine == 0 ) {
+        recoil[ID].light.SetIsoByName(str[0]);
+        recoil[ID].lightA  = recoil[ID].light.A;
+        recoil[ID].lightZ  = recoil[ID].light.Z;
+      }
+      if( recoilLine == 1 ) recoil[ID].lightStoppingPowerFile = str[0];
+      if( recoilLine == 2 ) recoil[ID].heavyStoppingPowerFile = str[0];
+      if( recoilLine == 3 ) recoil[ID].isDecay = str[0].compare("true")  == 0 ? true : false;
+      if( recoilLine == 4 ) recoil[ID].decayA  = atoi(str[0].c_str());
+      if( recoilLine == 5 ) recoil[ID].decayZ  = atoi(str[0].c_str());
 
-      if( recoilLine > 6 && str.size() == 4) {
+      if( recoilLine > 5 && str.size() == 4) {
         if( str[0].find('#') != std::string::npos) continue;
         if( str[0] == "IAEA"){
                     

@@ -1,7 +1,6 @@
 #--- '#---' comment line identifier
 #------------- beam
-32             //beam_A
-14             //beam_Z
+32Si             //beam_symbol
 0.0            //excitation_energy_of_beam[MeV]
 8.8            //beam-energy_in_MeV/u
 0.000          //beam-energy_sigma_in_MeV/u
@@ -11,8 +10,7 @@
 0.00           //y_offset_of_Beam_in_mm
 
 #------------- target
-2               //target_A
-1               //target_Z
+d               //target_symbol
 false           //isTargetScattering
 0.913           //target_density_in_g/cm3
 2.2e-4          //targetThickness_in_cm
@@ -26,8 +24,7 @@ false           //Redo_until_hit_array=all_events_hit_array
 #---- If not, somethings funny would happens.
 
 #=================reaction_for_1st_Array
-1               //recoil_light_A
-1               //recoil-light_Z
+p               //recoil_light
 ../SRIM/3H_in_CD2.txt   //stopping_power_for_light_recoil
 ../SRIM/19F_in_CD2.txt  //stopping_power_for_heavy_recoil
 false           //isDacay
@@ -43,8 +40,7 @@ false           //isDacay
 IAEA      +       10     0.01
 
 #==================_reaction_for_2nd_Array_use_ony_when_2nd_array_used
-3               //recoil_light_A
-2               //recoil-light_Z
+3He               //recoil_light
 ../SRIM/3H_in_CD2.txt   //stopping_power_for_light_recoil
 ../SRIM/19F_in_CD2.txt  //stopping_power_for_heavy_recoil
 false           //isDacay
