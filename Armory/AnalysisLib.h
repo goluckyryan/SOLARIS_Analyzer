@@ -5,6 +5,7 @@
 #include <vector>
 #include <fstream>
 #include <string>
+#include <iostream>
 
 #include <TMacro.h>
 #include <TList.h>
@@ -15,6 +16,27 @@
 #include <TGraph.h>
 
 namespace AnalysisLib {
+
+//*######################################### Execute Python Script
+std::vector<std::string> executePythonScript(std::string command) {
+  std::vector<std::string> result;
+  printf("Python : %s \n", command.c_str());
+  FILE* pipe = popen(command.c_str(), "r");
+  if (!pipe) {
+      std::cerr << "Failed to open pipe for command: " << command << std::endl;
+      return result;
+  }
+
+  constexpr int buffer_size = 256;
+  char buffer[buffer_size];
+
+  while (fgets(buffer, buffer_size, pipe) != nullptr) {
+      result.emplace_back(buffer);
+  }
+
+  pclose(pipe);
+  return result;
+}
 
 //*######################################### TRAPEZOID 
 TGraph * TrapezoidFilter(TGraph * trace, int baseLineEnd = 80, int riseTime = 10, int flatTop = 20, float decayTime = 2000){

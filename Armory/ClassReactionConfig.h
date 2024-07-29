@@ -225,7 +225,64 @@ inline bool ReactionConfig::LoadReactionConfig(TMacro * macro){
       if( recoilLine == 5 ) recoil[ID].decayA  = atoi(str[0].c_str());
       if( recoilLine == 6 ) recoil[ID].decayZ  = atoi(str[0].c_str());
 
-      if( recoilLine > 6 && str.size() == 4) exList[ID].Add( atoi(str[0].c_str()), atoi(str[1].c_str()), atoi(str[2].c_str()), atoi(str[3].c_str()));
+      if( recoilLine > 6 && str.size() == 4) {
+        if( str[0] == "IAEA"){
+          
+          exList[ID].Clear();
+          
+          recoil[ID].heavyA = beamA + targetA - recoil[ID].lightA;
+          recoil[ID].heavyZ = beamZ + targetZ - recoil[ID].lightZ;
+          printf(">>>>>>>>>>>>> Retrieving Ex data from IAEA website....\n");
+          std::string scriptPath = "../WebSimHelper/getEx.py " + std::to_string(recoil[ID].heavyA) + " " + std::to_string(recoil[ID].heavyZ) + " " + str[2];
+          std::vector<std::string> output = AnalysisLib::executePythonScript(scriptPath);
+
+          if( output.size() > 1 ){
+            for( size_t dudu = 1 ; dudu < output.size(); dudu ++ ){
+              printf("%s", output[dudu].c_str());
+              std::vector<std::string> dondon = AnalysisLib::SplitStr(output[dudu], " ");
+
+              if( str[1].find("all") == std::string::npos){ // only comfirm states
+                if(dondon[2].find(')') != std::string::npos  ) continue;
+                if(dondon[2].find('N') != std::string::npos  ) continue;
+                // printf("kdlsakdas ---- %s\n", str[1].c_str());
+
+                if(str[1] == "+" && dondon[2].find('+') != std::string::npos  ){
+                  // printf(" only comfim + states\n");
+                  exList[ID].Add( atoi(dondon[1].c_str()), 1.0, 1.0, atoi(str[3].c_str()));
+                }
+                if(str[1] == "-" && dondon[2].find('-') != std::string::npos  ){
+                  // printf(" only comfim - states\n");
+                  exList[ID].Add( atoi(dondon[1].c_str()), 1.0, 1.0, atoi(str[3].c_str()));
+                }
+                if( str[1] == "known"  ){
+                  // printf(" All comfim state\n");
+                  exList[ID].Add( atoi(dondon[1].c_str()), 1.0, 1.0, atoi(str[3].c_str()));
+                }
+
+              }else{
+                if(str[1] == "+all" && dondon[2].find('+') != std::string::npos  ){
+                  // printf(" All state : %s\n", str[1].c_str());
+                  exList[ID].Add( atoi(dondon[1].c_str()), 1.0, 1.0, atoi(str[3].c_str()));
+                }
+                if(str[1] == "-all" && dondon[2].find('-') != std::string::npos  ){
+                  // printf(" All state : %s\n", str[1].c_str());
+                  exList[ID].Add( atoi(dondon[1].c_str()), 1.0, 1.0, atoi(str[3].c_str()));
+                }
+                if( str[1] == "all" ){
+                  // printf(" All state \n");
+                  exList[ID].Add( atoi(dondon[1].c_str()), 1.0, 1.0, atoi(str[3].c_str()));
+                }
+
+              }
+            }
+          }else{
+            printf(" No states found from IAEA database, assume ground state.");
+            exList[ID].Add( 0, 1.0, 1.0, 0.01);
+          }
+        }else{
+          exList[ID].Add( atoi(str[0].c_str()), atoi(str[1].c_str()), atoi(str[2].c_str()), atoi(str[3].c_str()));
+        }
+      }
 
     }
 

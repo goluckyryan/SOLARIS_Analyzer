@@ -41,7 +41,7 @@ except FileNotFoundError:
 ##        'ENSDFauthors', 'Extraction_date']
 
 
-def GetExList(ASym : str, maxEx : float):
+def GetExList(ASym : str, maxEx : float) ->pd.DataFrame:
   try:
     exList = lc_read_csv(livechart + "fields=levels&nuclides=" + ASym)
     exJpi = exList[['energy', 'jp']]
