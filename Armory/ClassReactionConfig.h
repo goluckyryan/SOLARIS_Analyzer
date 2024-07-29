@@ -226,10 +226,9 @@ inline bool ReactionConfig::LoadReactionConfig(TMacro * macro){
       if( recoilLine == 6 ) recoil[ID].decayZ  = atoi(str[0].c_str());
 
       if( recoilLine > 6 && str.size() == 4) {
+        if( str[0].find('#') != std::string::npos) continue;
         if( str[0] == "IAEA"){
-          
-          exList[ID].Clear();
-          
+                    
           recoil[ID].heavyA = beamA + targetA - recoil[ID].lightA;
           recoil[ID].heavyZ = beamZ + targetZ - recoil[ID].lightZ;
           printf(">>>>>>>>>>>>> Retrieving Ex data from IAEA website....\n");
