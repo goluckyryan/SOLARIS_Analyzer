@@ -72,7 +72,7 @@ void Transfer(
   int count = 0;
   for( unsigned short i = 0 ; i < numDetGeo; i++){
     if( detGeoConfig.array[i].enable ){
-      transfer[count].SetReactionFromFile(basicConfig, i);
+      transfer[count].SetReactionFromReactionConfigClass(reactionConfig, i);
       if(transfer[count].GetRecoil().isDecay) {
         decay[count].SetMotherDaugther(transfer[count].GetRecoil());
       }

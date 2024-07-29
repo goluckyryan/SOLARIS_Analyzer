@@ -490,10 +490,11 @@ std::vector<double> Plotter::FindRange(TString branch){
   TH1F * temp1 = (TH1F *) gROOT->FindObjectAny("temp1");
 
   std::vector<double> output;
-  output.push_back( temp1->GetXaxis()->GetXmax() );
-  output.push_back( temp1->GetXaxis()->GetXmin() );
-
-  delete temp1;
+  if( temp1 != nullptr){
+    output.push_back( temp1->GetXaxis()->GetXmax() );
+    output.push_back( temp1->GetXaxis()->GetXmin() );
+    delete temp1;
+  }
   return output;
 }
 

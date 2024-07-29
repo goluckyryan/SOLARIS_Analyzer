@@ -39,6 +39,7 @@ public:
   void SetB(int A, int Z);
   void SetIncidentEnergyAngle(double KEA, double theta, double phi);
 
+  void SetReactionFromReactionConfigClass(ReactionConfig reactConfigClassObject, unsigned short ID = 0);
   void SetReactionFromFile(std::string configFile, unsigned short ID = 0);
   void SetReactionFromTMacro(TMacro configMacro, unsigned short ID = 0);
   void SetReactionSimple(int beamA, int beamZ,
@@ -281,6 +282,30 @@ void TransferReaction::SetExA(double Ex){
 void TransferReaction::SetExB(double Ex){
   this->ExB = Ex;
   isReady = false;
+}
+
+void TransferReaction::SetReactionFromReactionConfigClass(ReactionConfig reactConfigClassObject, unsigned short ID){
+
+  config = reactConfigClassObject;
+  SetA(config.beamA, config.beamZ);
+  Seta(config.targetA, config.targetZ);
+
+  SetExA(config.beamEx);
+
+  if( ID > config.recoil.size() ){
+    printf("Reaction Config only has %zu recoil settings. input is %u. Abort.\n", config.recoil.size(), ID);
+    return;
+  }
+
+  recoil = config.recoil[ID];
+  exList = config.exList[ID];
+
+  Setb(recoil.lightA, recoil.lightZ);
+  SetB(recoil.heavyA, recoil.heavyZ);
+  SetIncidentEnergyAngle(config.beamEnergy, 0, 0);
+
+  CalReactionConstant();
+
 }
 
 void TransferReaction::SetReactionFromFile(std::string configFile, unsigned short ID){

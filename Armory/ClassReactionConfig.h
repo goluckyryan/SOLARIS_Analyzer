@@ -213,13 +213,13 @@ inline bool ReactionConfig::LoadReactionConfig(TMacro * macro){
         targetA = target.A;
         targetZ = target.Z;
       }
-      if( recoilLine == 10 ) isTargetScattering    = str[0].compare("true")  == 0 ? true: false;
-      if( recoilLine == 11 ) targetDensity         = atof(str[0].c_str());
-      if( recoilLine == 12 ) targetThickness       = atof(str[0].c_str());
-      if( recoilLine == 13 ) beamStoppingPowerFile = str[0];
+      if( recoilLine ==  9 ) isTargetScattering    = str[0].compare("true")  == 0 ? true: false;
+      if( recoilLine == 10 ) targetDensity         = atof(str[0].c_str());
+      if( recoilLine == 11 ) targetThickness       = atof(str[0].c_str());
+      if( recoilLine == 12 ) beamStoppingPowerFile = str[0];
 
-      if( recoilLine == 14 ) numEvents = atoi(str[0].c_str());
-      if( recoilLine == 15 ) isRedo    = str[0].compare("true" ) == 0 ? true : false;
+      if( recoilLine == 13 ) numEvents = atoi(str[0].c_str());
+      if( recoilLine == 14 ) isRedo    = str[0].compare("true" ) == 0 ? true : false;
     }
 
     if( recoilFlag > 0 ){
