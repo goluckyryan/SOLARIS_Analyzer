@@ -302,13 +302,13 @@ int HELIOS::CheckDetAcceptance(){
   if( array.firstPos > 0 && orbitb.z < 0 ) {acceptanceCode = -2; return acceptanceCode;}
 
   // -11 ======== rho is too small
-  if(  2 * orbitb.rho < array.detPerpDist ) { acceptanceCode = -11; return acceptanceCode;} 
+  if( 2 * orbitb.rho < array.detPerpDist ) { acceptanceCode = -11; return acceptanceCode;} 
   
   // -15 ========= if detRowID == -1, should be (2 * orbitb.rho < perpDist)
   if( orbitb.detRowID == -1 ) {acceptanceCode = -15; return acceptanceCode;}
   
   // -10 =========== when rho is too big . 
-  if( detGeo.bore < 2 * orbitb.rho) { acceptanceCode = -10; return acceptanceCode;} 
+  if( array.detFaceOut && detGeo.bore < 2 * orbitb.rho) { acceptanceCode = -10; return acceptanceCode;} 
   
   // -14 ========== check particle-B hit radius on recoil dectector
   if( isCoincidentWithRecoil && orbitB.R > aux.outerRadius  ) {acceptanceCode = -14; return acceptanceCode;} 

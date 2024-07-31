@@ -179,7 +179,7 @@ inline bool DetGeo::LoadDetectorGeo(TMacro * macro, bool verbose){
     std::vector<std::string> str = AnalysisLib::SplitStr(line, " ");
 
     // printf("%3d | %s\n", i,  str[0].c_str());
-
+    if( str[0].find("#//") != std::string::npos ) continue;
     if( str[0].find("####") != std::string::npos ) break;
     if( str[0].find("#===") != std::string::npos ) {
       detFlag ++;
