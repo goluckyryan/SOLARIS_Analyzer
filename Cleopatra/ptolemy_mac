@@ -1,2 +1,2 @@
 #!/bin/bash
-docker run --rm -i -w $PWD tehatanlgov/ptolemy
+docker run --rm --platform linux/amd64 -i -w $PWD tehatanlgov/ptolemy
