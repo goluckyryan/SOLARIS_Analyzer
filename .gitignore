@@ -30,5 +30,7 @@ Cleopatra/SimTransfer
 Cleopatra/SimTransfer_single
 Cleopatra/Cleopatra
 
+EventBuilder
+
 __pycache__
 *.DS_Store

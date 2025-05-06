@@ -4,7 +4,8 @@
             "name": "Mac",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/Applications/root_v6.30.06/include/**"
+                "/Applications/root_v6.30.06/include/**",
+                "/opt/homebrew/Cellar/root/6.34.08_1/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/g++",
