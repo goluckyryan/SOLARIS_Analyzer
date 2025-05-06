@@ -1,2 +1,0 @@
-#!/bin/bash
-docker run --rm --platform linux/amd64 -i -w $PWD tehatanlgov/ptolemy
