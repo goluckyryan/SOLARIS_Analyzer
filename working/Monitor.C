@@ -12,6 +12,7 @@
 #include "TFile.h"
 #include "TChain.h"
 #include "TH1F.h"
+#include "TMacro.h"
 #include "TTreeReader.h"
 #include "TTreeReaderValue.h"
 #include "TTreeReaderArray.h"

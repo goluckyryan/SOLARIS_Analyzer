@@ -1,1 +1,1 @@
-../Cleopatra/SimHelper.C
+../cleopatra/SimHelper.C
