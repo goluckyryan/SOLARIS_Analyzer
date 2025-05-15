@@ -162,8 +162,7 @@ ln -sfv ${rootData} root_data
 
 if [ ${PCID} -eq 1 ]; then 
 
-  ############### tell Database SetupNewExp change exp.
-  
+  ############### tell Database SetupNewExp change exp.  
   echo -e "=================== Tell the database"
 
   haha1=${databaseIP}"/write?db="${databaseName}
@@ -171,13 +170,12 @@ if [ ${PCID} -eq 1 ]; then
   if [ ${isBranchExist} -eq 0 ]; then
     haha2="RunID,start=0 value=0,expName=\"${expName}\",comment=\"New_experiment_[${expName}]_was_created.\""
   else
-
-    source working/expName.sh
-
+    source ${rawData}/expName.sh
     haha2="RunID,start=0 value=${runID},expName=\"${expName}\",comment=\"Experiment_[${expName}]_was_switched.\""
   fi
   #echo $haha1
   #echo $haha2
+
   curl -s -v -XPOST "$haha1" --data-binary "$haha2"  --max-time 1 --connect-timeout 1
 
   #===== clean up working if it is new
