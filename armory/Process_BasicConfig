@@ -24,7 +24,7 @@ echo -e "${RED}##################### Loading Process_BasicConfig.sh ${NC}"
 
 ##############   need to distingish mac and daq
 Arch="$(uname -s)"
-PCName="$(hostname)"
+#PCName="$(hostname)" ##don't use host name, set PCName in .bashrc 
 PCID=-1      #if PCID == 1 (DAQ), 2 (MAC), 3 (test station), -1(OTHER)
 
 #------ Set up data folder, check disk space
@@ -76,7 +76,7 @@ if [ ${Arch} == "Linux" ] && [ ${PCName} == "solaris-daq" ]; then
 
 fi
 
-if [ ${Arch} == "Darwin" ] && [ ${PCName} == "SOLARISs-Mac-Studio.local" ]; then 
+if [ ${Arch} == "Darwin" ] && [ ${PCName} == "solaris-mac-studio" ]; then 
   PCID=2
   # rawDataPathParent=${HOME}/experimentalData/
   # rootDataPathParent=${HOME}/experimentalData/

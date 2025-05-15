@@ -22,6 +22,14 @@ this batch shell script adds few enviroment variables and functions. Add the Arm
 >source SOLARIS.sh
 ```
 
+and also set your PCName
+
+```sh
+>export PCName="what-ever-your-like"
+```
+
+the PCName use to identify different computer.
+
 # Event Builder
 
 Please download the SOLARIS_DAQ, under the Aux directory, make, and link the EventBuilder to Armory.

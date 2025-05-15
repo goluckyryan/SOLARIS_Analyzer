@@ -26,7 +26,7 @@ fi
 if [ ${PCID} -eq 1 ]; then
   echo -e "================================================ ${YELLOW}SOLARIS DAQ ${NC}"
 elif [ ${PCID} -eq 2 ]; then
-  echo -e "================================================ ${YELLOW}SOLARIS MAC ${NC}"
+  echo -e "================================================ ${YELLOW}SOLARIS MAC STUDIO ${NC}"
 else
   echo -e "================================================ ${YELLOW}Other PC ${NC}"
 fi
@@ -135,8 +135,8 @@ if [ ${PCID} -eq 1 ]; then
   rawData=${rawDataPathParent}/${expName}
   rootData=${rootDataPathParent}/${expName}
 elif [ ${PCID} -eq 2 ]; then
-  rawData=${rawDataPathParent}/${expName}/data
-  rootData=${rootDataPathParent}/${expName}/root_data
+  rawData=~/experimentalData/${expName}/data
+  rootData=~/experimentalData/${expName}/root_data
 else
 
   path=$(pwd)
