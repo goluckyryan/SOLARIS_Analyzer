@@ -132,15 +132,14 @@ fi
 echo -e "${YELLOW} 4) ##################  making new folders in ${rawDataPathParent} ${NC}"
 
 if [ ${PCID} -eq 1 ]; then
-  rawData=${rawDataPathParent}/${expName}
-  rootData=${rootDataPathParent}/${expName}
+  rawData=/mnt/data0/${expName}
+  rootData=/mnt/data1/${expName}
 elif [ ${PCID} -eq 2 ]; then
   rawData=~/experimentalData/${expName}/data
   rootData=~/experimentalData/${expName}/root_data
 else
 
-  path=$(pwd)
-  read -p "Please enter absolute DATAPATH (e.g. ${path}) " DATAPATH
+  read -p "Please enter absolute DATAPATH for storing the data, don't include the expName : " DATAPATH
   echo "DATAPATH for    raw data : ${DATAPATH}/${expName}/data"
   echo "DATAPATH for   root_data : ${DATAPATH}/${expName}/root_data"   
 
