@@ -16,8 +16,8 @@
 #include "TMacro.h"
 #include "TObjArray.h"
 #include "TGraph.h"
-#include "../Cleopatra/ClassHelios.h"
-#include "../Cleopatra/ClassTransfer.h"
+#include "../cleopatra/ClassHelios.h"
+#include "../cleopatra/ClassTransfer.h"
 
 void FindThetaCM(double Ex, int nDivision=1, double XRATION = 0.95, 
             std::string reactionConfigFileName="reactionConfig.txt",  

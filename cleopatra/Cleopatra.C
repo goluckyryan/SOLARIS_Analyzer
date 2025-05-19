@@ -81,9 +81,9 @@ int main (int argc, char *argv[]) { //TODO add angle range
   ptolemyOutFileName += ".out";
   std::ostringstream commandStream;
   #if defined(__linux__)
-    commandStream << "../Cleopatra/ptolemy <" << ptolemyInFileName << "> " << ptolemyOutFileName;
+    commandStream << "../cleopatra/ptolemy <" << ptolemyInFileName << "> " << ptolemyOutFileName;
   #elif defined(__APPLE__) && defined(__MACH__)
-    commandStream << "../Cleopatra/ptolemy_mac <" << ptolemyInFileName << "> " << ptolemyOutFileName;
+    commandStream << "../cleopatra/ptolemy_mac <" << ptolemyInFileName << "> " << ptolemyOutFileName;
   #endif
   std::string command = commandStream.str();
 

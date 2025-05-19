@@ -13,9 +13,9 @@
 #include <vector>
 #include <fstream>
 
-#include "../Armory/AnalysisLib.h"
-#include "../Armory/ClassDetGeo.h"
-#include "../Armory/ClassReactionConfig.h"
+#include "../armory/AnalysisLib.h"
+#include "../armory/ClassDetGeo.h"
+#include "../armory/ClassReactionConfig.h"
 
 //=======================================================
 //#######################################################

@@ -1,10 +1,10 @@
 
-#include "../Armory/AnalysisLib.h"
-#include "../Armory/ClassDetGeo.h"
-#include "../Armory/ClassReactionConfig.h"
-#include "../Armory/ClassCorrParas.h"
-// #include "../Cleopatra/ClassHelios.h"
-#include "../Cleopatra/ClassTransfer.h"
+#include "../armory/AnalysisLib.h"
+#include "../armory/ClassDetGeo.h"
+#include "../armory/ClassReactionConfig.h"
+#include "../armory/ClassCorrParas.h"
+// #include "../cleopatra/ClassHelios.h"
+#include "../cleopatra/ClassTransfer.h"
 
 #include "ClassMonPlotter.h"
 #include "Mapping.h"

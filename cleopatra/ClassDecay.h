@@ -3,8 +3,8 @@
 
 #include "TVector3.h"
 
-#include "../Cleopatra/ClassIsotope.h"
-#include "../Armory/ClassReactionConfig.h"
+#include "../cleopatra/ClassIsotope.h"
+#include "../armory/ClassReactionConfig.h"
 
 //=======================================================
 //#######################################################

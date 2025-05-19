@@ -12,7 +12,7 @@
 #include "TMacro.h"
 
 #include "AnalysisLib.h"
-#include "../Cleopatra/ClassIsotope.h"
+#include "../cleopatra/ClassIsotope.h"
 
 struct Recoil {
 

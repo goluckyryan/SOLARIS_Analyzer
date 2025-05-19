@@ -1,10 +1,10 @@
 #ifndef ClassMonitorPlotter_H
 #define ClassMonitorPlotter_H
 
-#include "../Armory/ClassDetGeo.h"
-#include "../Armory/ClassReactionConfig.h"
-#include "../Cleopatra/ClassTransfer.h"
-#include "../Cleopatra/ClassIsotope.h"
+#include "../armory/ClassDetGeo.h"
+#include "../armory/ClassReactionConfig.h"
+#include "../cleopatra/ClassTransfer.h"
+#include "../cleopatra/ClassIsotope.h"
 
 #include "TH1.h"
 #include "TH2.h"

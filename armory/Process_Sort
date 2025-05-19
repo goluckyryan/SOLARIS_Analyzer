@@ -21,7 +21,7 @@ RUN=$1
 nWorker=$2
 TraceMethod=$3
 
-source $SOLARISANADIR/Armory/Process_BasicConfig
+source $SOLARISANADIR/armory/Process_BasicConfig
 if [ -z $expName ]; then
     source $SOLARISANADIR/working/expName.sh
 fi
@@ -72,7 +72,7 @@ else
 
   if [ $nWorker -le -1 ]; then
     echo -e "${LRED}>>>>>>>>>>>>>>> Force GeneralSort $(date) ${NC}"
-    root -l -q -b "$SOLARISANADIR/Armory/GeneralSortAgent.C($runNum, $nWorker, $TraceMethod)"
+    root -l -q -b "$SOLARISANADIR/armory/GeneralSortAgent.C($runNum, $nWorker, $TraceMethod)"
     echo -e "${LRED}<<<<<<<<<<<<<<<< Done GeneralSort $(date) ${NC}"
   fi
 
@@ -81,7 +81,7 @@ else
     if [ $rootDataTime -ge $genRootDataTime ]; then
 
       echo -e "${LRED}>>>>>>>>>>>>>>>>>>>>> GeneralSort $(date) ${NC}"
-      root -l -q -b "$SOLARISANADIR/Armory/GeneralSortAgent.C($runNum, $nWorker, $TraceMethod)"
+      root -l -q -b "$SOLARISANADIR/armory/GeneralSortAgent.C($runNum, $nWorker, $TraceMethod)"
       echo -e "${LRED}<<<<<<<<<<<<<<<< Done GeneralSort $(date) ${NC}"
 
     else

@@ -21,7 +21,7 @@
 #include <TObjArray.h>
 #include <fstream>
 #include <vector>
-#include "../Cleopatra/ClassIsotope.h"
+#include "../cleopatra/ClassIsotope.h"
 #include "Mapping.h"
 
 #define tick2ns 8. // 1clock tick = 8 ns
@@ -694,9 +694,9 @@ void Monitor::Terminate(){
   // gROOT->ProcessLine(".L ../armory/Check_rdtGate.C");
   // printf("============================================ loaded armory/Check_rdtGate.C\n");
   // gROOT->ProcessLine(".L ../armory/readTrace.C");
-  // printf("============================================ loaded Armory/readTrace.C\n");
+  // printf("============================================ loaded armory/readTrace.C\n");
   // gROOT->ProcessLine(".L ../armory/readRawTrace.C");
-  // printf("============================================ loaded Armory/readRawTrace.C\n");
+  // printf("============================================ loaded armory/readRawTrace.C\n");
   // gROOT->ProcessLine("listDraws()");
   
   /************************* Save histograms to root file*/

@@ -29,7 +29,7 @@ RUN=$1
 EventBld=$2
 timeWin=$3
 
-source ${SOLARISANADIR}/Armory/Process_BasicConfig
+source ${SOLARISANADIR}/armory/Process_BasicConfig
 if [ -z $expName ]; then
     source $SOLARISANADIR/working/expName.sh
 fi

@@ -13,7 +13,7 @@ RUN=$1
 runNum=${RUN#0} #remove zero
 RUN=$(printf '%03d' $runNum) ##add back the zero
 
-source $SOLARISANADIR/Armory/Process_BasicConfig
+source $SOLARISANADIR/armory/Process_BasicConfig
 
 if [ -z $expName ]; then
     source $SOLARISANADIR/working/expName.sh

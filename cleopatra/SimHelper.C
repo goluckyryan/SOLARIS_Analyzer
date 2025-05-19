@@ -13,13 +13,13 @@
 #include <RQ_OBJECT.h>
 
 
-#include "../Cleopatra/SimTransfer.C"
-#include "../Cleopatra/InFileCreator.h"
-#include "../Cleopatra/ExtractXSec.h"
-#include "../Cleopatra/PlotTGraphTObjArray.h"
-#include "../Armory/AutoFit.C"
-#include "../Armory/AnalysisLib.h"
-#include "../Cleopatra/SimChecker.C"
+#include "../cleopatra/SimTransfer.C"
+#include "../cleopatra/InFileCreator.h"
+#include "../cleopatra/ExtractXSec.h"
+#include "../cleopatra/PlotTGraphTObjArray.h"
+#include "../armory/AutoFit.C"
+#include "../armory/AnalysisLib.h"
+#include "../cleopatra/SimChecker.C"
 
 #include <iostream>
 #include <stdexcept>
@@ -399,7 +399,7 @@ void MyMainFrame::GetData(){
    TString name = txtName->GetText();
    TString maxEx = txtEx->GetText();
    
-   TString cmd = "../Cleopatra/nuclear_data.py " + name + " " + maxEx;
+   TString cmd = "../cleopatra/nuclear_data.py " + name + " " + maxEx;
    
    system(cmd.Data());
    
@@ -433,9 +433,9 @@ void MyMainFrame::Command(int ID) {
       statusLabel->SetText("Running Ptolemy.....");
       int output = 1; 
       if( OS_Type == 1 ){
-        output = system("../Cleopatra/ptolemy <DWBA.in> DWBA.out");
+        output = system("../cleopatra/ptolemy <DWBA.in> DWBA.out");
       }else{
-        output = system("../Cleopatra/ptolemy_mac <DWBA.in> DWBA.out");
+        output = system("../cleopatra/ptolemy_mac <DWBA.in> DWBA.out");
       }
       
       statusLabel->SetText("Check terminal, if no massage, Ptolemy run well.");

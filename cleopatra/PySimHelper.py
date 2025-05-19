@@ -3,7 +3,7 @@
 #============== experimental Simulation Helper using PyROOT and PyQT
 #
 #   need pip install PyQt6
-#   need to make at Cleopatra
+#   need to make at cleopatra
 #
 #=====================================================
 
@@ -30,7 +30,7 @@ def LoadTxtToEditor(txtFileName):
 
 def RunSimulation():
   SaveTxtFromEditor()
-  bash_command = "../Cleopatra/SimTransfer reactionConfig.txt detectorGeo.txt 0 '' transfer.root"
+  bash_command = "../cleopatra/SimTransfer reactionConfig.txt detectorGeo.txt 0 '' transfer.root"
   process = subprocess.Popen(bash_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   output, error = process.communicate()
   if process.returncode != 0:

@@ -4,8 +4,8 @@
 #include "utility"
 
 #include "ClassIsotope.h"
-#include "../Armory/AnalysisLib.h"
-#include "../Armory/ClassReactionConfig.h"
+#include "../armory/AnalysisLib.h"
+#include "../armory/ClassReactionConfig.h"
 
 #include "TLorentzVector.h"
 #include "TMath.h"

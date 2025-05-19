@@ -68,7 +68,7 @@ echo "###   Trace Method : $TraceMethod"
 echo "###        Monitor : $isMonitor"
 echo "#################################################"
 
-source ${SOLARISANADIR}/Armory/Process_BasicConfig
+source ${SOLARISANADIR}/armory/Process_BasicConfig
 source ${rawDataPath}/expName.sh
 
 #################################### CHECK IS RUN DATA EXIST

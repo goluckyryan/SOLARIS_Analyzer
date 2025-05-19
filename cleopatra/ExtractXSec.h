@@ -26,7 +26,7 @@
 #include <TMacro.h>
 #include <TF1.h>
 #include <TObjArray.h>
-#include "../Armory/AnalysisLib.h"
+#include "../armory/AnalysisLib.h"
 
 using namespace std;
 

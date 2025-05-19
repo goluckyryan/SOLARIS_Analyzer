@@ -18,12 +18,12 @@
 #include <TObjArray.h>
 #include <fstream>
 #include <TCutG.h>
-#include "../Armory/AnalysisLib.h"
-#include "../Armory/ClassDetGeo.h"
-#include "../Armory/ClassReactionConfig.h"
-#include "../Cleopatra/ClassIsotope.h"
-#include "../Cleopatra/ClassTransfer.h"
-#include "../Cleopatra/ClassSimPlotter.h"
+#include "../armory/AnalysisLib.h"
+#include "../armory/ClassDetGeo.h"
+#include "../armory/ClassReactionConfig.h"
+#include "../cleopatra/ClassIsotope.h"
+#include "../cleopatra/ClassTransfer.h"
+#include "../cleopatra/ClassSimPlotter.h"
 #include <vector>
 
 plotID StringToPlotID(TString str);

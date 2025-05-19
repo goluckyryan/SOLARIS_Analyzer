@@ -10,9 +10,9 @@
 #include <TLegend.h>
 #include <TLine.h>
 #include <TLatex.h>
-#include "../Armory/ClassDetGeo.h"
-#include "../Armory/ClassReactionConfig.h"
-#include "../Cleopatra/ClassIsotope.h"
+#include "../armory/ClassDetGeo.h"
+#include "../armory/ClassReactionConfig.h"
+#include "../cleopatra/ClassIsotope.h"
 
 enum plotID { pEZ,               /// 0
               pRecoilXY,         /// 1

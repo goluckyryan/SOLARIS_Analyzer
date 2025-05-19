@@ -16,10 +16,10 @@ export SOLARISANADIR
 
 echo "####### set global variable SOLARISANADIR = ${SOLARISANADIR}"
 
-export PATH=$PATH:$SOLARISANADIR/Armory:$SOLARISANADIR/Cleopatra
+export PATH=$PATH:$SOLARISANADIR/armory:$SOLARISANADIR/cleopatra
 
-echo "####### add ${SOLARISANADIR}/Armory into PATH"
-echo "####### add ${SOLARISANADIR}/Cleopatra into PATH"
+echo "####### add ${SOLARISANADIR}/armory into PATH"
+echo "####### add ${SOLARISANADIR}/cleopatra into PATH"
 
 
 ###########################

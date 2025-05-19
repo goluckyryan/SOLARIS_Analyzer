@@ -28,10 +28,10 @@ Cleopatra: Cleopatra.C InFileCreator.h ExtractXSec.h
 FindThetaCM: FindThetaCM.C FindThetaCM.h $(depend)
 	$(CC) $(CFLAG) FindThetaCM.C -o FindThetaCM `root-config --cflags --glibs`
 
-SimTransfer: SimTransfer.C ClassTransfer.h $(depend) ../Armory/ClassReactionConfig.h ../Armory/ClassDetGeo.h
+SimTransfer: SimTransfer.C ClassTransfer.h $(depend) ../armory/ClassReactionConfig.h ../armory/ClassDetGeo.h
 	$(CC) $(CFLAG) SimTransfer.C -o SimTransfer `root-config --cflags --glibs`
 
-SimTransfer_single: SimTransfer_single.C $(depend) ../Armory/ClassReactionConfig.h ../Armory/ClassDetGeo.h
+SimTransfer_single: SimTransfer_single.C $(depend) ../armory/ClassReactionConfig.h ../armory/ClassDetGeo.h
 	$(CC) $(CFLAG) SimTransfer_single.C -o SimTransfer_single `root-config --cflags --glibs`
 
 SimAlpha: SimAlpha.C ClassHelios.h 

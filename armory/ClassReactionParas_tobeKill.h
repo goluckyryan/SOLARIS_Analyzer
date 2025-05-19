@@ -48,7 +48,7 @@ inline void ReactionParas::LoadReactionParas(bool verbose = false){
 
   //if( aaa1 != aaa2 ) {
   //  printf("########################## recalculate transfer.root \n");
-  //  system("../Cleopatra/Transfer");
+  //  system("../cleopatra/Transfer");
   //  printf("########################## transfer.root updated\n");
   //}
 

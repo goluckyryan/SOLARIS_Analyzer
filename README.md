@@ -8,15 +8,15 @@ Analysis
 ├── README.md  
 ├── SetupNewExp // bash script to create new branch and raw data folder  
 ├── SOLARIS.sh // bash script to define some env variable and functions  
-├── Armory // analysis codes, independent from experiment.  
-├── Cleopatra // Swaper for DWBA code Ptolomey and simulation  
+├── armory // analysis codes, independent from experiment.  
+├── cleopatra // Swaper for DWBA code Ptolomey and simulation  
 ├── data_raw // should be the symbolic link to the raw data, created by SetUpNewExp  
 ├── root_data // symbolic link to converted root file, created by SetUpNewExp  
 └── working // working directory, depends on experiment.
 
 # SOLARIS.sh
 
-this batch shell script adds few enviroment variables and functions. Add the Armory and Cleopatra into the system PATH.
+this batch shell script adds few enviroment variables and functions. Add the `armory` and `cleopatra` into the system PATH.
 
 ```sh
 >source SOLARIS.sh
@@ -32,7 +32,7 @@ the PCName use to identify different computer.
 
 # Event Builder
 
-Please download the SOLARIS_DAQ, under the Aux directory, make, and link the EventBuilder to Armory.
+Please download the SOLARIS_DAQ, under the `Aux` directory, make, and link the EventBuilder to `armory`.
 
 The reason for having EventBuilder in the DAQ code is the Hit.h is original from the DAQ code.
 
@@ -54,7 +54,7 @@ sudo cmake --build . --target install -j <number_of_threads>
 
 # Analysis & Simulation
 
-The Armory/AnalysisLib.h constains many small but handy functions.
+The armory/AnalysisLib.h constains many small but handy functions.
 
 All class headers are started with Class*.h
 

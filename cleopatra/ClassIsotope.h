@@ -21,7 +21,7 @@
 #include <stdlib.h>  //atoi
 #include <algorithm>
 
-std::string massData="../Cleopatra/mass20.txt";
+std::string massData="../cleopatra/mass20.txt";
 
 // about the mass**.txt
 // Mass Excess = (ATOMIC MASS - A)*amu | e.g. n : (1.088664.91585E-6-1)*amu

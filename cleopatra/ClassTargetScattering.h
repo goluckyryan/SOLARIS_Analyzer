@@ -5,7 +5,7 @@
 #include <fstream>
 #include <string>
 
-#include "../Armory/AnalysisLib.h"
+#include "../armory/AnalysisLib.h"
 
 //=======================================================
 //#######################################################

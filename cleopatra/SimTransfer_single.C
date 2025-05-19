@@ -13,7 +13,7 @@
 #include <fstream>
 #include <TObjArray.h>
 
-#include "../Armory/ClassDetGeo.h"
+#include "../armory/ClassDetGeo.h"
 #include "ClassTargetScattering.h"
 #include "ClassDecay.h"
 #include "ClassTransfer.h"
@@ -703,18 +703,18 @@ int main (int argc, char *argv[]) {
 
   Transfer( basicConfig, heliosDetGeoFile, ID, ptolemyRoot, saveFileName);
 
-  //run Armory/Check_Simulation
+  //run armory/Check_Simulation
   if( isPlot ){
     std::ifstream file_in;
-    file_in.open("../Cleopatra/Check_Simulation.C", std::ios::in);
+    file_in.open("../cleopatra/Check_Simulation.C", std::ios::in);
     if( file_in){
-      printf("---- running ../Cleopatra/Check_Simulation.C on %s \n", saveFileName.Data());
+      printf("---- running ../cleopatra/Check_Simulation.C on %s \n", saveFileName.Data());
       TString cmd;
-      cmd.Form("root -l '../Cleopatra/Check_Simulation.C(\"%s\")'", saveFileName.Data());
+      cmd.Form("root -l '../cleopatra/Check_Simulation.C(\"%s\")'", saveFileName.Data());
       
       system(cmd.Data());
     }else{
-      printf("cannot find ../Cleopatra/Check_Simulation.C \n");
+      printf("cannot find ../cleopatra/Check_Simulation.C \n");
     }
   }
   
